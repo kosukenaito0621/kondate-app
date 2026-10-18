@@ -35,6 +35,19 @@ describe('AI の結果を整える', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('材料名のかっこ書きは外してそろえる', () => {
+    const { draft } = toRecipeDraft(
+      aiRecipeSchema.parse({
+        ...base,
+        ingredients: [
+          { name: 'ぶり（切り身）', amount: '2切れ', section: 'fish' },
+          { name: 'タマネギ (中)', amount: '1個', section: 'veg' },
+        ],
+      }),
+    );
+    expect(draft.ingredients.map((i) => i.name)).toEqual(['ぶり', '玉ねぎ']);
+  });
+
   it('揚げ物や手順が多いレシピはふたばにしない', () => {
     const fried = toRecipeDraft(
       aiRecipeSchema.parse({ ...base, steps: [{ text: '170℃の油で揚げる', tip: 'x' }] }),

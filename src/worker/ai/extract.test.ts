@@ -16,13 +16,12 @@ const valid = {
 };
 
 /** env.AI の代わり。呼ばれた入力を記録し、用意した返答を順に返す */
-function fakeAi(responses: unknown[], failFirstCall = false) {
+function fakeAi(responses: unknown[]) {
   const calls: { model: string; input: Record<string, unknown> }[] = [];
   let i = 0;
   const ai = {
     run: async (model: string, input: Record<string, unknown>) => {
       calls.push({ model, input });
-      if (failFirstCall && calls.length === 1) throw new Error('unsupported content format');
       return { response: responses[i++] };
     },
   } as unknown as Ai;
@@ -48,11 +47,11 @@ describe('extractRecipe', () => {
     expect(last[1]!.image_url!.url).toMatch(/^data:image\/jpeg;base64,/);
   });
 
-  it('content 配列が使えなければ image 欄の形式でやり直す', async () => {
-    const { ai, calls } = fakeAi([valid], true);
-    await extractRecipe(ai, img);
-    expect(calls).toHaveLength(2);
-    expect(calls[1]!.input.image).toMatch(/^data:image\/jpeg;base64,/);
+  it('OpenAI 互換の choices 形式の返答も読める', async () => {
+    const ai = {
+      run: async () => ({ choices: [{ message: { content: JSON.stringify(valid) } }] }),
+    } as unknown as Ai;
+    expect((await extractRecipe(ai, img)).name).toBe('鶏の照り焼き');
   });
 
   it('形式が崩れていたら理由を伝えて1回だけやり直す', async () => {

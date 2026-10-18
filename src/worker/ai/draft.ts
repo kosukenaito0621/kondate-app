@@ -108,7 +108,8 @@ export type RecipeDraft = Omit<RecipeInput, 'imageKey'> & { imageKey: null };
 export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
   const warnings: string[] = [];
   const ingredients = ai.ingredients.map((i) => {
-    const name = normalizeIngredientName(i.name);
+    // 「ぶり（切り身）」のような補足は外してから表記をそろえる
+    const name = normalizeIngredientName(i.name.replace(/s*[（(][^）)]*[）)]s*/g, '') || i.name);
     const section: Section = sectionOf(name) ?? i.section;
     return { name, section, ...parseAmount(i.amount) };
   });

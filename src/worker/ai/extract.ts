@@ -2,10 +2,11 @@ import { aiRecipeSchema, AI_RECIPE_JSON_SCHEMA, extractJson, type AiRecipe } fro
 
 /**
  * 使うモデル（ここだけ変えれば差し替えられる）。
- * 公式ドキュメントで画像入力対応を確認したもの。日本語の読み取り精度は実機で比較して選ぶ。
+ * 2026-10-18 に日本語のレシピ画像で比較：mistral-small-3.1 が約15秒で最も正確
+ * （llama-4-scout 約30秒・分量の誤読あり、qwen3.8 約57秒、gemma-4 は形式崩れ）。
  */
-export const VISION_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
-export const TEXT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+export const VISION_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
+export const TEXT_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
 const SYSTEM_PROMPT = `あなたは料理本の写真やレシピサイトから、レシピを正確に読み取るアシスタントです。
 次のルールで、指定された JSON だけを返してください。説明文は不要です。
@@ -39,31 +40,51 @@ function toDataUri(bytes: Uint8Array, type: string) {
 }
 
 type Message = { role: 'system' | 'user' | 'assistant'; content: unknown };
+type RunResult = { response?: unknown; choices?: { message?: { content?: unknown } }[] };
 
-async function callModel(ai: Ai, input: AiInput, messages: Message[]) {
+/** AI の呼び出しが返ってこないときに待ち続けないための上限 */
+export const AI_TIMEOUT_MS = 90_000;
+
+/**
+ * 返答の本文を取り出す。モデルによって { response } 形式と
+ * OpenAI 互換の { choices[0].message.content } 形式がある。
+ */
+export function responseOf(res: RunResult | null | undefined): unknown {
+  return res?.response ?? res?.choices?.[0]?.message?.content ?? null;
+}
+
+async function withTimeout<T>(p: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('ai timeout')), AI_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([p, timeout]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+async function callModel(ai: Ai, input: AiInput, messages: Message[]): Promise<RunResult> {
+  const run = (ai as unknown as { run: (m: string, i: unknown) => Promise<RunResult> }).run.bind(
+    ai,
+  );
   const common = {
     max_tokens: 2500,
     temperature: 0.1,
     response_format: { type: 'json_schema', json_schema: AI_RECIPE_JSON_SCHEMA },
   };
-  if (input.kind === 'text') {
-    return (
-      ai as unknown as { run: (m: string, i: unknown) => Promise<{ response?: unknown }> }
-    ).run(TEXT_MODEL, { ...common, messages });
-  }
-  const run = (
-    ai as unknown as { run: (m: string, i: unknown) => Promise<{ response?: unknown }> }
-  ).run.bind(ai);
+  if (input.kind === 'text') return withTimeout(run(TEXT_MODEL, { ...common, messages }));
+
+  // 画像は最後のユーザーメッセージに、文字と画像の配列として添える（OpenAI 互換の形式）。
+  // 実機確認：image 欄の形式では画像を読まないモデルがある。
   const dataUri = toDataUri(input.bytes, input.contentType);
-  const [system, ...rest] = messages;
-  const last = rest[rest.length - 1]!;
-  try {
-    // OpenAI 互換の形式（文字と画像を content の配列で渡す）
-    return await run(VISION_MODEL, {
+  const last = messages[messages.length - 1]!;
+  return withTimeout(
+    run(VISION_MODEL, {
       ...common,
       messages: [
-        system,
-        ...rest.slice(0, -1),
+        ...messages.slice(0, -1),
         {
           role: 'user',
           content: [
@@ -72,12 +93,8 @@ async function callModel(ai: Ai, input: AiInput, messages: Message[]) {
           ],
         },
       ],
-    });
-  } catch (e) {
-    console.warn('vision content-array format failed, retrying with image field', e);
-    // Workers AI のビジョンチュートリアルの形式（image 欄）
-    return await run(VISION_MODEL, { ...common, messages, image: dataUri });
-  }
+    }),
+  );
 }
 
 /**
@@ -95,7 +112,7 @@ export async function extractRecipe(ai: Ai, input: AiInput): Promise<AiRecipe> {
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await callModel(ai, input, messages);
-    const json = extractJson(res?.response);
+    const json = extractJson(responseOf(res));
     if (json && typeof json === 'object' && 'error' in json && !('name' in json)) {
       throw new ExtractError(
         'レシピを読み取れませんでした。写真が鮮明か、レシピが写っているか確認してください',
@@ -111,7 +128,8 @@ export async function extractRecipe(ai: Ai, input: AiInput): Promise<AiRecipe> {
     messages.push(
       {
         role: 'assistant',
-        content: typeof res?.response === 'string' ? res.response : JSON.stringify(res?.response),
+        content:
+          typeof responseOf(res) === 'string' ? responseOf(res) : JSON.stringify(responseOf(res)),
       },
       {
         role: 'user',
