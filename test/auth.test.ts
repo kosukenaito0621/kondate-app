@@ -3,7 +3,7 @@ import { exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import { getDb } from '../src/worker/db/client';
 import { createSession, validateSession, SESSION_TTL_MS } from '../src/worker/lib/session';
-import { upsertGoogleUser } from '../src/worker/routes/auth';
+import { safeNext, upsertGoogleUser } from '../src/worker/routes/auth';
 
 const BASE = 'http://localhost:5173';
 const db = () => getDb(env.DB);
@@ -81,14 +81,50 @@ describe('auth', () => {
     expect(res.status).toBe(400);
   });
 
-  it('同じ Google アカウントは同じユーザーになり、既定設定は7曜日分', async () => {
+  it('同じ Google アカウントは同じユーザーになり、自分だけのグループ（曜日設定7件）が1つ作られる', async () => {
     const a = await upsertGoogleUser(db(), { sub: 'same', email: 'a@example.com' });
     const b = await upsertGoogleUser(db(), { sub: 'same', email: 'b@example.com' });
     expect(a).toBe(b);
-    const days = await env.DB.prepare('select count(*) n from day_settings where user_id=?')
+    const groups = await env.DB.prepare(
+      `select m.group_id, m.role, g.name, (select count(*) from day_settings d where d.group_id = m.group_id) days
+       from group_members m join groups g on g.id = m.group_id where m.user_id = ?`,
+    )
       .bind(a)
-      .first<{ n: number }>();
-    expect(days?.n).toBe(7);
+      .all<{ group_id: string; role: string; name: string; days: number }>();
+    expect(groups.results).toHaveLength(1);
+    expect(groups.results[0]).toMatchObject({ role: 'owner', name: 'わたしの家', days: 7 });
+  });
+
+  it('ユーザーネームを決めると「わたしの家」が「◯◯の家」になり、初回のレベル選択がグループ既定になる', async () => {
+    const { cookie } = await login('naming');
+    await env.DB.prepare('update users set display_name = null where google_sub = ?')
+      .bind('naming')
+      .run();
+    const patch = (json: unknown) =>
+      exports.default.fetch(`${BASE}/api/me`, {
+        method: 'PATCH',
+        headers: { cookie, 'content-type': 'application/json', origin: BASE },
+        body: JSON.stringify(json),
+      });
+    const me = await (
+      await patch({ displayName: 'はなこ' })
+    ).json<{ groups: { name: string }[]; cookingLevel: null }>();
+    expect(me.groups[0]?.name).toBe('はなこの家');
+    expect(me.cookingLevel).toBeNull();
+
+    await patch({ cookingLevel: 'futaba' });
+    const level = await env.DB.prepare(
+      `select g.default_level from groups g join group_members m on m.group_id = g.id join users u on u.id = m.user_id where u.google_sub = 'naming'`,
+    ).first<{ default_level: string }>();
+    expect(level?.default_level).toBe('futaba');
+  });
+
+  it('ログイン後の戻り先はアプリ内のパスだけ', () => {
+    expect(safeNext('/invite/abc')).toBe('/invite/abc');
+    expect(safeNext('//evil.example.com')).toBe('/');
+    expect(safeNext('https://evil.example.com')).toBe('/');
+    expect(safeNext('/\\evil.example.com')).toBe('/');
+    expect(safeNext(undefined)).toBe('/');
   });
 
   it('セッションは期限切れで無効、残り半分未満で延長', async () => {

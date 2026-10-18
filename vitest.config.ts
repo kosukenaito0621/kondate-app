@@ -23,6 +23,8 @@ export default defineConfig(async () => {
               // Workers AI はリモート専用。テストではモックするのでリモート接続しない
               remoteBindings: false,
               miniflare: {
+                // マイグレーション検証用の空DB
+                d1Databases: { MIGRATION_DB: 'migration-test-db' },
                 bindings: {
                   TEST_MIGRATIONS: migrations,
                   GOOGLE_CLIENT_ID: 'test-client.apps.googleusercontent.com',

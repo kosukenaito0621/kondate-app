@@ -15,6 +15,27 @@
       "when": 1792312393512,
       "tag": "0001_user_theme",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792314374585,
+      "tag": "0002_groups_add",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792314466685,
+      "tag": "0003_groups_finalize",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792314606359,
+      "tag": "0004_cooking_level_nullable",
+      "breakpoints": true
     }
   ]
 }

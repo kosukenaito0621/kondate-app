@@ -12,3 +12,5 @@ coverage/
 node_modules/.tmp/
 .DS_Store
 Thumbs.db
+docs/recipes-preview.html
+seed/seed.sql
