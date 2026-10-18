@@ -10,8 +10,6 @@ export const shoppingQuery = (weekStart: string) =>
     queryKey: ['shopping', weekStart],
     queryFn: async () =>
       ok<ShoppingListView>(await api.shopping[':weekStart'].$get({ param: { weekStart } })),
-    // リアルタイム同期が入るまでは、ほかのメンバーの変更を定期的に取り込む
-    refetchInterval: 15_000,
     refetchOnWindowFocus: true,
   });
 

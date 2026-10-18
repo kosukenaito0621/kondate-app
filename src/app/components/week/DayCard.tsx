@@ -38,6 +38,7 @@ export function MealRow({ item, onClick }: { item: PlanItemView; onClick: () => 
 export function DayCard({
   day,
   isToday,
+  highlightAt,
   index,
   shuffle,
   onItem,
@@ -47,6 +48,8 @@ export function DayCard({
 }: {
   day: PlanDayView;
   isToday: boolean;
+  /** ほかのメンバーが変えた時刻（変わるたびに光らせる） */
+  highlightAt?: number;
   index: number;
   shuffle: number;
   onItem: (item: PlanItemView) => void;
@@ -78,9 +81,22 @@ export function DayCard({
         initial={shuffle ? { opacity: 0, y: 40, rotate: tilt, scale: 0.9 } : false}
         animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
         transition={{ ...spring.soft, delay: shuffle ? index * 0.07 : 0 }}
-        className={cn('glass rounded-[var(--radius-card)] p-3', isToday && 'ring-2 ring-accent')}
+        className={cn(
+          'glass relative rounded-[var(--radius-card)] p-3',
+          isToday && 'ring-2 ring-accent',
+        )}
         aria-label={`${WEEKDAY_LABELS[day.weekday]}曜日 ${md(day.date)}`}
       >
+        {highlightAt && (
+          <motion.span
+            key={highlightAt}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[var(--radius-card)] ring-2 ring-accent bg-accent-soft"
+            initial={{ opacity: 0.9 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 2.4, ease: 'easeOut' }}
+          />
+        )}
         <header className="mb-1 flex items-center gap-2 px-1">
           <button
             type="button"

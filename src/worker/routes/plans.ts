@@ -1,7 +1,8 @@
 import { zValidator } from '@hono/zod-validator';
 import { and, eq, gte, isNull, lt, or, sql } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
-import { addDays, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
+import { CATEGORY_LABEL } from '../../shared/constants';
+import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
 import {
   regenerateSchema,
   setSlotSchema,
@@ -26,10 +27,13 @@ import type { Db } from '../db/client';
 import { hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { loadSettings } from './settings';
 
 type Ctx = Context<AppEnv>;
+
+const dayName = (date: string) => `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
 
 function toSummary(r: typeof recipes.$inferSelect): RecipeSummary {
   return {
@@ -311,6 +315,12 @@ export const planRoutes = new Hono<AppEnv>()
     const result = generateWeek(input);
     await replaceItems(c, plan.id, result.items, {});
     await saveCost(c.var.db, c.var.group.id, plan.id, ws);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: weekDates(ws),
+      summary: '1週間の献立を作り直しました',
+    });
     return c.json(await buildPlanView(c.var.db, c.var.group.id, ws, result.warnings));
   })
   /** 1日分（slot 指定なら1品）だけ作り直す */
@@ -326,6 +336,12 @@ export const planRoutes = new Hono<AppEnv>()
     const result = regenerate(input, current, date, slot);
     await replaceItems(c, plan.id, result.items, { date, slot });
     await saveCost(c.var.db, c.var.group.id, plan.id, ws);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: [date],
+      summary: `${dayName(date)}の${slot ? CATEGORY_LABEL[slot] : '献立'}を変更しました`,
+    });
     return c.json(await buildPlanView(c.var.db, c.var.group.id, ws, result.warnings));
   })
   /** レシピを手動で指定（null で外す） */
@@ -348,6 +364,12 @@ export const planRoutes = new Hono<AppEnv>()
     if (!plan) return stale(c);
     await replaceItems(c, plan.id, recipeId ? [{ date, slot, recipeId }] : [], { date, slot });
     await saveCost(db, c.var.group.id, plan.id, ws);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: [date],
+      summary: `${dayName(date)}の${CATEGORY_LABEL[slot]}を${recipeId ? '変更' : '外'}しました`,
+    });
     return c.json(await buildPlanView(db, c.var.group.id, ws));
   })
   /** 2つの曜日の献立を入れ替える */
@@ -369,6 +391,12 @@ export const planRoutes = new Hono<AppEnv>()
         .where(and(eq(mealPlanItems.planId, plan.id), eq(mealPlanItems.date, a)));
     // ユニーク制約（plan, date, slot）に当たらないよう一時日付を経由する
     await db.batch([move(from, tmp), move(to, from), move(tmp, to)]);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: [from, to],
+      summary: `${dayName(from)}と${dayName(to)}の献立を入れ替えました`,
+    });
     return c.json(await buildPlanView(db, c.var.group.id, ws));
   });
 

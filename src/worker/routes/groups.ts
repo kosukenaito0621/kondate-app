@@ -27,6 +27,7 @@ import {
 } from '../lib/groups';
 import { hitRateLimit } from '../lib/rate-limit';
 import { requireAuth } from '../middleware/auth';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 
 type Ctx = Context<AppEnv>;
@@ -136,6 +137,21 @@ export const groupRoutes = new Hono<AppEnv>()
     await ensureCurrentGroup(c.var.db, c.var.user.id, c.var.user.displayName);
     return c.json({ ok: true });
   })
+  /** リアルタイム同期の WebSocket。メンバー確認をしてからグループの部屋（Durable Object）へ渡す */
+  .get('/:id/live', async (c) => {
+    if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') {
+      return c.json({ error: 'expected_websocket' }, 426);
+    }
+    const g = await guard(c);
+    if ('error' in g) return g.error;
+    const headers = new Headers(c.req.raw.headers);
+    headers.set('x-kondate-user', c.var.user.id);
+    const res = await c.env.GROUP_ROOM.getByName(g.groupId).fetch(new Request(c.req.url, { headers }));
+    // DO の応答はヘッダーを変更できないので、共通ミドルウェアが触れるよう作り直す
+    return res.webSocket
+      ? new Response(null, { status: 101, webSocket: res.webSocket })
+      : new Response(res.body, res);
+  })
   .post('/:id/switch', async (c) => {
     const g = await guard(c);
     if ('error' in g) return g.error;
@@ -170,6 +186,9 @@ export const groupRoutes = new Hono<AppEnv>()
       .where(eq(users.id, target))
       .get();
     await ensureCurrentGroup(c.var.db, target, left?.displayName ?? null);
+    // 抜けた人のリアルタイム接続を切り、残ったメンバーに知らせる
+    c.executionCtx.waitUntil(c.env.GROUP_ROOM.getByName(g.groupId).disconnect(target).catch(() => {}));
+    notifyGroup(c, { type: 'group.updated' }, g.groupId);
     return c.json({ ok: true });
   })
   .post('/:id/transfer', zValidator('json', z.object({ userId: z.string() })), async (c) => {

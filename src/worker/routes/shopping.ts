@@ -25,6 +25,7 @@ import {
 } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { loadSettings } from './settings';
 
@@ -201,6 +202,16 @@ function weekParam(c: Ctx) {
 const itemWhere = (c: Ctx) =>
   and(eq(shoppingItems.id, c.req.param('id')!), eq(shoppingItems.groupId, c.var.group.id));
 
+/** 項目の変更を、その週の買い物リストを見ているメンバーに知らせる */
+async function notifyShopping(c: Ctx, planId: string, summary: string) {
+  const plan = await c.var.db
+    .select({ weekStart: mealPlans.weekStart })
+    .from(mealPlans)
+    .where(eq(mealPlans.id, planId))
+    .get();
+  if (plan) notifyGroup(c, { type: 'shopping.updated', weekStart: plan.weekStart, summary });
+}
+
 export const shoppingRoutes = new Hono<AppEnv>()
   .use(requireAuth, requireGroup)
   .get('/:weekStart', async (c) => {
@@ -216,6 +227,11 @@ export const shoppingRoutes = new Hono<AppEnv>()
     if (!plan) return c.json({ error: 'no_plan' }, 404);
     const { lines } = await computeLines(c.var.db, c.var.group.id, plan.id);
     await writeLines(c, plan.id, lines);
+    notifyGroup(c, {
+      type: 'shopping.updated',
+      weekStart: ws,
+      summary: '買い物リストを献立に合わせて更新しました',
+    });
     return c.json(await buildView(c, ws));
   })
   /** 手で追加（例: 牛乳 1本） */
@@ -250,6 +266,11 @@ export const shoppingRoutes = new Hono<AppEnv>()
         sort: Date.now() % 1_000_000_000,
         updatedAt: Date.now(),
       });
+      notifyGroup(c, {
+        type: 'shopping.updated',
+        weekStart: ws,
+        summary: `${normalized}を買い物リストに追加しました`,
+      });
       return c.json(await buildView(c, ws), 201);
     },
   )
@@ -265,8 +286,13 @@ export const shoppingRoutes = new Hono<AppEnv>()
         updatedAt: Date.now(),
       })
       .where(itemWhere(c))
-      .returning({ id: shoppingItems.id });
+      .returning({ id: shoppingItems.id, name: shoppingItems.name, planId: shoppingItems.planId });
     if (!res.length) return c.json({ error: 'not_found' }, 404);
+    await notifyShopping(
+      c,
+      res[0]!.planId,
+      `${res[0]!.name}を${checked ? 'かごに入れました' : 'リストに戻しました'}`,
+    );
     return c.json({ ok: true, checked });
   })
   .delete('/items/:id', async (c) => {

@@ -18,6 +18,8 @@ import { requireGroup } from './middleware/group';
 import type { AppEnv } from './types';
 
 export type { AppEnv };
+// Durable Object（wrangler.jsonc の class_name と一致させる）
+export { GroupRoom } from './realtime/group-room';
 
 const api = new Hono<AppEnv>()
   .basePath('/api')

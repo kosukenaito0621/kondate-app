@@ -7,6 +7,7 @@ import { daySettings, groups } from '../db/schema';
 import { memberCount } from '../lib/groups';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 
 export async function loadSettings(db: Db, groupId: string): Promise<PlanSettings> {
@@ -58,6 +59,9 @@ export const settingsRoutes = new Hono<AppEnv>()
           .onConflictDoUpdate({ target: [daySettings.groupId, daySettings.weekday], set: rest }),
       );
     }
-    if (ops.length) await db.batch(ops as [(typeof ops)[number], ...typeof ops]);
+    if (ops.length) {
+      await db.batch(ops as [(typeof ops)[number], ...typeof ops]);
+      notifyGroup(c, { type: 'settings.updated' });
+    }
     return c.json(await loadSettings(db, groupId));
   });

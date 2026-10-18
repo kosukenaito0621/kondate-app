@@ -22,6 +22,11 @@
   "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "kondate-images" }],
   // Workers AI はローカルでもリモート実行（利用量がカウントされる）
   "ai": { "binding": "AI", "remote": true },
+  // グループごとのリアルタイム同期（WebSocket Hibernation）
+  "durable_objects": {
+    "bindings": [{ "name": "GROUP_ROOM", "class_name": "GroupRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupRoom"] }],
   "vars": {
     "AI_DAILY_LIMIT": "20"
   }

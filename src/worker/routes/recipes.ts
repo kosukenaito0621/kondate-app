@@ -17,6 +17,7 @@ import { hiddenRecipes, recipeIngredients, recipes } from '../db/schema';
 import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
 
@@ -160,6 +161,7 @@ export const recipeRoutes = new Hono<AppEnv>()
       ),
     ]);
     const row = await findVisible(db, c.var.group.id, id);
+    notifyGroup(c, { type: 'recipes.updated' });
     return c.json(await loadDetail(db, row!), 201);
   })
   .put('/:id', zValidator('json', recipeInputSchema), async (c) => {
@@ -185,6 +187,7 @@ export const recipeRoutes = new Hono<AppEnv>()
         db.insert(recipeIngredients).values(chunk),
       ),
     ]);
+    notifyGroup(c, { type: 'recipes.updated' });
     if (existing.imageKey !== input.imageKey)
       await deleteImage(db, c.env.IMAGES, existing.imageKey);
     const row = await findVisible(db, c.var.group.id, id);
@@ -197,6 +200,7 @@ export const recipeRoutes = new Hono<AppEnv>()
       .returning({ id: recipes.id, imageKey: recipes.imageKey });
     if (!res.length) return c.json({ error: 'not_found_or_readonly' }, 404);
     await deleteImage(c.var.db, c.env.IMAGES, res[0]!.imageKey);
+    notifyGroup(c, { type: 'recipes.updated' });
     return c.json({ ok: true });
   })
   /** システム共通やグループのレシピを複製して、自グループのレシピにする（アレンジ用） */

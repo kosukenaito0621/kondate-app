@@ -9,6 +9,7 @@ import type { ShoppingItemView } from '../../../shared/shopping';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, RefreshIcon } from '../../components/icons';
+import { useFallbackRefetch } from '../../components/live/LiveProvider';
 import { PageHeader } from '../../components/PageHeader';
 import { ShoppingRow } from '../../components/shopping/ShoppingRow';
 import { ShoppingSkeleton } from '../../components/skeleton/Skeletons';
@@ -30,7 +31,8 @@ function ShoppingPage() {
   const today = toJstDate();
   const weekStart = weekStartOf(w ?? today);
   const navigate = useNavigate({ from: Route.fullPath });
-  const { data, isPending } = useQuery(shoppingQuery(weekStart));
+  const refetchInterval = useFallbackRefetch();
+  const { data, isPending } = useQuery({ ...shoppingQuery(weekStart), refetchInterval });
   const actions = useShoppingActions(weekStart);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');

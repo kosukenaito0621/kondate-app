@@ -15,6 +15,7 @@ import { cookLogs, recipes, users } from '../db/schema';
 import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
 import { toSummary } from './recipes';
@@ -144,6 +145,7 @@ export const logRoutes = new Hono<AppEnv>()
         and(eq(cookLogs.groupId, groupId), eq(cookLogs.recipeId, recipeId), eq(cookLogs.date, day)),
       )
       .get();
+    notifyGroup(c, { type: 'logs.updated' });
     return c.json({ id: row!.id, date: day }, 201);
   })
   /** 写真を付ける・差し替える・外す（null） */
@@ -164,6 +166,7 @@ export const logRoutes = new Hono<AppEnv>()
       await c.var.db.update(cookLogs).set({ imageKey }).where(where);
       if (before.imageKey && before.imageKey !== imageKey)
         await deleteImage(c.var.db, c.env.IMAGES, before.imageKey);
+      notifyGroup(c, { type: 'logs.updated' });
       return c.json({ ok: true, imageKey });
     },
   )
@@ -174,5 +177,6 @@ export const logRoutes = new Hono<AppEnv>()
       .returning({ id: cookLogs.id, imageKey: cookLogs.imageKey });
     if (!res.length) return c.json({ error: 'not_found' }, 404);
     await deleteImage(c.var.db, c.env.IMAGES, res[0]!.imageKey);
+    notifyGroup(c, { type: 'logs.updated' });
     return c.json({ ok: true });
   });

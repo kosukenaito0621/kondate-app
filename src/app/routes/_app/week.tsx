@@ -8,6 +8,7 @@ import type { PlanDayView } from '../../../shared/plan';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { ChevronLeftIcon, ChevronRightIcon, GearIcon, CutleryIcon } from '../../components/icons';
+import { useFallbackRefetch, useLive } from '../../components/live/LiveProvider';
 import { PageHeader } from '../../components/PageHeader';
 import { WeekSkeleton } from '../../components/skeleton/Skeletons';
 import { BudgetBar } from '../../components/week/BudgetBar';
@@ -32,7 +33,9 @@ function WeekPage() {
   const today = toJstDate();
   const weekStart = weekStartOf(w ?? today);
   const navigate = useNavigate({ from: Route.fullPath });
-  const { data: plan, isPending } = useQuery(planQuery(weekStart));
+  const refetchInterval = useFallbackRefetch();
+  const { highlights } = useLive();
+  const { data: plan, isPending } = useQuery({ ...planQuery(weekStart), refetchInterval });
   const mutation = usePlanMutation(weekStart);
 
   const [shuffle, setShuffle] = useState(0);
@@ -148,6 +151,7 @@ function WeekPage() {
                   index={i}
                   shuffle={shuffle}
                   isToday={date === today}
+                  highlightAt={highlights[date]}
                   onItem={(item) => setMeal({ day, slot: item.slot, item })}
                   onAddSlot={(slot) => setMeal({ day, slot })}
                   onMenu={() => setDaySheet(day)}
