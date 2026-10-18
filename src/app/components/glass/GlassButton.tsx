@@ -15,10 +15,9 @@ type Props = HTMLMotionProps<'button'> & {
 };
 
 const variants: Record<Variant, string> = {
-  primary:
-    'bg-terracotta-600 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_8px_20px_-8px_rgb(169_87_58/0.6)]',
+  primary: 'btn-primary font-bold',
   glass: 'glass text-ink',
-  ghost: 'text-ink-soft hover:bg-white/40',
+  ghost: 'text-ink-soft hover:bg-pill',
   danger: 'glass text-danger',
 };
 

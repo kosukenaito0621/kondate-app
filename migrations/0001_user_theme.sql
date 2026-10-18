@@ -1,0 +1,1 @@
+ALTER TABLE `user_settings` ADD `theme` text DEFAULT 'ichigo' NOT NULL;

@@ -60,14 +60,14 @@ function Login() {
           </p>
 
           {error && (
-            <p role="alert" className="mt-5 rounded-2xl bg-chu-soft px-4 py-3 text-sm text-danger">
+            <p role="alert" className="mt-5 rounded-2xl bg-chu-soft px-4 py-3 text-sm text-chu-ink">
               {ERRORS[error] ?? 'ログインに失敗しました'}
             </p>
           )}
 
           <motion.a
             href="/api/auth/google"
-            className="sheen mt-7 flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-6 font-medium shadow-[inset_0_1px_0_white,0_8px_24px_-10px_rgb(92_64_40/0.45)]"
+            className="sheen mt-7 flex min-h-14 items-center justify-center gap-3 rounded-full px-6 font-bold pill-active"
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}
           >

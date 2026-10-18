@@ -5,9 +5,15 @@ import { spring } from '../lib/motion';
 import { clamp, cutsToRatio, moveCut, pickThumb, ratioToCuts, type GenreRatio } from '../lib/ratio';
 
 const GENRES = [
-  { key: 'wa', label: '和食', color: 'var(--color-wa)', soft: 'var(--color-wa-soft)' },
-  { key: 'yo', label: '洋食', color: 'var(--color-yo)', soft: 'var(--color-yo-soft)' },
-  { key: 'chu', label: '中華', color: 'var(--color-chu)', soft: 'var(--color-chu-soft)' },
+  { key: 'wa', label: '和食', color: 'var(--wa)', soft: 'var(--wa-soft)', ink: 'var(--wa-ink)' },
+  { key: 'yo', label: '洋食', color: 'var(--yo)', soft: 'var(--yo-soft)', ink: 'var(--yo-ink)' },
+  {
+    key: 'chu',
+    label: '中華',
+    color: 'var(--chu)',
+    soft: 'var(--chu-soft)',
+    ink: 'var(--chu-ink)',
+  },
 ] as const;
 
 const STEP = 5;
@@ -77,10 +83,10 @@ export function GenreRatioSlider({ value, onChange }: Props) {
       <div className="mb-4 grid grid-cols-3 gap-2" aria-hidden="true">
         {GENRES.map((g) => (
           <div key={g.key} className="rounded-2xl px-3 py-2" style={{ background: g.soft }}>
-            <div className="text-[11px] font-medium" style={{ color: g.color }}>
+            <div className="text-[11px] font-medium" style={{ color: g.ink }}>
               {g.label}
             </div>
-            <div className="num text-xl font-semibold" style={{ color: g.color }}>
+            <div className="num text-xl font-bold" style={{ color: g.ink }}>
               <AnimatedNumber value={value[g.key]} />
               <span className="ml-0.5 text-xs">%</span>
             </div>
@@ -97,7 +103,7 @@ export function GenreRatioSlider({ value, onChange }: Props) {
         onPointerCancel={endDrag}
       >
         {/* トラック（3色のセグメントが伸縮） */}
-        <div className="absolute inset-x-0 top-1/2 flex h-3.5 -translate-y-1/2 overflow-hidden rounded-full shadow-[inset_0_1px_2px_rgb(0_0_0/0.15)]">
+        <div className="absolute inset-x-0 top-1/2 flex h-3.5 -translate-y-1/2 overflow-hidden rounded-full groove">
           {GENRES.map((g) => (
             <motion.div
               key={g.key}
@@ -147,7 +153,7 @@ export function GenreRatioSlider({ value, onChange }: Props) {
                 {active === thumb && (
                   <motion.span
                     className={cn(
-                      'num absolute bottom-full mb-2 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg',
+                      'num absolute bottom-full mb-2 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-canvas shadow-lg',
                       // 端ではカードからはみ出さないよう内側に寄せる
                       pos > 75 ? 'right-0' : pos < 25 ? 'left-0' : '',
                     )}

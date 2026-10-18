@@ -36,13 +36,13 @@ export function TabBar() {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'relative flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[1.35rem] text-[10.5px] font-medium transition-colors',
-                  active ? 'text-terracotta-600' : 'text-ink-soft',
+                  active ? 'font-bold text-accent-strong' : 'text-ink-soft',
                 )}
               >
                 {active && (
                   <motion.span
                     layoutId="tab-indicator"
-                    className="absolute inset-0 rounded-[1.35rem] bg-white/85 shadow-[inset_0_1px_0_white,0_4px_14px_-6px_rgb(92_64_40/0.35)]"
+                    className="pill-active absolute inset-0 rounded-[1.35rem]"
                     transition={spring.soft}
                   />
                 )}

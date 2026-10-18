@@ -17,7 +17,9 @@ import {
   ShoppingSkeleton,
   WeekSkeleton,
 } from '../components/skeleton/Skeletons';
+import { THEMES } from '../../shared/themes';
 import { riseItem, staggerContainer } from '../lib/motion';
+import { applyTheme } from '../lib/theme';
 import type { GenreRatio } from '../lib/ratio';
 
 /** 開発用：デザインシステムの一覧（本番ビルドでは 404） */
@@ -49,21 +51,36 @@ function Styleguide() {
     <main className="flex flex-col gap-6 px-4 py-6 pb-32">
       <PageHeader eyebrow="開発用" title="スタイルガイド" />
 
+      <Section title="テーマ（ここでの切り替えは保存されません）">
+        <div className="flex flex-wrap gap-2">
+          {THEMES.map((t) => (
+            <GlassButton key={t.id} size="sm" onClick={() => applyTheme(t.id, { animate: true })}>
+              <span
+                className="size-3 rounded-full"
+                style={{ background: t.swatch[1] }}
+                aria-hidden="true"
+              />
+              {t.name}
+            </GlassButton>
+          ))}
+        </div>
+      </Section>
+
       <Section title="カラー">
         <div className="grid grid-cols-4 gap-2 text-[10px]">
           {[
-            ['ivory-100', 'bg-ivory-100'],
-            ['ivory-200', 'bg-ivory-200'],
-            ['ivory-300', 'bg-ivory-300'],
-            ['ink', 'bg-ink text-white'],
-            ['terracotta', 'bg-terracotta text-white'],
-            ['terra-600', 'bg-terracotta-600 text-white'],
-            ['olive', 'bg-olive text-white'],
-            ['honey', 'bg-honey'],
-            ['和 wa', 'bg-wa text-white'],
-            ['洋 yo', 'bg-yo text-white'],
-            ['中 chu', 'bg-chu text-white'],
-            ['danger', 'bg-danger text-white'],
+            ['canvas', 'bg-canvas text-ink border border-ink-faint/30'],
+            ['ink', 'bg-ink text-canvas'],
+            ['ink-soft', 'bg-ink-soft text-canvas'],
+            ['accent', 'bg-accent text-accent-ink'],
+            ['strong', 'bg-accent-strong text-canvas'],
+            ['acc-soft', 'bg-accent-soft text-accent-strong'],
+            ['sub', 'bg-sub text-sub-ink'],
+            ['sub-soft', 'bg-sub-soft text-sub-ink'],
+            ['和 wa', 'bg-wa-soft text-wa-ink'],
+            ['洋 yo', 'bg-yo-soft text-yo-ink'],
+            ['中 chu', 'bg-chu-soft text-chu-ink'],
+            ['success', 'bg-success text-success-ink'],
           ].map(([name, cls]) => (
             <div key={name} className={`grid h-14 place-items-center rounded-2xl ${cls}`}>
               {name}
@@ -160,7 +177,9 @@ function Styleguide() {
           >
             <span
               className={`grid size-7 place-items-center rounded-full border-2 transition-colors ${
-                checked ? 'border-olive bg-olive text-white' : 'border-ink-faint/50 bg-white/70'
+                checked
+                  ? 'border-success bg-success text-success-ink'
+                  : 'border-ink-faint/50 bg-pill'
               }`}
             >
               <CheckDraw checked={checked} />

@@ -1,0 +1,224 @@
+/* ===== テーマ =====
+ * 色の「役割」ごとの値を [data-theme] で差し替える。
+ * 文字色は各テーマの背景に対して 4.5:1 以上になる値を選んでいる。
+ */
+
+/* ---------- 淡いシリーズ共通 ---------- */
+:root,
+[data-theme='ichigo'],
+[data-theme='peach'],
+[data-theme='lavender'],
+[data-theme='sakura'] {
+  color-scheme: light;
+  --font-body: 'Zen Maru Gothic', 'Noto Sans JP', system-ui, sans-serif;
+  --font-number: 'Nunito', 'Zen Maru Gothic', system-ui, sans-serif;
+
+  --glass-1: rgb(255 255 255 / 0.74);
+  --glass-2: rgb(255 255 255 / 0.5);
+  --glass-strong-1: rgb(255 255 255 / 0.86);
+  --glass-strong-2: rgb(255 255 255 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.85);
+  --glass-highlight: rgb(255 255 255 / 0.95);
+  --glass-sheen: rgb(255 255 255 / 0.65);
+  --glass-fallback: rgb(255 255 255 / 0.95);
+  --pill: rgb(255 255 255 / 0.92);
+  --field: rgb(255 255 255 / 0.85);
+  --track: rgb(0 0 0 / 0.06);
+  --skeleton: rgb(0 0 0 / 0.055);
+  --shimmer: rgb(255 255 255 / 0.7);
+  --blob-opacity: 0.9;
+
+  --wa: #a8cf9a;
+  --wa-soft: #e6f3df;
+  --wa-ink: #4a7539;
+  --yo: #a9cdeb;
+  --yo-soft: #e3eef8;
+  --yo-ink: #3b6890;
+  --chu: #f5a99f;
+  --chu-soft: #fde4e0;
+  --chu-ink: #a8443a;
+  --success: #9ed5bc;
+  --success-ink: #2b7355;
+  --danger: #c2415a;
+}
+
+/* いちごミルク（既定） */
+:root,
+[data-theme='ichigo'] {
+  --base: #fff8f3;
+  --ink: #4a3b40;
+  --ink-soft: #75636b;
+  --ink-faint: #a8959c;
+  --accent: #f7b8c8;
+  --accent-ink: #7e2a4c;
+  --accent-strong: #b23c68;
+  --accent-soft: #fde8ee;
+  --sub: #fce38a;
+  --sub-soft: #fff5cc;
+  --sub-ink: #7d5f0c;
+  --blob-1: #f9c4d2;
+  --blob-2: #fce7a1;
+  --blob-3: #ffd9c9;
+  --shadow-rgb: 180 110 130;
+}
+
+[data-theme='peach'] {
+  --base: #fffaf2;
+  --ink: #4a3a33;
+  --ink-soft: #74655b;
+  --ink-faint: #a89a8e;
+  --accent: #ffc8a8;
+  --accent-ink: #7a3418;
+  --accent-strong: #ad4f28;
+  --accent-soft: #ffe9dc;
+  --sub: #fff1a6;
+  --sub-soft: #fff8d6;
+  --sub-ink: #7a640d;
+  --blob-1: #ffcdb2;
+  --blob-2: #fff0a3;
+  --blob-3: #c8ebd9;
+  --shadow-rgb: 170 120 90;
+}
+
+[data-theme='lavender'] {
+  --base: #fbf8ff;
+  --ink: #3f3850;
+  --ink-soft: #6a627c;
+  --ink-faint: #9f97ae;
+  --accent: #d9c8f2;
+  --accent-ink: #45317a;
+  --accent-strong: #6a4ba3;
+  --accent-soft: #efe7fb;
+  --sub: #fbe7a1;
+  --sub-soft: #fdf4d3;
+  --sub-ink: #77600f;
+  --blob-1: #e2d3f7;
+  --blob-2: #fbeaa6;
+  --blob-3: #f9d3e2;
+  --shadow-rgb: 120 100 160;
+}
+
+[data-theme='sakura'] {
+  --base: #fff9f6;
+  --ink: #46393b;
+  --ink-soft: #726466;
+  --ink-faint: #a6989a;
+  --accent: #f9cbd6;
+  --accent-ink: #7a2a42;
+  --accent-strong: #a03e5a;
+  --accent-soft: #fce6eb;
+  --sub: #dce8c6;
+  --sub-soft: #eef5e4;
+  --sub-ink: #4c6a2f;
+  --blob-1: #f9d0d9;
+  --blob-2: #dce8c6;
+  --blob-3: #fbebc2;
+  --shadow-rgb: 170 120 125;
+}
+
+/* ---------- かっこいいシリーズ共通（ダークガラス） ---------- */
+[data-theme='midnight'],
+[data-theme='graphite'],
+[data-theme='forest'],
+[data-theme='bordeaux'] {
+  color-scheme: dark;
+  --font-body: 'Noto Sans JP', system-ui, sans-serif;
+  --font-number: 'Outfit', 'Noto Sans JP', system-ui, sans-serif;
+
+  --glass-1: rgb(255 255 255 / 0.11);
+  --glass-2: rgb(255 255 255 / 0.05);
+  --glass-strong-1: rgb(255 255 255 / 0.16);
+  --glass-strong-2: rgb(255 255 255 / 0.09);
+  --glass-border: rgb(255 255 255 / 0.14);
+  --glass-highlight: rgb(255 255 255 / 0.22);
+  --glass-sheen: rgb(255 255 255 / 0.12);
+  --glass-fallback: rgb(30 30 34 / 0.96);
+  --pill: rgb(255 255 255 / 0.16);
+  --field: rgb(0 0 0 / 0.25);
+  --track: rgb(255 255 255 / 0.1);
+  --skeleton: rgb(255 255 255 / 0.07);
+  --shimmer: rgb(255 255 255 / 0.12);
+  --blob-opacity: 0.7;
+  --shadow-rgb: 0 0 0;
+
+  --wa: #8fbf7f;
+  --wa-soft: rgb(143 191 127 / 0.18);
+  --wa-ink: #aed99f;
+  --yo: #7fa9d6;
+  --yo-soft: rgb(127 169 214 / 0.18);
+  --yo-ink: #a8c9ee;
+  --chu: #e08a7e;
+  --chu-soft: rgb(224 138 126 / 0.18);
+  --chu-ink: #f2aca2;
+  --success: #5fc398;
+  --success-ink: #8ee0bb;
+  --danger: #ff7a85;
+}
+
+[data-theme='midnight'] {
+  --base: #0e1424;
+  --ink: #eef0f6;
+  --ink-soft: #a9b0c3;
+  --ink-faint: #7a8296;
+  --accent: #d4af6a;
+  --accent-ink: #1a1408;
+  --accent-strong: #e5c385;
+  --accent-soft: rgb(212 175 106 / 0.18);
+  --sub: #4a6fa5;
+  --sub-soft: rgb(74 111 165 / 0.22);
+  --sub-ink: #a6c0e6;
+  --blob-1: #1f3a6b;
+  --blob-2: #3b2f5c;
+  --blob-3: #5a4620;
+}
+
+[data-theme='graphite'] {
+  --base: #121212;
+  --ink: #f2f2f2;
+  --ink-soft: #b0b0b0;
+  --ink-faint: #7c7c7c;
+  --accent: #ff6b3d;
+  --accent-ink: #1a0903;
+  --accent-strong: #ff9068;
+  --accent-soft: rgb(255 107 61 / 0.16);
+  --sub: #8a8a8a;
+  --sub-soft: rgb(255 255 255 / 0.1);
+  --sub-ink: #d6d6d6;
+  --blob-1: #2e2e2e;
+  --blob-2: #4a2416;
+  --blob-3: #262626;
+}
+
+[data-theme='forest'] {
+  --base: #0f1a16;
+  --ink: #ecf2ec;
+  --ink-soft: #a4b5aa;
+  --ink-faint: #74887b;
+  --accent: #c9a66b;
+  --accent-ink: #1b140a;
+  --accent-strong: #dcbd85;
+  --accent-soft: rgb(201 166 107 / 0.18);
+  --sub: #3f6b57;
+  --sub-soft: rgb(63 107 87 / 0.3);
+  --sub-ink: #9fd0b8;
+  --blob-1: #1e4034;
+  --blob-2: #34421f;
+  --blob-3: #4a3a1e;
+}
+
+[data-theme='bordeaux'] {
+  --base: #1a0f14;
+  --ink: #f6ecef;
+  --ink-soft: #c4abb3;
+  --ink-faint: #8f7580;
+  --accent: #e9c9a8;
+  --accent-ink: #2a160d;
+  --accent-strong: #f2d6ba;
+  --accent-soft: rgb(233 201 168 / 0.16);
+  --sub: #7a2a44;
+  --sub-soft: rgb(122 42 68 / 0.35);
+  --sub-ink: #f0a9c0;
+  --blob-1: #5a1a2e;
+  --blob-2: #3e1a3a;
+  --blob-3: #503420;
+}

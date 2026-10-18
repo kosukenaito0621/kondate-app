@@ -45,6 +45,7 @@ export const userSettings = sqliteTable('user_settings', {
   ratioYo: integer('ratio_yo').notNull().default(30),
   ratioChu: integer('ratio_chu').notNull().default(20),
   servings: integer('servings').notNull().default(2),
+  theme: text('theme').notNull().default('ichigo'),
   buySeasonings: text('buy_seasonings', { mode: 'json' })
     .$type<string[]>()
     .notNull()

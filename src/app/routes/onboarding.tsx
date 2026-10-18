@@ -55,7 +55,7 @@ function Onboarding() {
         animate="animate"
       >
         <motion.div variants={riseItem} className="px-1">
-          <p className="text-sm font-medium text-terracotta-600">ようこそ</p>
+          <p className="text-sm font-bold text-accent-strong">ようこそ</p>
           <h1 className="mt-1 text-[28px] font-bold leading-tight">はじめまして</h1>
           <p className="mt-2 text-sm text-ink-soft">
             なんとお呼びしましょう？
@@ -78,7 +78,7 @@ function Onboarding() {
               placeholder="例：こうすけ"
               aria-invalid={!!error}
               aria-describedby={error ? 'displayName-error' : undefined}
-              className="min-h-12 rounded-2xl bg-white/80 px-4 shadow-[inset_0_1px_3px_rgb(92_64_40/0.15)] placeholder:text-ink-faint"
+              className="field min-h-12 rounded-2xl px-4"
             />
             {error && (
               <p id="displayName-error" role="alert" className="text-sm text-danger">

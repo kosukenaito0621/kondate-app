@@ -204,13 +204,13 @@ export function AiProgressSkeleton({ stages, current }: { stages: string[]; curr
                 <span
                   className={cn(
                     'grid size-6 place-items-center rounded-full',
-                    done ? 'bg-olive text-white' : 'bg-white/70',
+                    done ? 'bg-success text-success-ink' : 'bg-pill',
                   )}
                 >
                   {done ? (
                     <CheckDraw checked size={14} />
                   ) : now ? (
-                    <span className="size-2 animate-pulse rounded-full bg-terracotta motion-reduce:animate-none" />
+                    <span className="size-2 animate-pulse rounded-full bg-accent-strong motion-reduce:animate-none" />
                   ) : null}
                 </span>
                 <span className={cn(now && 'font-medium')}>

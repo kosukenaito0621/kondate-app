@@ -5,9 +5,9 @@ export type Genre = 'wa' | 'yo' | 'chu';
 export const GENRE_LABEL: Record<Genre, string> = { wa: '和', yo: '洋', chu: '中' };
 
 const styles: Record<Genre, string> = {
-  wa: 'bg-wa-soft text-wa',
-  yo: 'bg-yo-soft text-yo',
-  chu: 'bg-chu-soft text-chu',
+  wa: 'bg-wa-soft text-wa-ink',
+  yo: 'bg-yo-soft text-yo-ink',
+  chu: 'bg-chu-soft text-chu-ink',
 };
 
 export function GenreBadge({ genre, className }: { genre: Genre; className?: string }) {

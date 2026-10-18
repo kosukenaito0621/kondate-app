@@ -53,6 +53,24 @@ describe('auth', () => {
     expect(await patched.json()).toMatchObject({ displayName: 'こうすけ' });
   });
 
+  it('テーマは既定でいちごミルク、選んだテーマが保存される', async () => {
+    const { cookie } = await login('theme-user');
+    const me = await exports.default.fetch(`${BASE}/api/me`, { headers: { cookie } });
+    expect(await me.json()).toMatchObject({ theme: 'ichigo' });
+
+    const patch = (body: unknown) =>
+      exports.default.fetch(`${BASE}/api/me`, {
+        method: 'PATCH',
+        headers: { cookie, 'content-type': 'application/json', origin: BASE },
+        body: JSON.stringify(body),
+      });
+
+    const ok = await patch({ theme: 'midnight' });
+    expect(await ok.json()).toMatchObject({ theme: 'midnight' });
+    expect((await patch({ theme: 'rainbow' })).status).toBe(400);
+    expect((await patch({})).status).toBe(400);
+  });
+
   it('ユーザーネームは20文字まで', async () => {
     const { cookie } = await login('long-name');
     const res = await exports.default.fetch(`${BASE}/api/me`, {

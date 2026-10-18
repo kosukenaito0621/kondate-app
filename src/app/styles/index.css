@@ -1,40 +1,51 @@
 @import 'tailwindcss';
+@import './themes.css';
 /* components レイヤーに入れて、Tailwind ユーティリティ（absolute 等）で上書きできるようにする */
 @import './glass.css' layer(components);
 
-/* ===== デザイントークン（Liquid Glass × アイボリー） ===== */
+/* ===== デザイントークン =====
+ * 値はテーマ（themes.css の [data-theme]）から受け取る。
+ * inline にすることで、ユーティリティが var() を直接参照し、テーマ切り替えに追従する。
+ */
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-num: var(--font-number);
+
+  --color-canvas: var(--base);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-accent: var(--accent); /* 塗り（ボタン等） */
+  --color-accent-ink: var(--accent-ink); /* accent の上の文字 */
+  --color-accent-strong: var(--accent-strong); /* 背景上で目立たせる文字・アイコン */
+  --color-accent-soft: var(--accent-soft); /* 選択中・チップの淡い塗り */
+  --color-sub: var(--sub);
+  --color-sub-soft: var(--sub-soft);
+  --color-sub-ink: var(--sub-ink);
+
+  --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-danger: var(--danger);
+
+  --color-pill: var(--pill);
+  --color-field: var(--field);
+  --color-track: var(--track);
+
+  --color-wa: var(--wa);
+  --color-wa-soft: var(--wa-soft);
+  --color-wa-ink: var(--wa-ink);
+  --color-yo: var(--yo);
+  --color-yo-soft: var(--yo-soft);
+  --color-yo-ink: var(--yo-ink);
+  --color-chu: var(--chu);
+  --color-chu-soft: var(--chu-soft);
+  --color-chu-ink: var(--chu-ink);
+}
+
 @theme {
-  --font-sans: 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
-  --font-num: 'Outfit', 'Noto Sans JP', system-ui, sans-serif;
-
-  /* ベース */
-  --color-ivory-50: #fdfbf6;
-  --color-ivory-100: #faf7f0;
-  --color-ivory-200: #f3eee3;
-  --color-ivory-300: #e8e0cf;
-  --color-ink: #3a332b;
-  --color-ink-soft: #6b6155; /* ivory-100 上で 5.6:1 */
-  --color-ink-faint: #8f8475; /* 補助テキスト（大きめの文字のみ） */
-
-  /* アクセント */
-  --color-terracotta: #c4704f;
-  --color-terracotta-600: #a9573a; /* 白文字ボタン用 5.1:1 */
-  --color-terracotta-100: #f6e4da;
-  --color-olive: #7d8450;
-  --color-honey: #d9a441;
-  --color-danger: #b23a2e;
-
-  /* ジャンル（控えめ） */
-  --color-wa: #6f8a5b; /* 抹茶 */
-  --color-wa-soft: #e3ead9;
-  --color-yo: #5e7d8c; /* スレート */
-  --color-yo-soft: #dde7ec;
-  --color-chu: #c2553f; /* 朱 */
-  --color-chu-soft: #f5ddd5;
-
   --radius-card: 1.75rem;
   --radius-pill: 999px;
-
   --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -49,13 +60,14 @@
 
 /* 背景色は html のみ（body に付けると z-index:-1 のブロブが隠れる） */
 html {
-  background: var(--color-ivory-100);
+  background: var(--base);
+  transition: background-color 0.5s var(--ease-out-soft);
 }
 
 html,
 body {
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+  color: var(--ink);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -67,17 +79,24 @@ body {
 
 /* 数字用 */
 .num {
-  font-family: var(--font-num);
+  font-family: var(--font-number);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
 }
 
 :focus-visible {
-  outline: 2.5px solid var(--color-terracotta-600);
+  outline: 2.5px solid var(--accent-strong);
   outline-offset: 3px;
   border-radius: 12px;
 }
 
 ::selection {
-  background: var(--color-terracotta-100);
+  background: var(--accent-soft);
+}
+
+/* テーマ切り替え時のクロスフェード（View Transitions 対応ブラウザのみ） */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--ease-out-soft);
 }

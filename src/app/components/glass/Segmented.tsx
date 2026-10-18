@@ -42,7 +42,7 @@ export function Segmented<T extends string>({
       role="radiogroup"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className="flex rounded-full bg-ivory-300/50 p-1 shadow-[inset_0_1px_2px_rgb(92_64_40/0.12)]"
+      className="groove flex rounded-full p-1"
     >
       {options.map((o) => {
         const selected = o.value === value;
@@ -57,13 +57,13 @@ export function Segmented<T extends string>({
             className={cn(
               'relative flex-1 rounded-full font-medium transition-colors',
               size === 'sm' ? 'min-h-11 text-[13px]' : 'min-h-12 text-sm',
-              selected ? 'text-ink' : 'text-ink-soft',
+              selected ? 'font-bold text-ink' : 'text-ink-soft',
             )}
           >
             {selected && (
               <motion.span
                 layoutId={`seg-${id}`}
-                className="absolute inset-0 rounded-full bg-white shadow-[inset_0_1px_0_white,0_3px_10px_-4px_rgb(92_64_40/0.35)]"
+                className="pill-active absolute inset-0 rounded-full"
                 transition={spring.soft}
               />
             )}

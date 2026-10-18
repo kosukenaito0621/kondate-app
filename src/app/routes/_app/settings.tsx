@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import { api } from '../../api';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { PageHeader } from '../../components/PageHeader';
+import { ThemePicker } from '../../components/ThemePicker';
 import { logout, meQuery } from '../../lib/auth';
 import { riseItem, staggerContainer } from '../../lib/motion';
 
@@ -15,7 +16,8 @@ export const Route = createFileRoute('/_app/settings')({
 });
 
 function Settings() {
-  const { me } = Route.useRouteContext();
+  const { me: initialMe } = Route.useRouteContext();
+  const me = useQuery(meQuery).data ?? initialMe;
   const queryClient = useQueryClient();
   const router = useRouter();
   const [name, setName] = useState(me.displayName ?? '');
@@ -57,6 +59,12 @@ function Settings() {
         animate="animate"
       >
         <GlassCard variants={riseItem} padding="lg">
+          <h2 className="mb-1 text-sm font-bold">テーマカラー</h2>
+          <p className="mb-4 text-xs text-ink-soft">その日の気分で選べます</p>
+          <ThemePicker value={me.theme} />
+        </GlassCard>
+
+        <GlassCard variants={riseItem} padding="lg">
           <form onSubmit={submit} className="flex flex-col gap-3" noValidate>
             <label htmlFor="displayName" className="text-sm font-bold">
               ユーザーネーム
@@ -72,12 +80,12 @@ function Settings() {
               autoComplete="nickname"
               aria-invalid={message?.ok === false}
               aria-describedby="displayName-msg"
-              className="min-h-12 rounded-2xl bg-white/80 px-4 shadow-[inset_0_1px_3px_rgb(92_64_40/0.15)]"
+              className="field min-h-12 rounded-2xl px-4"
             />
             <p
               id="displayName-msg"
               role="status"
-              className={message?.ok === false ? 'text-sm text-danger' : 'text-sm text-olive'}
+              className={message?.ok === false ? 'text-sm text-danger' : 'text-sm text-success-ink'}
             >
               {message?.text}
             </p>
