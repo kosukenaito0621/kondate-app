@@ -2,10 +2,12 @@ import { Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import type { RecipeSummary } from '../../shared/recipe';
+import { imageUrl } from '../lib/images';
 import { riseItem, spring } from '../lib/motion';
 import { GenreBadge } from './GenreBadge';
 import { ClockIcon, YenIcon } from './icons';
 import { LevelBadge } from './LevelBadge';
+import { Photo } from './PhotoPicker';
 
 /** ジャンル色の細いライン（サムネイルの代わりに控えめな色の目印） */
 const stripe = { wa: 'bg-wa', yo: 'bg-yo', chu: 'bg-chu' } as const;
@@ -56,6 +58,13 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
               <LevelBadge level={recipe.difficulty} className="ml-auto" />
             </div>
           </div>
+          {recipe.imageKey && (
+            <Photo
+              src={imageUrl(recipe.imageKey)}
+              alt=""
+              className="size-16 shrink-0 self-center rounded-2xl"
+            />
+          )}
         </motion.div>
       </Link>
     </motion.li>

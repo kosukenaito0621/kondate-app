@@ -12,9 +12,11 @@ import {
 import { addDays, toJstDate } from '../../shared/date';
 import type { Db } from '../db/client';
 import { cookLogs, recipes, users } from '../db/schema';
+import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import type { AppEnv } from '../types';
+import { deleteImage } from './images';
 import { toSummary } from './recipes';
 
 async function loadMonth(db: Db, groupId: string, month: string): Promise<CookLogMonth> {
@@ -37,6 +39,7 @@ async function loadMonth(db: Db, groupId: string, month: string): Promise<CookLo
     entries: rows.map((r) => ({
       id: r.log.id,
       date: r.log.date,
+      imageKey: r.log.imageKey,
       recipe: toSummary(r.recipe),
       cookedBy: r.user
         ? { id: r.user.id, name: r.user.displayName, avatarUrl: r.user.avatarUrl }
@@ -64,10 +67,35 @@ export async function recipeCookStats(
     .from(cookLogs)
     .where(and(eq(cookLogs.groupId, groupId), eq(cookLogs.recipeId, recipeId)))
     .get();
+  const photos = await db
+    .select({ id: cookLogs.id, date: cookLogs.date, imageKey: cookLogs.imageKey })
+    .from(cookLogs)
+    .where(
+      and(
+        eq(cookLogs.groupId, groupId),
+        eq(cookLogs.recipeId, recipeId),
+        sql`${cookLogs.imageKey} is not null`,
+      ),
+    )
+    .orderBy(desc(cookLogs.date))
+    .limit(6);
+  const today = await db
+    .select({ id: cookLogs.id, imageKey: cookLogs.imageKey })
+    .from(cookLogs)
+    .where(
+      and(
+        eq(cookLogs.groupId, groupId),
+        eq(cookLogs.recipeId, recipeId),
+        eq(cookLogs.date, toJstDate()),
+      ),
+    )
+    .get();
   return {
     count: row?.count ?? 0,
     lastDate: row?.last ?? null,
-    cookedToday: row?.last === toJstDate(),
+    cookedToday: !!today,
+    todayLogId: today?.id ?? null,
+    photos: photos.map((p) => ({ logId: p.id, date: p.date, imageKey: p.imageKey! })),
   };
 }
 
@@ -118,11 +146,33 @@ export const logRoutes = new Hono<AppEnv>()
       .get();
     return c.json({ id: row!.id, date: day }, 201);
   })
+  /** 写真を付ける・差し替える・外す（null） */
+  .patch(
+    '/:id',
+    zValidator('json', z.object({ imageKey: z.string().max(200).nullable() })),
+    async (c) => {
+      const { imageKey } = c.req.valid('json');
+      const groupId = c.var.group.id;
+      if (!isGroupImageKey(groupId, imageKey)) return c.json({ error: 'invalid_image' }, 400);
+      const where = and(eq(cookLogs.id, c.req.param('id')), eq(cookLogs.groupId, groupId));
+      const before = await c.var.db
+        .select({ imageKey: cookLogs.imageKey })
+        .from(cookLogs)
+        .where(where)
+        .get();
+      if (!before) return c.json({ error: 'not_found' }, 404);
+      await c.var.db.update(cookLogs).set({ imageKey }).where(where);
+      if (before.imageKey && before.imageKey !== imageKey)
+        await deleteImage(c.var.db, c.env.IMAGES, before.imageKey);
+      return c.json({ ok: true, imageKey });
+    },
+  )
   .delete('/:id', async (c) => {
     const res = await c.var.db
       .delete(cookLogs)
       .where(and(eq(cookLogs.id, c.req.param('id')), eq(cookLogs.groupId, c.var.group.id)))
-      .returning({ id: cookLogs.id });
+      .returning({ id: cookLogs.id, imageKey: cookLogs.imageKey });
     if (!res.length) return c.json({ error: 'not_found' }, 404);
+    await deleteImage(c.var.db, c.env.IMAGES, res[0]!.imageKey);
     return c.json({ ok: true });
   });

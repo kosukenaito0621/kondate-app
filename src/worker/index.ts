@@ -5,6 +5,7 @@ import { toJstDate } from '../shared/date';
 import { getDb } from './db/client';
 import { authRoutes } from './routes/auth';
 import { groupRoutes, inviteRoutes } from './routes/groups';
+import { imageRoutes } from './routes/images';
 import { logRoutes } from './routes/logs';
 import { meRoutes } from './routes/me';
 import { planRoutes, todayItems } from './routes/plans';
@@ -33,6 +34,7 @@ const api = new Hono<AppEnv>()
   .route('/settings', settingsRoutes)
   .route('/plans', planRoutes)
   .route('/logs', logRoutes)
+  .route('/images', imageRoutes)
   .get('/today', requireAuth, requireGroup, async (c) => {
     const { view, day } = await todayItems(c.var.db, c.var.group.id, toJstDate());
     return c.json({

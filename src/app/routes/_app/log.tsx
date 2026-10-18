@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { CATEGORY_LABEL } from '../../../shared/constants';
 import type { CookLogEntry } from '../../../shared/cooklog';
@@ -8,12 +9,16 @@ import { toJstDate, weekdayIndex, WEEKDAY_LABELS } from '../../../shared/date';
 import { api } from '../../api';
 import { Avatar } from '../../components/Avatar';
 import { GenreBadge } from '../../components/GenreBadge';
+import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
+import { Sheet } from '../../components/glass/Sheet';
 import { ChevronLeftIcon, ChevronRightIcon, TrashIcon } from '../../components/icons';
 import { PageHeader } from '../../components/PageHeader';
+import { Photo, PhotoPicker } from '../../components/PhotoPicker';
 import { RecipeListSkeleton } from '../../components/skeleton/Skeletons';
 import { useToast } from '../../components/toast/Toaster';
 import { monthLogsQuery } from '../../lib/cooklog';
+import { imageUrl } from '../../lib/images';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/log')({
@@ -147,9 +152,25 @@ function Stat({
   );
 }
 
+/** 自炊記録の写真を付け替える */
+function useLogPhoto(logId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (imageKey: string | null) => {
+      const res = await api.logs[':id'].$patch({ param: { id: logId }, json: { imageKey } });
+      if (!res.ok) throw new Error('写真を保存できませんでした');
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logs'] }),
+    onError: (e) => toast(e.message, 'error'),
+  });
+}
+
 function LogRow({ entry }: { entry: CookLogEntry }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [viewing, setViewing] = useState(false);
+  const photo = useLogPhoto(entry.id);
   const remove = useMutation({
     mutationFn: async () => {
       const res = await api.logs[':id'].$delete({ param: { id: entry.id } });
@@ -168,17 +189,36 @@ function LogRow({ entry }: { entry: CookLogEntry }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -24 }}
       transition={spring.soft}
-      className="flex items-center gap-2.5 py-1"
+      className="flex items-center gap-2.5 py-1.5"
     >
+      {entry.imageKey ? (
+        <button
+          type="button"
+          onClick={() => setViewing(true)}
+          className="shrink-0 rounded-2xl"
+          aria-label={`${entry.recipe.name}の写真を見る`}
+        >
+          <Photo src={imageUrl(entry.imageKey)} alt="" className="size-14 rounded-2xl" />
+        </button>
+      ) : (
+        <PhotoPicker
+          compact
+          label={`${entry.recipe.name}の写真を追加`}
+          className="size-14 rounded-2xl"
+          onUploaded={(key) => photo.mutateAsync(key)}
+        />
+      )}
       <Link
         to="/recipes/$id"
         params={{ id: entry.recipe.id }}
         className="flex min-h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl px-1"
       >
-        <GenreBadge genre={entry.recipe.genre} className="size-5 text-[10px]" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-bold">{entry.recipe.name}</span>
-          <span className="text-[11px] text-ink-soft">{CATEGORY_LABEL[entry.recipe.category]}</span>
+          <span className="flex items-center gap-1.5 text-[11px] text-ink-soft">
+            <GenreBadge genre={entry.recipe.genre} className="size-5 text-[10px]" />
+            {CATEGORY_LABEL[entry.recipe.category]}
+          </span>
+          <span className="mt-0.5 block truncate font-bold">{entry.recipe.name}</span>
         </span>
       </Link>
       {entry.cookedBy && (
@@ -195,6 +235,34 @@ function LogRow({ entry }: { entry: CookLogEntry }) {
       >
         <TrashIcon size={16} />
       </button>
+
+      <Sheet open={viewing} title={entry.recipe.name} onClose={() => setViewing(false)}>
+        {entry.imageKey && (
+          <div className="flex flex-col gap-3">
+            <Photo
+              src={imageUrl(entry.imageKey)}
+              alt={`${entry.recipe.name}の写真`}
+              className="aspect-square w-full rounded-[var(--radius-card)]"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <PhotoPicker
+                label="写真を変える"
+                onUploaded={async (key) => {
+                  await photo.mutateAsync(key);
+                  setViewing(false);
+                }}
+              />
+              <GlassButton
+                variant="ghost"
+                loading={photo.isPending}
+                onClick={() => photo.mutate(null, { onSuccess: () => setViewing(false) })}
+              >
+                写真を外す
+              </GlassButton>
+            </div>
+          </div>
+        )}
+      </Sheet>
     </motion.li>
   );
 }

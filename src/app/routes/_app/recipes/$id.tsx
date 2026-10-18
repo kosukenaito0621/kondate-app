@@ -11,6 +11,7 @@ import {
 import { formatAmount, type RecipeDetail } from '../../../../shared/recipe';
 import { api } from '../../../api';
 import { CookedButton } from '../../../components/CookedButton';
+import { Photo, PhotoPicker } from '../../../components/PhotoPicker';
 import { GenreBadge } from '../../../components/GenreBadge';
 import { ConfirmDialog } from '../../../components/glass/ConfirmDialog';
 import { GlassButton } from '../../../components/glass/GlassButton';
@@ -22,6 +23,7 @@ import { StepList } from '../../../components/recipe/StepList';
 import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 import { recipeCookQuery } from '../../../lib/cooklog';
+import { imageUrl } from '../../../lib/images';
 import { recipeQuery } from '../../../lib/recipes';
 
 export const Route = createFileRoute('/_app/recipes/$id')({
@@ -113,6 +115,13 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
 
   return (
     <article>
+      {recipe.imageKey && (
+        <Photo
+          src={imageUrl(recipe.imageKey)}
+          alt={recipe.name}
+          className="mb-4 aspect-[4/3] w-full rounded-[var(--radius-card)]"
+        />
+      )}
       <div className="px-1">
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
           <GenreBadge genre={recipe.genre} />
@@ -319,27 +328,61 @@ function IngredientTable({ items, scale }: { items: RecipeDetail['ingredients'];
 /** 自炊記録：今日作ったら記録。これまでの回数と最後に作った日 */
 function CookCard({ recipeId, recipeName }: { recipeId: string; recipeName: string }) {
   const { data } = useQuery(recipeCookQuery(recipeId));
+  const queryClient = useQueryClient();
   const last = data?.lastDate;
+  const todayPhoto = data?.photos.find((p) => p.logId === data.todayLogId);
+
+  const attach = async (key: string) => {
+    if (!data?.todayLogId) return;
+    const res = await api.logs[':id'].$patch({
+      param: { id: data.todayLogId },
+      json: { imageKey: key },
+    });
+    if (!res.ok) throw new Error('写真を保存できませんでした');
+    await queryClient.invalidateQueries({ queryKey: ['logs'] });
+  };
+
   return (
-    <GlassCard variants={riseItem} padding="md" className="flex items-center gap-3">
-      <div className="min-w-0 flex-1 px-1">
-        <p className="text-xs text-ink-soft">自炊記録</p>
-        <p className="mt-0.5 font-bold">
-          {data && data.count > 0 ? (
-            <>
-              これまでに<span className="num mx-0.5 text-lg">{data.count}</span>回
-              {last && (
-                <span className="ml-1.5 text-xs font-normal text-ink-soft">
-                  最後：{Number(last.slice(5, 7))}/{Number(last.slice(8, 10))}
-                </span>
-              )}
-            </>
-          ) : (
-            'まだ作っていません'
-          )}
-        </p>
+    <GlassCard variants={riseItem} padding="md" className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1 px-1">
+          <p className="text-xs text-ink-soft">自炊記録</p>
+          <p className="mt-0.5 font-bold">
+            {data && data.count > 0 ? (
+              <>
+                これまでに<span className="num mx-0.5 text-lg">{data.count}</span>回
+                {last && (
+                  <span className="ml-1.5 text-xs font-normal text-ink-soft">
+                    最後：{Number(last.slice(5, 7))}/{Number(last.slice(8, 10))}
+                  </span>
+                )}
+              </>
+            ) : (
+              'まだ作っていません'
+            )}
+          </p>
+        </div>
+        <CookedButton recipeId={recipeId} recipeName={recipeName} size="lg" />
       </div>
-      <CookedButton recipeId={recipeId} recipeName={recipeName} size="lg" />
+      {data?.todayLogId && !todayPhoto && (
+        <PhotoPicker label="今日作った写真を追加" onUploaded={attach} className="w-full" />
+      )}
+      {data && data.photos.length > 0 && (
+        <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="作った料理の写真">
+          {data.photos.map((p) => (
+            <li key={p.logId} className="shrink-0 text-center">
+              <Photo
+                src={imageUrl(p.imageKey)}
+                alt={`${p.date}の${recipeName}`}
+                className="size-24 rounded-2xl"
+              />
+              <span className="num mt-1 block text-[10px] text-ink-soft">
+                {Number(p.date.slice(5, 7))}/{Number(p.date.slice(8, 10))}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </GlassCard>
   );
 }

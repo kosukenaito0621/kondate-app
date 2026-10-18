@@ -1,0 +1,1 @@
+ALTER TABLE `cook_logs` ADD `image_key` text;

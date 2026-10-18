@@ -20,11 +20,13 @@ import {
   type RecipeInput,
 } from '../../../shared/recipe';
 import { cn } from '../../lib/cn';
+import { imageUrl } from '../../lib/images';
 import { spring } from '../../lib/motion';
 import { GlassButton } from '../glass/GlassButton';
 import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
 import { GripIcon, PlusIcon, TrashIcon } from '../icons';
+import { Photo, PhotoPicker } from '../PhotoPicker';
 
 type IngredientRow = { key: string; name: string; amount: string; section: Section };
 type StepRow = { key: string; text: string; tip: string };
@@ -149,6 +151,25 @@ export function RecipeForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
       <GlassCard padding="lg" className="flex flex-col gap-4">
+        <Field label="写真（任意）">
+          {v.imageKey ? (
+            <div className="flex items-center gap-3">
+              <Photo src={imageUrl(v.imageKey)} alt="料理の写真" className="size-24 rounded-2xl" />
+              <div className="flex flex-col gap-2">
+                <PhotoPicker label="変える" onUploaded={(key) => set('imageKey', key)} />
+                <button
+                  type="button"
+                  onClick={() => set('imageKey', null)}
+                  className="min-h-11 text-sm font-bold text-ink-soft"
+                >
+                  外す
+                </button>
+              </div>
+            </div>
+          ) : (
+            <PhotoPicker label="料理の写真を追加" onUploaded={(key) => set('imageKey', key)} />
+          )}
+        </Field>
         <Field label="料理名" htmlFor="name">
           <input
             id="name"

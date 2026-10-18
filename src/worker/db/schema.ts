@@ -304,6 +304,8 @@ export const cookLogs = sqliteTable(
       .notNull()
       .references(() => recipes.id, { onDelete: 'cascade' }),
     date: text('date').notNull(), // JST日付
+    /** 作った料理の写真（R2 のキー） */
+    imageKey: text('image_key'),
     createdAt: timestamp('created_at'),
   },
   (t) => [

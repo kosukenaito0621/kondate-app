@@ -14,9 +14,11 @@ import {
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
 import { hiddenRecipes, recipeIngredients, recipes } from '../db/schema';
+import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import type { AppEnv } from '../types';
+import { deleteImage } from './images';
 
 type RecipeRow = typeof recipes.$inferSelect;
 
@@ -141,6 +143,9 @@ export const recipeRoutes = new Hono<AppEnv>()
   })
   .post('/', zValidator('json', recipeInputSchema), async (c) => {
     const input = c.req.valid('json');
+    if (!isGroupImageKey(c.var.group.id, input.imageKey)) {
+      return c.json({ error: 'invalid_image' }, 400);
+    }
     const db = c.var.db;
     const id = crypto.randomUUID();
     await db.batch([
@@ -161,8 +166,11 @@ export const recipeRoutes = new Hono<AppEnv>()
     const input = c.req.valid('json');
     const db = c.var.db;
     const id = c.req.param('id');
+    if (!isGroupImageKey(c.var.group.id, input.imageKey)) {
+      return c.json({ error: 'invalid_image' }, 400);
+    }
     const existing = await db
-      .select({ id: recipes.id })
+      .select({ id: recipes.id, imageKey: recipes.imageKey })
       .from(recipes)
       .where(ownedBy(c.var.group.id, id))
       .get();
@@ -177,6 +185,8 @@ export const recipeRoutes = new Hono<AppEnv>()
         db.insert(recipeIngredients).values(chunk),
       ),
     ]);
+    if (existing.imageKey !== input.imageKey)
+      await deleteImage(db, c.env.IMAGES, existing.imageKey);
     const row = await findVisible(db, c.var.group.id, id);
     return c.json(await loadDetail(db, row!));
   })
@@ -184,8 +194,9 @@ export const recipeRoutes = new Hono<AppEnv>()
     const res = await c.var.db
       .delete(recipes)
       .where(ownedBy(c.var.group.id, c.req.param('id')))
-      .returning({ id: recipes.id });
+      .returning({ id: recipes.id, imageKey: recipes.imageKey });
     if (!res.length) return c.json({ error: 'not_found_or_readonly' }, 404);
+    await deleteImage(c.var.db, c.env.IMAGES, res[0]!.imageKey);
     return c.json({ ok: true });
   })
   /** システム共通やグループのレシピを複製して、自グループのレシピにする（アレンジ用） */

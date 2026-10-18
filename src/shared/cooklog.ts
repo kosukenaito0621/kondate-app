@@ -13,6 +13,7 @@ export const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 export type CookLogEntry = {
   id: string;
   date: string;
+  imageKey: string | null;
   recipe: RecipeSummary;
   cookedBy: { id: string; name: string | null; avatarUrl: string | null } | null;
 };
@@ -32,7 +33,14 @@ export type CookLogMonth = {
   };
 };
 
-export type RecipeCookStats = { count: number; lastDate: string | null; cookedToday: boolean };
+export type RecipeCookStats = {
+  count: number;
+  lastDate: string | null;
+  cookedToday: boolean;
+  todayLogId: string | null;
+  /** 写真付きの記録（新しい順・最大6件） */
+  photos: { logId: string; date: string; imageKey: string }[];
+};
 
 /** 日付の集合から、today（記録がなければ昨日）までの連続日数を数える */
 export function streakDays(dates: Iterable<string>, today: string): number {
