@@ -123,9 +123,7 @@ function Styleguide() {
               pressable
               className="flex items-center gap-3"
             >
-              <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-wa-soft text-2xl">
-                🍽️
-              </div>
+              <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-wa-soft text-2xl"></div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[11px] font-medium text-ink-soft">
                   <GenreBadge genre={m.genre as 'wa'} className="size-5 text-[10px]" />

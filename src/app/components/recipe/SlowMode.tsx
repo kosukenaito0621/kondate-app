@@ -80,7 +80,7 @@ export function SlowMode({
       >
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-ink-soft">
-            🌱 ゆっくりモード
+            ゆっくりモード
             <span className="num ml-2">
               {index + 1} / {steps.length}
             </span>

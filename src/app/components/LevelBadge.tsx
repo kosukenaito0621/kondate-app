@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { LEVEL_META, type CookingLevel } from '../../shared/levels';
 import { cn } from '../lib/cn';
 
-/** 🌱ふたば／🌾みのり の小さなガラス調チップ。ふたばは芽がぴょこっと揺れる */
+/** 🌱／🌾 のアイコンだけの小さなガラス調チップ。ふたばは芽がぴょこっと揺れる */
 export function LevelBadge({
   level,
   size = 'sm',
@@ -15,16 +15,18 @@ export function LevelBadge({
   const meta = LEVEL_META[level];
   return (
     <span
+      role="img"
+      aria-label={meta.name}
+      title={meta.name}
       className={cn(
-        'glass inline-flex items-center gap-1 rounded-full font-bold whitespace-nowrap',
-        size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-xs',
-        level === 'futaba' ? 'text-success-ink' : 'text-sub-ink',
+        'glass inline-grid shrink-0 place-items-center rounded-full',
+        size === 'sm' ? 'size-7 text-[14px]' : 'size-9 text-[18px]',
         className,
       )}
     >
       <motion.span
         aria-hidden="true"
-        className="inline-block origin-bottom"
+        className="inline-block origin-bottom leading-none"
         animate={level === 'futaba' ? { rotate: [0, -12, 10, -6, 0], y: [0, -1.5, 0] } : undefined}
         transition={
           level === 'futaba'
@@ -34,7 +36,6 @@ export function LevelBadge({
       >
         {meta.emoji}
       </motion.span>
-      {meta.name}
     </span>
   );
 }

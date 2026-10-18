@@ -3,7 +3,7 @@ import { useId } from 'react';
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 
-type Option<T extends string> = { value: T; label: string; hint?: string };
+type Option<T extends string> = { value: T; label: string; hint?: string; ariaLabel?: string };
 
 type Props<T extends string> = {
   label: string;
@@ -52,6 +52,8 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
+            aria-label={o.ariaLabel}
+            title={o.ariaLabel}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(o.value)}
             className={cn(

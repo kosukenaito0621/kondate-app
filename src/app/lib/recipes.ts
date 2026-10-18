@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { Category, Genre, MainIngredient } from '../../shared/constants';
+import type { Category, Genre } from '../../shared/constants';
 import type { CookingLevel } from '../../shared/levels';
 import type { RecipeDetail, RecipeSummary } from '../../shared/recipe';
 import { api } from '../api';
@@ -33,24 +33,6 @@ export const recipeQuery = (id: string) =>
     queryFn: async () => ok<RecipeDetail>(await api.recipes[':id'].$get({ param: { id } })),
     staleTime: 5 * 60_000,
   });
-
-/** サムネイル代わりの絵文字（画像がないとき） */
-export function recipeEmoji(r: { category: Category; mainIngredient: MainIngredient }): string {
-  if (r.category === 'soup') return '🍲';
-  if (r.category === 'side') return '🥗';
-  return (
-    {
-      chicken: '🍗',
-      pork: '🥓',
-      beef: '🥩',
-      fish: '🐟',
-      egg: '🍳',
-      tofu: '🧈',
-      veg: '🥦',
-      other: '🍽️',
-    } as const
-  )[r.mainIngredient];
-}
 
 /** 手順の文章から「◯分」を見つける（タイマー用）。「2〜3分」は大きい方 */
 export function findMinutes(text: string): number | null {

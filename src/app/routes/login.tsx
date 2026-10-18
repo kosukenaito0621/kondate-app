@@ -21,8 +21,6 @@ export const Route = createFileRoute('/login')({
   component: Login,
 });
 
-const DISHES = ['🍲', '🍳', '🥗', '🍙', '🥟'];
-
 function Login() {
   const { error } = Route.useSearch();
   return (
@@ -33,24 +31,6 @@ function Login() {
         initial="initial"
         animate="animate"
       >
-        <motion.div
-          variants={riseItem}
-          className="flex justify-center gap-2 text-3xl"
-          aria-hidden="true"
-        >
-          {DISHES.map((d, i) => (
-            <motion.span
-              key={d}
-              className="glass grid size-14 place-items-center rounded-2xl"
-              initial={{ y: 20, opacity: 0, rotate: -8 }}
-              animate={{ y: 0, opacity: 1, rotate: 0 }}
-              transition={{ ...spring.soft, delay: 0.15 + i * 0.06 }}
-            >
-              {d}
-            </motion.span>
-          ))}
-        </motion.div>
-
         <GlassCard variants={riseItem} strong padding="lg" className="px-6 py-8 text-center">
           <h1 className="text-[32px] font-bold tracking-tight">こんだて</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-soft">

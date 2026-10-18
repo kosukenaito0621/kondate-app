@@ -18,7 +18,6 @@ import { ChevronLeftIcon, ClockIcon, YenIcon } from '../../../components/icons';
 import { LevelBadge } from '../../../components/LevelBadge';
 import { SlowMode } from '../../../components/recipe/SlowMode';
 import { StepList } from '../../../components/recipe/StepList';
-import { RecipeThumb } from '../../../components/RecipeCard';
 import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 import { recipeQuery } from '../../../lib/recipes';
@@ -112,9 +111,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
 
   return (
     <article>
-      <RecipeThumb recipe={recipe} size="hero" />
-
-      <div className="mt-4 px-1">
+      <div className="px-1">
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
           <GenreBadge genre={recipe.genre} />
           {GENRE_LABEL[recipe.genre]}・{CATEGORY_LABEL[recipe.category]}
@@ -166,11 +163,8 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
             type="button"
             onClick={() => setSlow(true)}
             whileTap={{ scale: 0.97 }}
-            className="btn-primary sheen flex min-h-16 items-center justify-center gap-3 rounded-[var(--radius-card)] px-5 text-left"
+            className="btn-primary sheen flex min-h-16 flex-col items-center justify-center rounded-[var(--radius-card)] px-5 text-center"
           >
-            <span className="text-3xl" aria-hidden="true">
-              🌱
-            </span>
             <span>
               <span className="block font-bold">ゆっくりモードで作る</span>
               <span className="block text-xs opacity-80">1ステップずつ大きく表示します</span>

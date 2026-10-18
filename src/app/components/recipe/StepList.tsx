@@ -22,8 +22,9 @@ export function TipBubble({ tip, large }: { tip: string; large?: boolean }) {
         aria-hidden="true"
       />
       <span className="relative">
-        <span aria-hidden="true">💡 </span>
-        <span className="sr-only">コツ：</span>
+        <span className="mr-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
+          コツ
+        </span>
         {tip}
       </span>
     </motion.div>
@@ -39,6 +40,7 @@ export function StepTimerButton({ text, label }: { text: string; label: string }
     <motion.button
       type="button"
       onClick={() => start(label, minutes)}
+      aria-label={`${minutes}分のタイマーを開始`}
       whileTap={{ scale: 0.92 }}
       transition={spring.snappy}
       className="glass sheen mt-2.5 inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-bold text-accent-strong"

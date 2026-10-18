@@ -2,43 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import type { RecipeSummary } from '../../shared/recipe';
-import { cn } from '../lib/cn';
 import { riseItem, spring } from '../lib/motion';
-import { recipeEmoji } from '../lib/recipes';
 import { GenreBadge } from './GenreBadge';
 import { ClockIcon, YenIcon } from './icons';
 import { LevelBadge } from './LevelBadge';
 
-const thumbBg = { wa: 'bg-wa-soft', yo: 'bg-yo-soft', chu: 'bg-chu-soft' } as const;
-
-/** サムネイル（一覧→詳細で共有要素遷移する） */
-export function RecipeThumb({
-  recipe,
-  size = 'md',
-  className,
-}: {
-  recipe: Pick<RecipeSummary, 'id' | 'genre' | 'category' | 'mainIngredient'>;
-  size?: 'md' | 'hero';
-  className?: string;
-}) {
-  return (
-    <motion.div
-      layoutId={`recipe-thumb-${recipe.id}`}
-      transition={spring.soft}
-      className={cn(
-        'grid shrink-0 place-items-center',
-        thumbBg[recipe.genre],
-        size === 'hero'
-          ? 'aspect-[16/10] w-full rounded-[var(--radius-card)] text-7xl'
-          : 'size-16 rounded-2xl text-3xl',
-        className,
-      )}
-      aria-hidden="true"
-    >
-      {recipeEmoji(recipe)}
-    </motion.div>
-  );
-}
+/** ジャンル色の細いライン（サムネイルの代わりに控えめな色の目印） */
+const stripe = { wa: 'bg-wa', yo: 'bg-yo', chu: 'bg-chu' } as const;
 
 export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
   return (
@@ -51,9 +21,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
         <motion.div
           whileTap={{ scale: 0.975 }}
           transition={spring.snappy}
-          className="glass sheen flex items-center gap-3 rounded-[var(--radius-card)] p-3"
+          className="glass sheen flex items-stretch gap-3 rounded-[var(--radius-card)] py-3.5 pl-3 pr-4"
         >
-          <RecipeThumb recipe={recipe} />
+          <span
+            className={`w-1 shrink-0 rounded-full ${stripe[recipe.genre]}`}
+            aria-hidden="true"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
               <GenreBadge genre={recipe.genre} className="size-5 text-[10px]" />
@@ -67,7 +40,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
             <motion.p
               layoutId={`recipe-title-${recipe.id}`}
               transition={spring.soft}
-              className="mt-0.5 truncate font-bold"
+              className="mt-0.5 truncate text-[15px] font-bold"
             >
               {recipe.name}
             </motion.p>

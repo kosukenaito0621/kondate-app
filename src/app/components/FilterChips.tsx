@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/cn';
 import { spring } from '../lib/motion';
 
-type Option<T extends string> = { value: T | undefined; label: string };
+type Option<T extends string> = { value: T | undefined; label: string; ariaLabel?: string };
 
 /** 横スクロールの絞り込みチップ（1つ選択） */
 export function FilterChips<T extends string>({
@@ -30,6 +30,8 @@ export function FilterChips<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
+            aria-label={o.ariaLabel}
+            title={o.ariaLabel}
             onClick={() => onChange(o.value)}
             whileTap={{ scale: 0.94 }}
             transition={spring.snappy}

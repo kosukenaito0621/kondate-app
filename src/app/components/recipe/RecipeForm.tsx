@@ -182,7 +182,8 @@ export function RecipeForm({
             onChange={(x) => set('difficulty', x)}
             options={COOKING_LEVELS.map((l) => ({
               value: l,
-              label: `${LEVEL_META[l].emoji}${LEVEL_META[l].name}`,
+              label: LEVEL_META[l].emoji,
+              ariaLabel: LEVEL_META[l].name,
             }))}
           />
           <p className="mt-1.5 text-xs text-ink-soft">{LEVEL_META[v.difficulty].description}</p>
@@ -335,7 +336,7 @@ export function RecipeForm({
         <h2 className="font-bold">作り方</h2>
         {futaba && (
           <p className="mt-1 text-xs text-ink-soft">
-            🌱ふたばのレシピは、手順ごとに「ひとことコツ」を入れると初めての人も安心です（5ステップ以内がおすすめ）。
+            🌱のレシピは、手順ごとに「ひとことコツ」を入れると初めての人も安心です（5ステップ以内がおすすめ）。
           </p>
         )}
         <ol className="mt-3 flex flex-col gap-3">
@@ -366,7 +367,7 @@ export function RecipeForm({
                     aria-label={`手順${idx + 1}のコツ`}
                     value={s.tip}
                     onChange={(e) => updateStep(s.key, { tip: e.target.value })}
-                    placeholder={futaba ? '💡 ひとことコツ' : '💡 コツ（任意）'}
+                    placeholder={futaba ? 'ひとことコツ' : 'コツ（任意）'}
                     className="field min-h-10 w-full rounded-xl px-3 text-sm"
                   />
                 </div>

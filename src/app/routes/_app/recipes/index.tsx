@@ -107,9 +107,10 @@ function RecipeList() {
             { value: undefined, label: 'レベルすべて' },
             ...COOKING_LEVELS.map((l) => ({
               value: l as string,
-              label: `${LEVEL_META[l].emoji}${LEVEL_META[l].name}`,
+              label: LEVEL_META[l].emoji,
+              ariaLabel: LEVEL_META[l].name,
             })),
-            { value: 'mine', label: '🏠うちのレシピ' },
+            { value: 'mine', label: 'うちのレシピ' },
           ]}
         />
       </div>
@@ -134,9 +135,6 @@ function RecipeList() {
           transition={spring.soft}
           className="glass rounded-[var(--radius-card)] p-8 text-center"
         >
-          <p className="text-3xl" aria-hidden="true">
-            🍳
-          </p>
           <p className="mt-2 font-bold">見つかりませんでした</p>
           <p className="mt-1 text-sm text-ink-soft">
             条件を変えるか、新しいレシピを追加してみましょう
