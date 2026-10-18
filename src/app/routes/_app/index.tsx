@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { GroupSwitcher } from '../../components/GroupSwitcher';
 import { PageHeader } from '../../components/PageHeader';
 import { HomeSkeleton } from '../../components/skeleton/Skeletons';
 
@@ -11,6 +12,9 @@ function Home() {
   const { me } = Route.useRouteContext();
   return (
     <>
+      <div className="mb-3">
+        <GroupSwitcher />
+      </div>
       <PageHeader eyebrow="今日の献立" title={`こんにちは、${me.displayName}さん`} />
       <HomeSkeleton />
     </>

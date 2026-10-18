@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { displayNameSchema } from '../../../shared/schemas';
 import { api } from '../../api';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
+import { GroupDot } from '../../components/GroupSwitcher';
+import { ChevronRightIcon } from '../../components/icons';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
 import { logout, meQuery } from '../../lib/auth';
@@ -58,6 +60,25 @@ function Settings() {
         initial="initial"
         animate="animate"
       >
+        <motion.div variants={riseItem}>
+          <Link
+            to="/group"
+            className="glass sheen flex min-h-16 items-center gap-3 rounded-[var(--radius-card)] px-5"
+          >
+            <GroupDot
+              color={me.groups.find((g) => g.id === me.currentGroupId)?.color ?? 'rose'}
+              size={14}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs text-ink-soft">グループ・家族の招待</span>
+              <span className="block truncate font-bold">
+                {me.groups.find((g) => g.id === me.currentGroupId)?.name}
+              </span>
+            </span>
+            <ChevronRightIcon size={18} className="text-ink-soft" />
+          </Link>
+        </motion.div>
+
         <GlassCard variants={riseItem} padding="lg">
           <h2 className="mb-1 text-sm font-bold">テーマカラー</h2>
           <p className="mb-4 text-xs text-ink-soft">その日の気分で選べます</p>

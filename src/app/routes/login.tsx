@@ -6,6 +6,11 @@ import { GoogleLogo } from '../components/icons';
 import { meQuery } from '../lib/auth';
 import { riseItem, spring, staggerContainer } from '../lib/motion';
 
+/** アプリ内の相対パスだけを戻り先にする */
+function safeNext(next: string | undefined): string {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+}
+
 const ERRORS: Record<string, string> = {
   cancelled: 'ログインがキャンセルされました',
   invalid_state: 'ログインの有効期限が切れました。もう一度お試しください',
@@ -13,16 +18,17 @@ const ERRORS: Record<string, string> = {
 };
 
 export const Route = createFileRoute('/login')({
-  validateSearch: z.object({ error: z.string().optional() }),
-  beforeLoad: async ({ context }) => {
+  validateSearch: z.object({ error: z.string().optional(), next: z.string().optional() }),
+  beforeLoad: async ({ context, search }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
-    if (me) throw redirect({ to: '/' });
+    if (me) throw redirect({ href: safeNext(search.next) });
   },
   component: Login,
 });
 
 function Login() {
-  const { error } = Route.useSearch();
+  const { error, next } = Route.useSearch();
+  const loginHref = `/api/auth/google${next ? `?next=${encodeURIComponent(safeNext(next))}` : ''}`;
   return (
     <main className="flex min-h-dvh flex-col justify-center px-5 py-10">
       <motion.div
@@ -46,7 +52,7 @@ function Login() {
           )}
 
           <motion.a
-            href="/api/auth/google"
+            href={loginHref}
             className="sheen mt-7 flex min-h-14 items-center justify-center gap-3 rounded-full px-6 font-bold pill-active"
             whileTap={{ scale: 0.96 }}
             transition={spring.snappy}

@@ -3,14 +3,14 @@ import { COOKING_LEVELS, type CookingLevel } from './levels';
 
 /** グループの色（絵文字アイコンは使わず、色で見分ける） */
 export const GROUP_COLORS = [
-  { id: 'rose', value: '#e9879f' },
-  { id: 'butter', value: '#e8c45a' },
-  { id: 'peach', value: '#f2a27a' },
-  { id: 'mint', value: '#7fc4a3' },
-  { id: 'sky', value: '#7fb0dc' },
-  { id: 'lavender', value: '#a48fd6' },
-  { id: 'gold', value: '#c9a24f' },
-  { id: 'slate', value: '#7d8796' },
+  { id: 'rose', label: 'ローズ', value: '#e9879f' },
+  { id: 'butter', label: 'バター', value: '#e8c45a' },
+  { id: 'peach', label: 'ピーチ', value: '#f2a27a' },
+  { id: 'mint', label: 'ミント', value: '#7fc4a3' },
+  { id: 'sky', label: 'スカイ', value: '#7fb0dc' },
+  { id: 'lavender', label: 'ラベンダー', value: '#a48fd6' },
+  { id: 'gold', label: 'ゴールド', value: '#c9a24f' },
+  { id: 'slate', label: 'スレート', value: '#7d8796' },
 ] as const;
 export type GroupColorId = (typeof GROUP_COLORS)[number]['id'];
 const COLOR_IDS = GROUP_COLORS.map((c) => c.id) as [GroupColorId, ...GroupColorId[]];
