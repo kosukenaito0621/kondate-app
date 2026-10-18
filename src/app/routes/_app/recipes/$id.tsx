@@ -115,13 +115,6 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
 
   return (
     <article>
-      {recipe.imageKey && (
-        <Photo
-          src={imageUrl(recipe.imageKey)}
-          alt={recipe.name}
-          className="mb-4 aspect-[4/3] w-full rounded-[var(--radius-card)]"
-        />
-      )}
       <div className="px-1">
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
           <GenreBadge genre={recipe.genre} />
