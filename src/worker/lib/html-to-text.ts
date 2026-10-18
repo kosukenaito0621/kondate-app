@@ -78,7 +78,8 @@ export function htmlToText(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/[ \t　]+/g, ' ')
+    // 改行以外の空白（全角スペースを含む）をまとめる
+    .replace(/[^\S\n]+/g, ' ')
     .replace(/ *\n */g, '\n')
     .replace(/\n\s*\n+/g, '\n')
     .trim();

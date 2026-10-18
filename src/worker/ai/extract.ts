@@ -93,7 +93,6 @@ export async function extractRecipe(ai: Ai, input: AiInput): Promise<AiRecipe> {
     { role: 'user', content: userText },
   ];
 
-  let lastError = '';
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await callModel(ai, input, messages);
     const json = extractJson(res?.response);
@@ -104,7 +103,7 @@ export async function extractRecipe(ai: Ai, input: AiInput): Promise<AiRecipe> {
     }
     const parsed = aiRecipeSchema.safeParse(json);
     if (parsed.success) return parsed.data;
-    lastError = parsed.error.issues
+    const lastError = parsed.error.issues
       .slice(0, 5)
       .map((i) => `${i.path.join('.')}: ${i.message}`)
       .join(' / ');
