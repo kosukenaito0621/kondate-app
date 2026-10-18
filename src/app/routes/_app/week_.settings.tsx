@@ -235,7 +235,12 @@ function SettingsForm({ initial }: { initial: PlanSettings }) {
                             value={d.level}
                             onChange={(lv) => updateDay(d.weekday, { level: lv })}
                             options={[
-                              { value: 'inherit' as const, label: 'いつもどおり' },
+                              {
+                                value: 'inherit' as const,
+                                label: `既定 ${LEVEL_META[initial.defaultLevel].emoji}`,
+                                hint: 'グループの設定',
+                                ariaLabel: `グループの既定（${LEVEL_META[initial.defaultLevel].name}）`,
+                              },
                               {
                                 value: 'futaba' as const,
                                 label: LEVEL_META.futaba.emoji,
@@ -249,7 +254,9 @@ function SettingsForm({ initial }: { initial: PlanSettings }) {
                             ]}
                           />
                           <p className="mt-1.5 text-[11px] text-ink-soft">
-                            {LEVEL_META[level].description}
+                            {d.level === 'inherit'
+                              ? `グループ設定の「いつもの料理レベル」に従います。${LEVEL_META[level].description}`
+                              : LEVEL_META[level].description}
                           </p>
                         </Row>
                       </div>

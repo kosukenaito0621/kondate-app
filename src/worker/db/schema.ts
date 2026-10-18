@@ -290,3 +290,24 @@ export const rateLimits = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.key, t.window] })],
 );
+
+/** 自炊記録：グループで「作った」料理（同じ日に同じレシピは1回） */
+export const cookLogs = sqliteTable(
+  'cook_logs',
+  {
+    id: text('id').primaryKey(),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    recipeId: text('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    date: text('date').notNull(), // JST日付
+    createdAt: timestamp('created_at'),
+  },
+  (t) => [
+    uniqueIndex('cook_logs_group_recipe_date_uq').on(t.groupId, t.recipeId, t.date),
+    index('cook_logs_group_date_idx').on(t.groupId, t.date),
+  ],
+);

@@ -10,6 +10,7 @@ import {
 } from '../../../../shared/constants';
 import { formatAmount, type RecipeDetail } from '../../../../shared/recipe';
 import { api } from '../../../api';
+import { CookedButton } from '../../../components/CookedButton';
 import { GenreBadge } from '../../../components/GenreBadge';
 import { ConfirmDialog } from '../../../components/glass/ConfirmDialog';
 import { GlassButton } from '../../../components/glass/GlassButton';
@@ -20,6 +21,7 @@ import { SlowMode } from '../../../components/recipe/SlowMode';
 import { StepList } from '../../../components/recipe/StepList';
 import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
+import { recipeCookQuery } from '../../../lib/cooklog';
 import { recipeQuery } from '../../../lib/recipes';
 
 export const Route = createFileRoute('/_app/recipes/$id')({
@@ -172,6 +174,8 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
           </motion.button>
         )}
 
+        <CookCard recipeId={recipe.id} recipeName={recipe.name} />
+
         <GlassCard variants={riseItem} padding="lg">
           <div className="flex items-center justify-between">
             <h2 className="font-bold">材料</h2>
@@ -309,5 +313,33 @@ function IngredientTable({ items, scale }: { items: RecipeDetail['ingredients'];
         </div>
       ))}
     </dl>
+  );
+}
+
+/** 自炊記録：今日作ったら記録。これまでの回数と最後に作った日 */
+function CookCard({ recipeId, recipeName }: { recipeId: string; recipeName: string }) {
+  const { data } = useQuery(recipeCookQuery(recipeId));
+  const last = data?.lastDate;
+  return (
+    <GlassCard variants={riseItem} padding="md" className="flex items-center gap-3">
+      <div className="min-w-0 flex-1 px-1">
+        <p className="text-xs text-ink-soft">自炊記録</p>
+        <p className="mt-0.5 font-bold">
+          {data && data.count > 0 ? (
+            <>
+              これまでに<span className="num mx-0.5 text-lg">{data.count}</span>回
+              {last && (
+                <span className="ml-1.5 text-xs font-normal text-ink-soft">
+                  最後：{Number(last.slice(5, 7))}/{Number(last.slice(8, 10))}
+                </span>
+              )}
+            </>
+          ) : (
+            'まだ作っていません'
+          )}
+        </p>
+      </div>
+      <CookedButton recipeId={recipeId} recipeName={recipeName} size="lg" />
+    </GlassCard>
   );
 }

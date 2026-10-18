@@ -7,7 +7,7 @@ import { addDays, isIsoDate, toJstDate, weekStartOf } from '../../../shared/date
 import type { PlanDayView } from '../../../shared/plan';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
-import { ChevronLeftIcon, ChevronRightIcon, GearIcon, ShuffleIcon } from '../../components/icons';
+import { ChevronLeftIcon, ChevronRightIcon, GearIcon, CutleryIcon } from '../../components/icons';
 import { PageHeader } from '../../components/PageHeader';
 import { WeekSkeleton } from '../../components/skeleton/Skeletons';
 import { BudgetBar } from '../../components/week/BudgetBar';
@@ -116,7 +116,7 @@ function WeekPage() {
           <GlassButton
             variant="primary"
             size="lg"
-            icon={<ShuffleIcon size={20} />}
+            icon={<CutleryIcon size={20} />}
             loading={mutation.isPending}
             onClick={generate}
           >
@@ -172,7 +172,7 @@ function WeekPage() {
           <motion.div layout transition={spring.soft} className="mt-2">
             <GlassButton
               block
-              icon={<ShuffleIcon size={18} />}
+              icon={<CutleryIcon size={18} />}
               loading={mutation.isPending && mutation.variables?.type === 'generate'}
               onClick={generate}
             >

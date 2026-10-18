@@ -89,6 +89,15 @@ export const ShuffleIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** フォークとナイフ（献立をつくる） */
+export const CutleryIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 3v7a2 2 0 0 0 2 2v9" />
+    <path d="M5 3v5a2 2 0 0 0 2 2M11 3v5a2 2 0 0 1-2 2" />
+    <path d="M17 21V3c-1.7.6-3 2.6-3 5.5V13h3" />
+  </Icon>
+);
+
 export const PlusIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 5v14M5 12h14" />

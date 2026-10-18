@@ -16,7 +16,7 @@ export const LEVELS = ['save', 'normal', 'rich'] as const;
 export type CostLevel = (typeof LEVELS)[number];
 export const COST_LEVEL_LABEL: Record<CostLevel, string> = {
   save: '節約',
-  normal: 'ふつう',
+  normal: '標準',
   rich: 'ゆとり',
 };
 
@@ -24,7 +24,7 @@ export const TIME_LEVELS = ['quick', 'normal', 'slow'] as const;
 export type TimeLevel = (typeof TIME_LEVELS)[number];
 export const TIME_LEVEL_LABEL: Record<TimeLevel, string> = {
   quick: '時短',
-  normal: 'ふつう',
+  normal: 'ほどよく',
   slow: 'じっくり',
 };
 

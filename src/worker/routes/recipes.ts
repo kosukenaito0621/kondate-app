@@ -20,7 +20,7 @@ import type { AppEnv } from '../types';
 
 type RecipeRow = typeof recipes.$inferSelect;
 
-const toSummary = (r: RecipeRow): RecipeSummary => ({
+export const toSummary = (r: RecipeRow): RecipeSummary => ({
   id: r.id,
   name: r.name,
   category: r.category,
