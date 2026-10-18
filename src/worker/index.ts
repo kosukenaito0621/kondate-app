@@ -3,6 +3,7 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { toJstDate } from '../shared/date';
 import { getDb } from './db/client';
+import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
 import { groupRoutes, inviteRoutes } from './routes/groups';
 import { imageRoutes } from './routes/images';
@@ -35,6 +36,7 @@ const api = new Hono<AppEnv>()
   .route('/plans', planRoutes)
   .route('/logs', logRoutes)
   .route('/images', imageRoutes)
+  .route('/ai', aiRoutes)
   .get('/today', requireAuth, requireGroup, async (c) => {
     const { view, day } = await todayItems(c.var.db, c.var.group.id, toJstDate());
     return c.json({
