@@ -99,6 +99,20 @@ describe('レシピAPI', () => {
     expect(again.map((x) => x.id)).toContain('sys-main-wa-02');
   });
 
+  it('材料が多いレシピも保存できる（D1 の変数上限を超えない）', async () => {
+    const u = await login('recipe-many');
+    const ingredients = Array.from({ length: 30 }, (_, i) => ({
+      name: `材料${i + 1}`,
+      quantity: i + 1,
+      unit: 'g' as const,
+      amountText: null,
+      section: 'other' as const,
+    }));
+    const res = await api(u, '/api/recipes', { method: 'POST', json: { ...sample, ingredients } });
+    expect(res.status).toBe(201);
+    expect(((await res.json()) as RecipeDetail).ingredients).toHaveLength(30);
+  });
+
   it('ふたばのレシピなど入力が不正なら 400', async () => {
     const u = await login('recipe-invalid');
     const bad = await api(u, '/api/recipes', {

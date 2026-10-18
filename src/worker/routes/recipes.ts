@@ -11,6 +11,7 @@ import {
   type RecipeInput,
   type RecipeSummary,
 } from '../../shared/recipe';
+import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
 import { hiddenRecipes, recipeIngredients, recipes } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
@@ -149,7 +150,9 @@ export const recipeRoutes = new Hono<AppEnv>()
         createdBy: c.var.user.id,
         ...rowValues(input),
       }),
-      db.insert(recipeIngredients).values(ingredientRows(id, input)),
+      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+        db.insert(recipeIngredients).values(chunk),
+      ),
     ]);
     const row = await findVisible(db, c.var.group.id, id);
     return c.json(await loadDetail(db, row!), 201);
@@ -170,7 +173,9 @@ export const recipeRoutes = new Hono<AppEnv>()
         .set({ ...rowValues(input), updatedAt: Date.now() })
         .where(ownedBy(c.var.group.id, id)),
       db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id)),
-      db.insert(recipeIngredients).values(ingredientRows(id, input)),
+      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+        db.insert(recipeIngredients).values(chunk),
+      ),
     ]);
     const row = await findVisible(db, c.var.group.id, id);
     return c.json(await loadDetail(db, row!));
@@ -198,7 +203,9 @@ export const recipeRoutes = new Hono<AppEnv>()
       db
         .insert(recipes)
         .values({ id, groupId: c.var.group.id, createdBy: c.var.user.id, ...rowValues(input) }),
-      db.insert(recipeIngredients).values(ingredientRows(id, input)),
+      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+        db.insert(recipeIngredients).values(chunk),
+      ),
     ]);
     return c.json({ id }, 201);
   })

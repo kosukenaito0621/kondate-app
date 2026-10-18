@@ -6,7 +6,11 @@ import { getDb } from './db/client';
 import { authRoutes } from './routes/auth';
 import { groupRoutes, inviteRoutes } from './routes/groups';
 import { meRoutes } from './routes/me';
+import { planRoutes, todayItems } from './routes/plans';
 import { recipeRoutes } from './routes/recipes';
+import { settingsRoutes } from './routes/settings';
+import { requireAuth } from './middleware/auth';
+import { requireGroup } from './middleware/group';
 import type { AppEnv } from './types';
 
 export type { AppEnv };
@@ -24,7 +28,19 @@ const api = new Hono<AppEnv>()
   .route('/me', meRoutes)
   .route('/recipes', recipeRoutes)
   .route('/groups', groupRoutes)
-  .route('/invites', inviteRoutes);
+  .route('/invites', inviteRoutes)
+  .route('/settings', settingsRoutes)
+  .route('/plans', planRoutes)
+  .get('/today', requireAuth, requireGroup, async (c) => {
+    const { view, day } = await todayItems(c.var.db, c.var.group.id, toJstDate());
+    return c.json({
+      date: day.date,
+      day,
+      weekStart: view.weekStart,
+      version: view.version,
+      exists: view.exists,
+    });
+  });
 
 api.notFound((c) => c.json({ error: 'not_found' }, 404));
 api.onError((err, c) => {
