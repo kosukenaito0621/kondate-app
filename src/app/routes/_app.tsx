@@ -1,6 +1,8 @@
 import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { TabBar } from '../components/glass/TabBar';
+import { TimerDock } from '../components/timer/TimerDock';
+import { TimerProvider } from '../components/timer/TimerProvider';
 import { meQuery } from '../lib/auth';
 import { pageVariants } from '../lib/motion';
 
@@ -9,7 +11,7 @@ export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ context }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (!me) throw redirect({ to: '/login' });
-    if (!me.displayName) throw redirect({ to: '/onboarding' });
+    if (!me.displayName || !me.cookingLevel) throw redirect({ to: '/onboarding' });
     return { me };
   },
   component: AppLayout,
@@ -18,7 +20,7 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <>
+    <TimerProvider>
       <motion.main
         key={pathname}
         variants={pageVariants}
@@ -32,7 +34,8 @@ function AppLayout() {
       >
         <Outlet />
       </motion.main>
+      <TimerDock />
       <TabBar />
-    </>
+    </TimerProvider>
   );
 }
