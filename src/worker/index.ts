@@ -1,16 +1,25 @@
 import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { toJstDate } from '../shared/date';
+import { getDb } from './db/client';
+import { authRoutes } from './routes/auth';
+import { meRoutes } from './routes/me';
+import type { AppEnv } from './types';
 
-export type AppEnv = { Bindings: Env };
+export type { AppEnv };
 
 const api = new Hono<AppEnv>()
   .basePath('/api')
   .use(secureHeaders())
-  .get('/health', async (c) => {
-    const row = await c.env.DB.prepare('select count(*) as n from recipes').first<{ n: number }>();
-    return c.json({ ok: true, today: toJstDate(), recipes: row?.n ?? 0 });
-  });
+  .use(csrf())
+  .use(async (c, next) => {
+    c.set('db', getDb(c.env.DB));
+    await next();
+  })
+  .get('/health', (c) => c.json({ ok: true, today: toJstDate() }))
+  .route('/auth', authRoutes)
+  .route('/me', meRoutes);
 
 api.notFound((c) => c.json({ error: 'not_found' }, 404));
 api.onError((err, c) => {

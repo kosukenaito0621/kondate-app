@@ -22,7 +22,14 @@ export default defineConfig(async () => {
               wrangler: { configPath: './wrangler.jsonc' },
               // Workers AI はリモート専用。テストではモックするのでリモート接続しない
               remoteBindings: false,
-              miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+              miniflare: {
+                bindings: {
+                  TEST_MIGRATIONS: migrations,
+                  GOOGLE_CLIENT_ID: 'test-client.apps.googleusercontent.com',
+                  GOOGLE_CLIENT_SECRET: 'test-secret',
+                  APP_URL: 'http://localhost:5173',
+                },
+              },
             }),
           ],
           test: {
