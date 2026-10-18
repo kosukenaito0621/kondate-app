@@ -12,7 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as StyleguideRouteImport } from './routes/styleguide'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppShoppingRouteImport } from './routes/_app/shopping'
+import { Route as AppWeekRouteImport } from './routes/_app/week'
+import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -28,9 +33,34 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StyleguideRoute = StyleguideRouteImport.update({
+  id: '/styleguide',
+  path: '/styleguide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShoppingRoute = AppShoppingRouteImport.update({
+  id: '/shopping',
+  path: '/shopping',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWeekRoute = AppWeekRouteImport.update({
+  id: '/week',
+  path: '/week',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecipesIndexRoute = AppRecipesIndexRouteImport.update({
+  id: '/recipes/',
+  path: '/recipes/',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -38,31 +68,73 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/styleguide': typeof StyleguideRoute
+  '/settings': typeof AppSettingsRoute
+  '/shopping': typeof AppShoppingRoute
+  '/week': typeof AppWeekRoute
+  '/recipes/': typeof AppRecipesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/styleguide': typeof StyleguideRoute
+  '/settings': typeof AppSettingsRoute
+  '/shopping': typeof AppShoppingRoute
+  '/week': typeof AppWeekRoute
   '/': typeof AppIndexRoute
+  '/recipes': typeof AppRecipesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/styleguide': typeof StyleguideRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/shopping': typeof AppShoppingRoute
+  '/_app/week': typeof AppWeekRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/recipes/': typeof AppRecipesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/styleguide'
+    | '/settings'
+    | '/shopping'
+    | '/week'
+    | '/recipes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/onboarding' | '/'
-  id: '__root__' | '/_app' | '/login' | '/onboarding' | '/_app/'
+  to:
+    | '/login'
+    | '/onboarding'
+    | '/styleguide'
+    | '/settings'
+    | '/shopping'
+    | '/week'
+    | '/'
+    | '/recipes'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/login'
+    | '/onboarding'
+    | '/styleguide'
+    | '/_app/settings'
+    | '/_app/shopping'
+    | '/_app/week'
+    | '/_app/'
+    | '/_app/recipes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  StyleguideRoute: typeof StyleguideRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/styleguide': {
+      id: '/styleguide'
+      path: '/styleguide'
+      fullPath: '/styleguide'
+      preLoaderRoute: typeof StyleguideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
@@ -95,15 +174,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/shopping': {
+      id: '/_app/shopping'
+      path: '/shopping'
+      fullPath: '/shopping'
+      preLoaderRoute: typeof AppShoppingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/week': {
+      id: '/_app/week'
+      path: '/week'
+      fullPath: '/week'
+      preLoaderRoute: typeof AppWeekRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recipes/': {
+      id: '/_app/recipes/'
+      path: '/recipes'
+      fullPath: '/recipes/'
+      preLoaderRoute: typeof AppRecipesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppShoppingRoute: typeof AppShoppingRoute
+  AppWeekRoute: typeof AppWeekRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppRecipesIndexRoute: typeof AppRecipesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppSettingsRoute: AppSettingsRoute,
+  AppShoppingRoute: AppShoppingRoute,
+  AppWeekRoute: AppWeekRoute,
   AppIndexRoute: AppIndexRoute,
+  AppRecipesIndexRoute: AppRecipesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -112,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  StyleguideRoute: StyleguideRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

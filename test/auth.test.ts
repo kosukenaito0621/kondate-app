@@ -31,10 +31,10 @@ describe('auth', () => {
   });
 
   it('callback で state が一致しなければログインしない', async () => {
-    const res = await exports.default.fetch(
-      `${BASE}/api/auth/google/callback?code=x&state=evil`,
-      { redirect: 'manual', headers: { cookie: 'kd_oauth_state=good; kd_oauth_verifier=v' } },
-    );
+    const res = await exports.default.fetch(`${BASE}/api/auth/google/callback?code=x&state=evil`, {
+      redirect: 'manual',
+      headers: { cookie: 'kd_oauth_state=good; kd_oauth_verifier=v' },
+    });
     expect(res.headers.get('location')).toBe('/login?error=invalid_state');
     expect(res.headers.getSetCookie().join(';')).not.toContain('kd_session=');
   });

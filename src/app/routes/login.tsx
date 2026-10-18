@@ -1,6 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { motion } from 'motion/react';
 import { z } from 'zod';
+import { GlassCard } from '../components/glass/GlassCard';
+import { GoogleLogo } from '../components/icons';
 import { meQuery } from '../lib/auth';
+import { riseItem, spring, staggerContainer } from '../lib/motion';
 
 const ERRORS: Record<string, string> = {
   cancelled: 'ログインがキャンセルされました',
@@ -17,26 +21,65 @@ export const Route = createFileRoute('/login')({
   component: Login,
 });
 
-// デザインはフェーズ4でガラス調に作り込む
+const DISHES = ['🍲', '🍳', '🥗', '🍙', '🥟'];
+
 function Login() {
   const { error } = Route.useSearch();
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-8 p-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">こんだて</h1>
-        <p className="mt-2 text-sm opacity-70">1週間の献立と買い物を、ここでぜんぶ。</p>
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-red-700">
-          {ERRORS[error] ?? 'ログインに失敗しました'}
-        </p>
-      )}
-      <a
-        href="/api/auth/google"
-        className="flex min-h-11 items-center gap-3 rounded-full bg-white px-6 py-3 font-medium shadow"
+    <main className="flex min-h-dvh flex-col justify-center px-5 py-10">
+      <motion.div
+        className="flex flex-col gap-6"
+        variants={staggerContainer(0.09, 0.1)}
+        initial="initial"
+        animate="animate"
       >
-        Google でログイン
-      </a>
+        <motion.div
+          variants={riseItem}
+          className="flex justify-center gap-2 text-3xl"
+          aria-hidden="true"
+        >
+          {DISHES.map((d, i) => (
+            <motion.span
+              key={d}
+              className="glass grid size-14 place-items-center rounded-2xl"
+              initial={{ y: 20, opacity: 0, rotate: -8 }}
+              animate={{ y: 0, opacity: 1, rotate: 0 }}
+              transition={{ ...spring.soft, delay: 0.15 + i * 0.06 }}
+            >
+              {d}
+            </motion.span>
+          ))}
+        </motion.div>
+
+        <GlassCard variants={riseItem} strong padding="lg" className="px-6 py-8 text-center">
+          <h1 className="text-[32px] font-bold tracking-tight">こんだて</h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            1週間の献立と買い物リストを、
+            <br />
+            ひらいた瞬間に。
+          </p>
+
+          {error && (
+            <p role="alert" className="mt-5 rounded-2xl bg-chu-soft px-4 py-3 text-sm text-danger">
+              {ERRORS[error] ?? 'ログインに失敗しました'}
+            </p>
+          )}
+
+          <motion.a
+            href="/api/auth/google"
+            className="sheen mt-7 flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-6 font-medium shadow-[inset_0_1px_0_white,0_8px_24px_-10px_rgb(92_64_40/0.45)]"
+            whileTap={{ scale: 0.96 }}
+            transition={spring.snappy}
+          >
+            <GoogleLogo />
+            Google でログイン
+          </motion.a>
+        </GlassCard>
+
+        <motion.p variants={riseItem} className="text-center text-xs text-ink-soft">
+          ログインすると、献立とレシピがあなた専用に保存されます
+        </motion.p>
+      </motion.div>
     </main>
   );
 }

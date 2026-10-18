@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { logout } from '../../lib/auth';
+import { PageHeader } from '../../components/PageHeader';
+import { HomeSkeleton } from '../../components/skeleton/Skeletons';
 
 export const Route = createFileRoute('/_app/')({
   component: Home,
@@ -9,11 +10,9 @@ export const Route = createFileRoute('/_app/')({
 function Home() {
   const { me } = Route.useRouteContext();
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold">こんにちは、{me.displayName}さん</h1>
-      <button onClick={logout} className="mt-6 min-h-11 text-sm underline">
-        ログアウト
-      </button>
-    </main>
+    <>
+      <PageHeader eyebrow="今日の献立" title={`こんにちは、${me.displayName}さん`} />
+      <HomeSkeleton />
+    </>
   );
 }
