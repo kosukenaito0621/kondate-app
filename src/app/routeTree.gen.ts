@@ -22,6 +22,7 @@ import { Route as InviteKeyRouteImport } from './routes/invite.$key'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesIdRouteImport } from './routes/_app/recipes/$id'
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
+import { Route as AppWeekSettingsRouteImport } from './routes/_app/week_.settings'
 import { Route as AppRecipesIdEditRouteImport } from './routes/_app/recipes/$id_.edit'
 
 const AppRoute = AppRouteImport.update({
@@ -88,6 +89,11 @@ const AppRecipesNewRoute = AppRecipesNewRouteImport.update({
   path: '/recipes/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWeekSettingsRoute = AppWeekSettingsRouteImport.update({
+  id: '/week_/settings',
+  path: '/week/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecipesIdEditRoute = AppRecipesIdEditRouteImport.update({
   id: '/recipes/$id_/edit',
   path: '/recipes/$id/edit',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/invite/$key': typeof InviteKeyRoute
   '/recipes/$id': typeof AppRecipesIdRoute
   '/recipes/new': typeof AppRecipesNewRoute
+  '/week/settings': typeof AppWeekSettingsRoute
   '/recipes/': typeof AppRecipesIndexRoute
   '/recipes/$id/edit': typeof AppRecipesIdEditRoute
 }
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/recipes/$id': typeof AppRecipesIdRoute
   '/recipes/new': typeof AppRecipesNewRoute
+  '/week/settings': typeof AppWeekSettingsRoute
   '/recipes': typeof AppRecipesIndexRoute
   '/recipes/$id/edit': typeof AppRecipesIdEditRoute
 }
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/$id': typeof AppRecipesIdRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
+  '/_app/week_/settings': typeof AppWeekSettingsRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/recipes/$id_/edit': typeof AppRecipesIdEditRoute
 }
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/invite/$key'
     | '/recipes/$id'
     | '/recipes/new'
+    | '/week/settings'
     | '/recipes/'
     | '/recipes/$id/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/'
     | '/recipes/$id'
     | '/recipes/new'
+    | '/week/settings'
     | '/recipes'
     | '/recipes/$id/edit'
   id:
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/recipes/$id'
     | '/_app/recipes/new'
+    | '/_app/week_/settings'
     | '/_app/recipes/'
     | '/_app/recipes/$id_/edit'
   fileRoutesById: FileRoutesById
@@ -291,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/week_/settings': {
+      id: '/_app/week_/settings'
+      path: '/week/settings'
+      fullPath: '/week/settings'
+      preLoaderRoute: typeof AppWeekSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recipes/$id_/edit': {
       id: '/_app/recipes/$id_/edit'
       path: '/recipes/$id/edit'
@@ -309,6 +328,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppRecipesIdRoute: typeof AppRecipesIdRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
+  AppWeekSettingsRoute: typeof AppWeekSettingsRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
   AppRecipesIdEditRoute: typeof AppRecipesIdEditRoute
 }
@@ -321,6 +341,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppRecipesIdRoute: AppRecipesIdRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
+  AppWeekSettingsRoute: AppWeekSettingsRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
   AppRecipesIdEditRoute: AppRecipesIdEditRoute,
 }

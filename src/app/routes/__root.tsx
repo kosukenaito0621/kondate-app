@@ -3,6 +3,7 @@ import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { MotionConfig } from 'motion/react';
 import { useEffect } from 'react';
 import { Blobs } from '../components/glass/Blobs';
+import { Toaster } from '../components/toast/Toaster';
 import { meQuery } from '../lib/auth';
 import { applyTheme } from '../lib/theme';
 
@@ -20,10 +21,12 @@ function Root() {
   return (
     // OS の「視差効果を減らす」設定に従ってアニメーションを控えめにする
     <MotionConfig reducedMotion="user">
-      <Blobs />
-      <div className="mx-auto min-h-dvh max-w-[var(--app-max-width)]">
-        <Outlet />
-      </div>
+      <Toaster>
+        <Blobs />
+        <div className="mx-auto min-h-dvh max-w-[var(--app-max-width)]">
+          <Outlet />
+        </div>
+      </Toaster>
     </MotionConfig>
   );
 }
