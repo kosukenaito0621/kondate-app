@@ -12,6 +12,7 @@ import { meRoutes } from './routes/me';
 import { planRoutes, todayItems } from './routes/plans';
 import { recipeRoutes } from './routes/recipes';
 import { settingsRoutes } from './routes/settings';
+import { shoppingRoutes } from './routes/shopping';
 import { requireAuth } from './middleware/auth';
 import { requireGroup } from './middleware/group';
 import type { AppEnv } from './types';
@@ -34,6 +35,7 @@ const api = new Hono<AppEnv>()
   .route('/invites', inviteRoutes)
   .route('/settings', settingsRoutes)
   .route('/plans', planRoutes)
+  .route('/shopping', shoppingRoutes)
   .route('/logs', logRoutes)
   .route('/images', imageRoutes)
   .route('/ai', aiRoutes)
