@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { CATEGORIES, CATEGORY_LABEL, GENRES, GENRE_LABEL } from '../../../../shared/constants';
 import { COOKING_LEVELS, LEVEL_META } from '../../../../shared/levels';
 import { FilterChips } from '../../../components/FilterChips';
-import { PlusIcon, SearchIcon } from '../../../components/icons';
+import { CameraIcon, PlusIcon, SearchIcon } from '../../../components/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
@@ -50,13 +50,23 @@ function RecipeList() {
         title="レシピ"
         eyebrow={data ? `${data.length}品` : undefined}
         action={
-          <Link
-            to="/recipes/new"
-            className="btn-primary sheen flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold"
-          >
-            <PlusIcon size={18} />
-            追加
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              to="/recipes/import"
+              className="glass sheen flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold"
+            >
+              <CameraIcon size={18} />
+              写真・URL
+            </Link>
+            <Link
+              to="/recipes/new"
+              className="btn-primary sheen flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-bold"
+              aria-label="手入力で追加"
+            >
+              <PlusIcon size={18} />
+              追加
+            </Link>
+          </div>
         }
       />
 
