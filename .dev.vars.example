@@ -1,0 +1,4 @@
+# .dev.vars にコピーして値を入れる（.dev.vars は git 管理外）
+GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxxxxxxx
+APP_URL=http://localhost:5173

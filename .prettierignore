@@ -1,0 +1,6 @@
+dist
+.wrangler
+migrations
+src/app/routeTree.gen.ts
+src/worker/worker-configuration.d.ts
+package-lock.json

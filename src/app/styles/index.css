@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* デザイントークンはフェーズ4で作り込む */
+@theme {
+  --color-ivory-50: #fdfbf6;
+  --color-ivory-100: #faf7f0;
+  --color-ivory-200: #f3eee3;
+  --color-ink: #3a332b;
+  --color-terracotta: #c4704f;
+  --color-olive: #7d8450;
+}
+
+html,
+body {
+  background: var(--color-ivory-100);
+  color: var(--color-ink);
+}
