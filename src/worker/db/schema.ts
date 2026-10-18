@@ -58,7 +58,7 @@ export const groups = sqliteTable('groups', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   icon: text('icon').notNull().default('🏠'),
-  color: text('color').notNull().default('ichigo'),
+  color: text('color').notNull().default('ichigo'), // 既定値はアプリ側で必ず指定する（変えるとテーブル作り直しになるため据え置き）
   defaultLevel: text('default_level', { enum: LEVEL }).notNull().default('minori'),
   /** 分量計算の人数。NULL ならメンバー数 */
   servings: integer('servings'),
@@ -278,4 +278,15 @@ export const aiUsage = sqliteTable(
     count: integer('count').notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.userId, t.date] })],
+);
+
+/** 簡易レート制限（キー×時間枠ごとの回数）。招待コードの総当たり対策など */
+export const rateLimits = sqliteTable(
+  'rate_limits',
+  {
+    key: text('key').notNull(),
+    window: text('window').notNull(),
+    count: integer('count').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.window] })],
 );

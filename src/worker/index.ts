@@ -4,6 +4,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { toJstDate } from '../shared/date';
 import { getDb } from './db/client';
 import { authRoutes } from './routes/auth';
+import { groupRoutes, inviteRoutes } from './routes/groups';
 import { meRoutes } from './routes/me';
 import { recipeRoutes } from './routes/recipes';
 import type { AppEnv } from './types';
@@ -21,7 +22,9 @@ const api = new Hono<AppEnv>()
   .get('/health', (c) => c.json({ ok: true, today: toJstDate() }))
   .route('/auth', authRoutes)
   .route('/me', meRoutes)
-  .route('/recipes', recipeRoutes);
+  .route('/recipes', recipeRoutes)
+  .route('/groups', groupRoutes)
+  .route('/invites', inviteRoutes);
 
 api.notFound((c) => c.json({ error: 'not_found' }, 404));
 api.onError((err, c) => {

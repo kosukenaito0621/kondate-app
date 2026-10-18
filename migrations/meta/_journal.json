@@ -36,6 +36,13 @@
       "when": 1792314606359,
       "tag": "0004_cooking_level_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792328862709,
+      "tag": "0005_rate_limits",
+      "breakpoints": true
     }
   ]
 }

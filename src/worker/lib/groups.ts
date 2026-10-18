@@ -16,7 +16,7 @@ export async function createGroup(
       id,
       name: opts.name,
       icon: opts.icon ?? '🏠',
-      color: opts.color ?? 'ichigo',
+      color: opts.color ?? 'rose',
       defaultLevel: opts.level ?? 'minori',
     }),
     db.insert(groupMembers).values({ groupId: id, userId: opts.ownerId, role: 'owner' }),
