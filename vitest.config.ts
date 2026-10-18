@@ -11,7 +11,7 @@ export default defineConfig(async () => {
           // 純粋ロジック（献立生成・買い物集計・日付など）
           test: {
             name: 'unit',
-            include: ['src/**/*.test.ts'],
+            include: ['src/**/*.test.ts', 'seed/**/*.test.ts'],
             environment: 'node',
           },
         },

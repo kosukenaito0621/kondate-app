@@ -6,15 +6,16 @@
 
 ## 0. 事前確認の結果
 
-| 項目 | 状況 | 対応 |
-|---|---|---|
-| Node.js | v24.21.0 / npm 11.19 | そのまま使用（パッケージマネージャは npm） |
-| git | **未インストール** | フェーズ2の前に `winget install Git.Git` を案内 |
-| gh CLI | **未インストール** | フェーズ11の前に `winget install GitHub.cli` → `gh auth login` を案内 |
-| wrangler | 未導入（グローバル） | プロジェクトの devDependency として入れて `npx wrangler` で使う |
-| 作業フォルダ | `01_共通` 直下に `04_献立アプリ` がある | **要確認**（下記「確認事項」） |
+| 項目         | 状況                                    | 対応                                                                  |
+| ------------ | --------------------------------------- | --------------------------------------------------------------------- |
+| Node.js      | v24.21.0 / npm 11.19                    | そのまま使用（パッケージマネージャは npm）                            |
+| git          | **未インストール**                      | フェーズ2の前に `winget install Git.Git` を案内                       |
+| gh CLI       | **未インストール**                      | フェーズ11の前に `winget install GitHub.cli` → `gh auth login` を案内 |
+| wrangler     | 未導入（グローバル）                    | プロジェクトの devDependency として入れて `npx wrangler` で使う       |
+| 作業フォルダ | `01_共通` 直下に `04_献立アプリ` がある | **要確認**（下記「確認事項」）                                        |
 
 ### 公式ドキュメントで確認したこと（2026-10-18時点）
+
 - **Workers 静的アセット + SPA**: `wrangler.jsonc` の `assets.not_found_handling: "single-page-application"` と `assets.run_worker_first: ["/api/*"]` で、`/api/*` だけWorker（Hono）、それ以外はSPAを配信できる（Wrangler v4.20+ / Vite plugin v1.7+）。`compatibility_date` は作成日の日付にする。
 - **Workers AI のビジョン対応モデル候補**: `@cf/meta/llama-4-scout-17b-16e-instruct`（画像対応・`guided_json` でJSONスキーマ指定可・131kコンテキスト）、`@cf/qwen/qwen3.8-27b`（画像対応・262k）、ほかに `mistral-small-3.1-24b-instruct`、`glm-5.3-flash`、`kimi-k2.6`。
   - 公式ページには日本語の品質についての記載がない → **フェーズ9で実際の日本語レシピ写真・ページで2〜3モデルを比較して決める**（決め打ちしない）。第一候補は llama-4-scout（`guided_json` が使えるため）。
@@ -203,30 +204,30 @@ erDiagram
 
 ## 4. API一覧（すべて `/api` 配下、auth以外はログイン必須）
 
-| メソッド | パス | 内容 |
-|---|---|---|
-| GET | `/api/auth/google` | state・PKCEをCookieに保存してGoogleへリダイレクト |
-| GET | `/api/auth/google/callback` | トークン交換 → ユーザー作成/更新 → セッション発行 |
-| POST | `/api/auth/logout` | セッション削除 |
-| GET / PATCH | `/api/me` | 自分の情報 / ユーザーネーム変更 |
-| GET / PUT | `/api/settings` | 週予算・ジャンル割合・人数・曜日別設定・買う調味料 |
-| GET | `/api/recipes?q=&category=&genre=&ingredient=` | 検索（名前・材料） |
-| GET | `/api/recipes/:id` | 詳細 |
-| POST / PUT / DELETE | `/api/recipes`, `/api/recipes/:id` | 自分のレシピのCRUD |
-| POST | `/api/recipes/:id/hide`, `/copy` | システムレシピの非表示 / 複製 |
-| POST | `/api/images` | 画像アップロード（R2、≤5MB、jpeg/png/webp） |
-| GET | `/api/images/:key` | 画像配信（本人のもの、またはシステムのもののみ） |
-| POST | `/api/ai/import-url` | URL → 安全な取得 → 本文抽出 → AI → レシピ下書き（保存はしない） |
-| POST | `/api/ai/import-image` | R2キー → ビジョンAI → レシピ下書き |
-| GET | `/api/today` | 今日の献立（ホーム用。ない場合は生成を促す） |
-| GET | `/api/plans/:weekStart` | 週間献立 + 想定費用 + 予算超過フラグ |
-| POST | `/api/plans/:weekStart/generate` | 週全体を生成 |
-| POST | `/api/plans/:weekStart/days/:date/regenerate` | 1日分を再生成（`{slot?}` で品目単位） |
-| PUT | `/api/plans/:weekStart/days/:date/:slot` | 手動でレシピを指定 / 削除 |
-| POST | `/api/plans/:weekStart/swap` | `{from, to}` で曜日を入れ替え |
-| GET | `/api/shopping/:weekStart` | 買い物リスト（なければ生成） |
-| POST | `/api/shopping/:weekStart/regenerate` | 再生成（チェック状態は名前と単位で引き継ぐ） |
-| POST / PATCH / DELETE | `/api/shopping/items`, `/:id` | 手動追加 / チェック切り替え / 削除 |
+| メソッド              | パス                                           | 内容                                                            |
+| --------------------- | ---------------------------------------------- | --------------------------------------------------------------- |
+| GET                   | `/api/auth/google`                             | state・PKCEをCookieに保存してGoogleへリダイレクト               |
+| GET                   | `/api/auth/google/callback`                    | トークン交換 → ユーザー作成/更新 → セッション発行               |
+| POST                  | `/api/auth/logout`                             | セッション削除                                                  |
+| GET / PATCH           | `/api/me`                                      | 自分の情報 / ユーザーネーム変更                                 |
+| GET / PUT             | `/api/settings`                                | 週予算・ジャンル割合・人数・曜日別設定・買う調味料              |
+| GET                   | `/api/recipes?q=&category=&genre=&ingredient=` | 検索（名前・材料）                                              |
+| GET                   | `/api/recipes/:id`                             | 詳細                                                            |
+| POST / PUT / DELETE   | `/api/recipes`, `/api/recipes/:id`             | 自分のレシピのCRUD                                              |
+| POST                  | `/api/recipes/:id/hide`, `/copy`               | システムレシピの非表示 / 複製                                   |
+| POST                  | `/api/images`                                  | 画像アップロード（R2、≤5MB、jpeg/png/webp）                     |
+| GET                   | `/api/images/:key`                             | 画像配信（本人のもの、またはシステムのもののみ）                |
+| POST                  | `/api/ai/import-url`                           | URL → 安全な取得 → 本文抽出 → AI → レシピ下書き（保存はしない） |
+| POST                  | `/api/ai/import-image`                         | R2キー → ビジョンAI → レシピ下書き                              |
+| GET                   | `/api/today`                                   | 今日の献立（ホーム用。ない場合は生成を促す）                    |
+| GET                   | `/api/plans/:weekStart`                        | 週間献立 + 想定費用 + 予算超過フラグ                            |
+| POST                  | `/api/plans/:weekStart/generate`               | 週全体を生成                                                    |
+| POST                  | `/api/plans/:weekStart/days/:date/regenerate`  | 1日分を再生成（`{slot?}` で品目単位）                           |
+| PUT                   | `/api/plans/:weekStart/days/:date/:slot`       | 手動でレシピを指定 / 削除                                       |
+| POST                  | `/api/plans/:weekStart/swap`                   | `{from, to}` で曜日を入れ替え                                   |
+| GET                   | `/api/shopping/:weekStart`                     | 買い物リスト（なければ生成）                                    |
+| POST                  | `/api/shopping/:weekStart/regenerate`          | 再生成（チェック状態は名前と単位で引き継ぐ）                    |
+| POST / PATCH / DELETE | `/api/shopping/items`, `/:id`                  | 手動追加 / チェック切り替え / 削除                              |
 
 献立を変更したときは、買い物リストに「献立が変わりました・更新」バナーを出す（自動で上書きはしない）。
 
@@ -258,19 +259,19 @@ erDiagram
 
 ## 7. 画面一覧
 
-| ルート | 画面 | 主なアニメーション / スケルトン |
-|---|---|---|
-| `/login` | ガラス調ログイン（Googleボタン） | ブロブ背景、フェードイン |
-| `/onboarding` | ユーザーネーム設定 | 入力欄がせり上がる |
-| `/` | **ホーム＝今日の献立**（挨拶・3品カード・週/買い物への導線） | 挨拶フェード、カードのstagger、スケルトン |
-| `/week` | 週間献立（7日 × 3品、再生成・入れ替え・差し替え） | シャッフル演出、ドラッグで持ち上がる→バネで収まる |
-| `/week/settings` | 曜日別設定・週予算・3分割ジャンルスライダー | つまみに追従するバッジ、割合バーの伸縮 |
-| `/shopping` | 買い物リスト（売り場別、タップ/スワイプでチェック） | チェックマークの描画、購入済みが下へ移動 |
-| `/recipes` | 一覧・検索・フィルタ | stagger、スケルトン |
-| `/recipes/$id` | 詳細（材料・手順・時間・費用） | カードからの共有要素遷移（layoutId） |
-| `/recipes/new`, `/recipes/$id/edit` | 登録・編集フォーム | — |
-| `/recipes/import` | AI取り込み（URL / 撮影・画像選択）→ 確認・編集 | 進行段階つきの解析中スケルトン |
-| `/settings` | ユーザーネーム、人数、買う調味料、ログアウト | スケルトン |
+| ルート                              | 画面                                                         | 主なアニメーション / スケルトン                   |
+| ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------- |
+| `/login`                            | ガラス調ログイン（Googleボタン）                             | ブロブ背景、フェードイン                          |
+| `/onboarding`                       | ユーザーネーム設定                                           | 入力欄がせり上がる                                |
+| `/`                                 | **ホーム＝今日の献立**（挨拶・3品カード・週/買い物への導線） | 挨拶フェード、カードのstagger、スケルトン         |
+| `/week`                             | 週間献立（7日 × 3品、再生成・入れ替え・差し替え）            | シャッフル演出、ドラッグで持ち上がる→バネで収まる |
+| `/week/settings`                    | 曜日別設定・週予算・3分割ジャンルスライダー                  | つまみに追従するバッジ、割合バーの伸縮            |
+| `/shopping`                         | 買い物リスト（売り場別、タップ/スワイプでチェック）          | チェックマークの描画、購入済みが下へ移動          |
+| `/recipes`                          | 一覧・検索・フィルタ                                         | stagger、スケルトン                               |
+| `/recipes/$id`                      | 詳細（材料・手順・時間・費用）                               | カードからの共有要素遷移（layoutId）              |
+| `/recipes/new`, `/recipes/$id/edit` | 登録・編集フォーム                                           | —                                                 |
+| `/recipes/import`                   | AI取り込み（URL / 撮影・画像選択）→ 確認・編集               | 進行段階つきの解析中スケルトン                    |
+| `/settings`                         | ユーザーネーム、人数、買う調味料、ログアウト                 | スケルトン                                        |
 
 下部のフローティングタブ: ホーム / 週間献立 / 買い物 / レシピ / 設定（週間の設定は「週間献立」から開く）。
 
