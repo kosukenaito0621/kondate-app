@@ -294,7 +294,7 @@ export function RecipeForm({
         >
           <AnimatePresence initial={false}>
             {v.ingredients.map((i, idx) => (
-              <Reorder.Item
+              <HandleItem
                 key={i.key}
                 value={i}
                 initial={{ opacity: 0, height: 0 }}
@@ -303,71 +303,79 @@ export function RecipeForm({
                 whileDrag={{ scale: 1.03, boxShadow: '0 12px 30px -12px rgb(0 0 0 / 0.35)' }}
                 className="groove flex flex-col gap-2 rounded-2xl p-2"
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="cursor-grab touch-none p-1 text-ink-faint" aria-hidden="true">
-                    <GripIcon size={18} />
-                  </span>
-                  <input
-                    aria-label={`材料${idx + 1}の名前`}
-                    list={listId}
-                    value={i.name}
-                    onChange={(e) => updateIngredient(i.key, { name: e.target.value })}
-                    onBlur={(e) => {
-                      const name = normalizeIngredientName(e.target.value);
-                      const section = sectionOf(name);
-                      updateIngredient(i.key, { name, ...(section && { section }) });
-                    }}
-                    placeholder="材料名"
-                    className="field min-h-11 min-w-0 flex-[1.4] rounded-xl px-3"
-                  />
-                  <input
-                    aria-label={`材料${idx + 1}の分量`}
-                    value={i.amount}
-                    onChange={(e) => updateIngredient(i.key, { amount: e.target.value })}
-                    placeholder="分量"
-                    className="field num min-h-11 min-w-0 flex-1 rounded-xl px-3"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      set(
-                        'ingredients',
-                        v.ingredients.filter((x) => x.key !== i.key),
-                      )
-                    }
-                    className="grid size-11 shrink-0 place-items-center text-ink-soft"
-                    aria-label={`材料${idx + 1}を削除`}
-                  >
-                    <TrashIcon size={18} />
-                  </button>
-                </div>
-                <div className="ml-8 flex items-center gap-2">
-                  <input
-                    aria-label={`材料${idx + 1}のグループ`}
-                    list={groupListId}
-                    value={i.group}
-                    onChange={(e) => updateIngredient(i.key, { group: e.target.value })}
-                    placeholder="グループ"
-                    maxLength={20}
-                    className="field min-h-9 w-24 rounded-full px-3 text-xs"
-                  />
-                  <select
-                    aria-label={`材料${idx + 1}の区分`}
-                    value={i.section}
-                    onChange={(e) =>
-                      updateIngredient(i.key, { section: e.target.value as Section })
-                    }
-                    className="min-h-9 min-w-0 rounded-full bg-transparent px-2 text-xs text-ink-soft"
-                  >
-                    {SECTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {SECTION_LABEL[s]}
-                        {s === 'seasoning' ? '（買い物リストに出さない）' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </Reorder.Item>
+                {(startDrag) => (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        onPointerDown={startDrag}
+                        className="-m-1 grid size-9 shrink-0 cursor-grab touch-none place-items-center text-ink-faint active:cursor-grabbing"
+                        aria-hidden="true"
+                      >
+                        <GripIcon size={18} />
+                      </span>
+                      <input
+                        aria-label={`材料${idx + 1}の名前`}
+                        list={listId}
+                        value={i.name}
+                        onChange={(e) => updateIngredient(i.key, { name: e.target.value })}
+                        onBlur={(e) => {
+                          const name = normalizeIngredientName(e.target.value);
+                          const section = sectionOf(name);
+                          updateIngredient(i.key, { name, ...(section && { section }) });
+                        }}
+                        placeholder="材料名"
+                        className="field min-h-11 min-w-0 flex-[1.4] rounded-xl px-3"
+                      />
+                      <input
+                        aria-label={`材料${idx + 1}の分量`}
+                        value={i.amount}
+                        onChange={(e) => updateIngredient(i.key, { amount: e.target.value })}
+                        placeholder="分量"
+                        className="field num min-h-11 min-w-0 flex-1 rounded-xl px-3"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          set(
+                            'ingredients',
+                            v.ingredients.filter((x) => x.key !== i.key),
+                          )
+                        }
+                        className="grid size-11 shrink-0 place-items-center text-ink-soft"
+                        aria-label={`材料${idx + 1}を削除`}
+                      >
+                        <TrashIcon size={18} />
+                      </button>
+                    </div>
+                    <div className="ml-8 flex items-center gap-2">
+                      <input
+                        aria-label={`材料${idx + 1}のグループ`}
+                        list={groupListId}
+                        value={i.group}
+                        onChange={(e) => updateIngredient(i.key, { group: e.target.value })}
+                        placeholder="グループ"
+                        maxLength={20}
+                        className="field min-h-9 w-24 rounded-full px-3 text-xs"
+                      />
+                      <select
+                        aria-label={`材料${idx + 1}の区分`}
+                        value={i.section}
+                        onChange={(e) =>
+                          updateIngredient(i.key, { section: e.target.value as Section })
+                        }
+                        className="min-h-9 min-w-0 rounded-full bg-transparent px-2 text-xs text-ink-soft"
+                      >
+                        {SECTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {SECTION_LABEL[s]}
+                            {s === 'seasoning' ? '（買い物リストに出さない）' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </HandleItem>
             ))}
           </AnimatePresence>
         </Reorder.Group>
@@ -676,6 +684,27 @@ function StepEditor({
           <TrashIcon size={18} />
         </button>
       </div>
+    </Reorder.Item>
+  );
+}
+
+/**
+ * つまみ（startDrag を渡した要素）を持ったときだけ並べ替えられる行。
+ * 行のどこでもドラッグできると、スクロールしただけで並びが変わってしまうため
+ */
+function HandleItem<T>({
+  children,
+  ...props
+}: Omit<
+  React.ComponentProps<typeof Reorder.Item<T>>,
+  'children' | 'dragListener' | 'dragControls'
+> & {
+  children: (startDrag: (e: React.PointerEvent) => void) => React.ReactNode;
+}) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item {...props} dragListener={false} dragControls={controls}>
+      {children((e) => controls.start(e))}
     </Reorder.Item>
   );
 }
