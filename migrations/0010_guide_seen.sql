@@ -1,0 +1,1 @@
+ALTER TABLE `user_settings` ADD `guide_seen_at` integer;

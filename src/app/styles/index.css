@@ -90,6 +90,11 @@ body {
   border-radius: 12px;
 }
 
+/* 読み上げ位置を移すためだけにフォーカスする要素（見出しなど）には枠を出さない */
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background: var(--accent-soft);
 }

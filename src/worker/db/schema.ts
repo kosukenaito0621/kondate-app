@@ -51,6 +51,8 @@ export const userSettings = sqliteTable('user_settings', {
   theme: text('theme').notNull().default('ichigo'),
   /** 未選択（オンボーディング前）は NULL */
   cookingLevel: text('cooking_level', { enum: LEVEL }),
+  /** 使い方ガイドを最後まで見た（またはスキップした）時刻。NULL なら初回に表示する */
+  guideSeenAt: integer('guide_seen_at'),
 });
 
 /** 家庭（グループ）。献立・設定・買い物リスト・独自レシピを共有する単位 */

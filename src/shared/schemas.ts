@@ -12,7 +12,13 @@ export const themeSchema = z.enum(THEME_IDS);
 export const cookingLevelSchema = z.enum(COOKING_LEVELS);
 
 export const updateMeSchema = z
-  .object({ displayName: displayNameSchema, theme: themeSchema, cookingLevel: cookingLevelSchema })
+  .object({
+    displayName: displayNameSchema,
+    theme: themeSchema,
+    cookingLevel: cookingLevelSchema,
+    /** 使い方ガイドを見終えた */
+    guideSeen: z.literal(true),
+  })
   .partial()
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
     message: '変更する項目がありません',
@@ -28,6 +34,8 @@ export type GroupSummary = {
 };
 
 export type Me = {
+  /** 使い方ガイドを見終えたか（初回ログイン時に表示する） */
+  guideSeen: boolean;
   id: string;
   email: string;
   displayName: string | null;

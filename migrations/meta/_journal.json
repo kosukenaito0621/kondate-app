@@ -71,6 +71,13 @@
       "when": 1792373966791,
       "tag": "0009_group_name_table",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792374845465,
+      "tag": "0010_guide_seen",
+      "breakpoints": true
     }
   ]
 }

@@ -240,7 +240,7 @@ function ShoppingPage() {
           {data.excludedSeasonings.length > 0 && (
             <GlassCard padding="md" className="mt-2">
               <p className="text-xs font-bold text-ink-soft">家にある前提で除いたもの</p>
-              <p className="mt-0.5 text-[11px] text-ink-faint">
+              <p className="mt-0.5 text-[11px] text-ink-soft">
                 切らしているものはタップするとリストに入ります（次回以降も）
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">

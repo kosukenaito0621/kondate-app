@@ -77,7 +77,7 @@ describe('マイグレーション: グループ化', () => {
 
     // 個人設定は残り、共有設定の列は消える
     expect(await q(`select * from user_settings`)).toEqual([
-      { user_id: 'u1', theme: 'midnight', cooking_level: null },
+      { user_id: 'u1', theme: 'midnight', cooking_level: null, guide_seen_at: null },
     ]);
 
     // 曜日設定はグループへ

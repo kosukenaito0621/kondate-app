@@ -11,13 +11,18 @@ import type { AppEnv } from '../types';
 
 export async function loadMe(db: Db, userId: string): Promise<Me> {
   const row = await db
-    .select({ user: users, theme: userSettings.theme, level: userSettings.cookingLevel })
+    .select({
+      user: users,
+      theme: userSettings.theme,
+      level: userSettings.cookingLevel,
+      guideSeenAt: userSettings.guideSeenAt,
+    })
     .from(users)
     .leftJoin(userSettings, eq(userSettings.userId, users.id))
     .where(eq(users.id, userId))
     .get();
   if (!row) throw new Error('user not found');
-  const { user, theme, level } = row;
+  const { user, theme, level, guideSeenAt } = row;
   const currentGroupId = await ensureCurrentGroup(db, user.id, user.displayName);
   return {
     id: user.id,
@@ -26,6 +31,7 @@ export async function loadMe(db: Db, userId: string): Promise<Me> {
     avatarUrl: user.avatarUrl,
     theme: isThemeId(theme) ? theme : DEFAULT_THEME,
     cookingLevel: level ?? null,
+    guideSeen: guideSeenAt != null,
     currentGroupId,
     groups: await listGroupsOf(db, user.id),
   };
@@ -35,7 +41,7 @@ export const meRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .get('/', async (c) => c.json(await loadMe(c.var.db, c.var.user.id)))
   .patch('/', zValidator('json', updateMeSchema), async (c) => {
-    const { displayName, theme, cookingLevel } = c.req.valid('json');
+    const { displayName, theme, cookingLevel, guideSeen } = c.req.valid('json');
     const db = c.var.db;
     const user = c.var.user;
 
@@ -69,8 +75,12 @@ export const meRoutes = new Hono<AppEnv>()
         }
       }
     }
-    if (theme !== undefined || cookingLevel !== undefined) {
-      const set = { ...(theme && { theme }), ...(cookingLevel && { cookingLevel }) };
+    if (theme !== undefined || cookingLevel !== undefined || guideSeen) {
+      const set = {
+        ...(theme && { theme }),
+        ...(cookingLevel && { cookingLevel }),
+        ...(guideSeen && { guideSeenAt: Date.now() }),
+      };
       await db
         .insert(userSettings)
         .values({ userId: user.id, ...set })
