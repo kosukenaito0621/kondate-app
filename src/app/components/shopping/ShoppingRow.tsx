@@ -97,7 +97,7 @@ export function ShoppingRow({
             <span
               className={cn(
                 'truncate font-bold transition-colors',
-                item.checked && 'text-ink-faint line-through decoration-2',
+                item.checked && 'text-ink-soft line-through decoration-2',
               )}
             >
               {item.name}
@@ -105,16 +105,16 @@ export function ShoppingRow({
             <span
               className={cn(
                 'num shrink-0 text-sm',
-                item.checked ? 'text-ink-faint' : 'text-ink-soft',
+                item.checked ? 'text-ink-soft' : 'text-ink-soft',
               )}
             >
               {lineAmount(item)}
             </span>
           </div>
           {item.sources.length > 0 && (
-            <p className="truncate text-[11px] text-ink-faint">{item.sources.join('・')}</p>
+            <p className="truncate text-[11px] text-ink-soft">{item.sources.join('・')}</p>
           )}
-          {item.isManual && <p className="text-[11px] text-ink-faint">手で追加</p>}
+          {item.isManual && <p className="text-[11px] text-ink-soft">手で追加</p>}
         </div>
         {item.checked && item.checkedBy && (
           <span title={`${item.checkedBy.name ?? ''}さんがチェック`}>

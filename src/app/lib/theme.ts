@@ -1,4 +1,5 @@
 import { DEFAULT_THEME, isThemeId, THEMES, type ThemeId } from '../../shared/themes';
+import { ensureFonts } from './fonts';
 
 const STORAGE_KEY = 'kd_theme';
 
@@ -20,6 +21,8 @@ export function currentTheme(): ThemeId {
 function setThemeAttributes(id: ThemeId) {
   const root = document.documentElement;
   root.dataset.theme = id;
+  const series = THEMES.find((t) => t.id === id)?.series;
+  if (series) ensureFonts(series);
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   const color = THEMES.find((t) => t.id === id)?.metaColor;
   if (meta && color) meta.content = color;

@@ -4,24 +4,54 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#FFF8F3" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <meta name="apple-mobile-web-app-title" content="こんだて" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="description" content="1週間の献立と買い物リストを、かんたんに。" />
-    <script>
-      // 描画前に記憶済みのテーマを当てて、色のちらつきを防ぐ
-      try {
-        var t = localStorage.getItem('kd_theme');
-        if (t && /^[a-z]+$/.test(t)) document.documentElement.dataset.theme = t;
-      } catch (e) {}
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Nunito:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Outfit:wght@500;600;700&display=swap"
-    />
+    <script>
+      // 描画前に記憶済みのテーマを当てて、色のちらつきを防ぐ
+      // フォントはテーマのシリーズに合う分だけ、描画を止めずに読む（src/app/lib/fonts.ts と合わせる）
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem('kd_theme');
+          if (t && /^[a-z]+$/.test(t)) document.documentElement.dataset.theme = t;
+        } catch (e) {}
+        var cool = /^(midnight|graphite|forest|bordeaux)$/.test(t || '');
+        var f = document.createElement('link');
+        f.rel = 'stylesheet';
+        f.dataset.fonts = cool ? 'cool' : 'pastel';
+        f.href = cool
+          ? 'https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&display=swap'
+          : 'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Nunito:wght@600;700;800&display=swap';
+        document.head.appendChild(f);
+      })();
+    </script>
+    <style>
+      /* JS が届くまでのあいだ、アイコンだけ先に出す（React の描画で置き換わる） */
+      .boot {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+      }
+      .boot img {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+        box-shadow: 0 12px 32px -12px rgb(194 85 122 / 0.45);
+      }
+    </style>
     <title>こんだて</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" aria-busy="true"><img src="/icon.svg" alt="こんだて" /></div>
+    </div>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

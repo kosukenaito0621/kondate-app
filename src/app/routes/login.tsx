@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { z } from 'zod';
 import { GlassCard } from '../components/glass/GlassCard';
 import { GoogleLogo } from '../components/icons';
 import { meQuery } from '../lib/auth';
+import { compact, optString } from '../lib/search';
 import { riseItem, spring, staggerContainer } from '../lib/motion';
 
 /** アプリ内の相対パスだけを戻り先にする */
@@ -18,7 +18,8 @@ const ERRORS: Record<string, string> = {
 };
 
 export const Route = createFileRoute('/login')({
-  validateSearch: z.object({ error: z.string().optional(), next: z.string().optional() }),
+  validateSearch: (s: Record<string, unknown>) =>
+    compact({ error: optString(s.error, 50), next: optString(s.next, 500) }),
   beforeLoad: async ({ context, search }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (me) throw redirect({ href: safeNext(search.next) });

@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion, Reorder } from 'motion/react';
 import { useMemo, useState } from 'react';
-import { z } from 'zod';
 import { addDays, isIsoDate, toJstDate, weekStartOf } from '../../../shared/date';
 import type { PlanDayView } from '../../../shared/plan';
 import { GlassButton } from '../../components/glass/GlassButton';
@@ -15,10 +14,12 @@ import { BudgetBar } from '../../components/week/BudgetBar';
 import { DayCard } from '../../components/week/DayCard';
 import { DaySheet, MealSheet, type MealTarget } from '../../components/week/MealSheets';
 import { planQuery, usePlanMutation } from '../../lib/plans';
+import { compact, optString } from '../../lib/search';
 import { spring } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/week')({
-  validateSearch: z.object({ w: z.string().refine(isIsoDate).optional() }),
+  validateSearch: (s: Record<string, unknown>) =>
+    compact({ w: [optString(s.w)].find((w) => w !== undefined && isIsoDate(w)) }),
   component: WeekPage,
 });
 

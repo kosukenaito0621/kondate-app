@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
-import { z } from 'zod';
 import { CATEGORY_LABEL } from '../../../shared/constants';
 import type { CookLogEntry } from '../../../shared/cooklog';
 import { toJstDate, weekdayIndex, WEEKDAY_LABELS } from '../../../shared/date';
@@ -19,15 +18,11 @@ import { RecipeListSkeleton } from '../../components/skeleton/Skeletons';
 import { useToast } from '../../components/toast/Toaster';
 import { monthLogsQuery } from '../../lib/cooklog';
 import { imageUrl } from '../../lib/images';
+import { compact, optMatch } from '../../lib/search';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/log')({
-  validateSearch: z.object({
-    m: z
-      .string()
-      .regex(/^\d{4}-\d{2}$/)
-      .optional(),
-  }),
+  validateSearch: (s: Record<string, unknown>) => compact({ m: optMatch(s.m, /^\d{4}-\d{2}$/) }),
   component: LogPage,
 });
 

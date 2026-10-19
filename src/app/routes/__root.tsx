@@ -2,6 +2,7 @@ import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { MotionConfig } from 'motion/react';
 import { useEffect } from 'react';
+import { AppStatus } from '../components/AppStatus';
 import { Blobs } from '../components/glass/Blobs';
 import { Toaster } from '../components/toast/Toaster';
 import { meQuery } from '../lib/auth';
@@ -26,6 +27,7 @@ function Root() {
         <div className="mx-auto min-h-dvh max-w-[var(--app-max-width)]">
           <Outlet />
         </div>
+        <AppStatus />
       </Toaster>
     </MotionConfig>
   );

@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'motion/react';
+import { useEffect } from 'react';
 import { SERIES_LABEL, THEMES, type ThemeId, type ThemeSeries } from '../../shared/themes';
 import { api } from '../api';
 import { meQuery } from '../lib/auth';
 import { cn } from '../lib/cn';
 import { spring } from '../lib/motion';
+import { ensureFonts } from '../lib/fonts';
 import { applyTheme, currentTheme } from '../lib/theme';
 import { CheckDraw } from './icons';
 
@@ -12,6 +14,11 @@ const SERIES: ThemeSeries[] = ['pastel', 'cool'];
 
 /** 気分で選べるテーマカラー。タップした瞬間に切り替え、裏でアカウントに保存 */
 export function ThemePicker({ value }: { value: ThemeId }) {
+  // 見本を各シリーズの書体で見せる
+  useEffect(() => {
+    ensureFonts('pastel');
+    ensureFonts('cool');
+  }, []);
   const queryClient = useQueryClient();
 
   const save = useMutation({

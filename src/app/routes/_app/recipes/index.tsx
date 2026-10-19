@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { z } from 'zod';
 import { CATEGORIES, CATEGORY_LABEL, GENRES, GENRE_LABEL } from '../../../../shared/constants';
 import { COOKING_LEVELS, LEVEL_META } from '../../../../shared/levels';
 import { FilterChips } from '../../../components/FilterChips';
@@ -11,18 +10,20 @@ import { PageHeader } from '../../../components/PageHeader';
 import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
 import { spring, staggerContainer } from '../../../lib/motion';
+import { compact, optOneOf, optString } from '../../../lib/search';
 import { recipesQuery } from '../../../lib/recipes';
 
-const searchSchema = z.object({
-  q: z.string().optional(),
-  category: z.enum(CATEGORIES).optional(),
-  genre: z.enum(GENRES).optional(),
-  difficulty: z.enum(COOKING_LEVELS).optional(),
-  mine: z.literal('1').optional(),
-});
+const validateSearch = (s: Record<string, unknown>) =>
+  compact({
+    q: optString(s.q, 50),
+    category: optOneOf(s.category, CATEGORIES),
+    genre: optOneOf(s.genre, GENRES),
+    difficulty: optOneOf(s.difficulty, COOKING_LEVELS),
+    mine: optOneOf(s.mine, ['1'] as const),
+  });
 
 export const Route = createFileRoute('/_app/recipes/')({
-  validateSearch: searchSchema,
+  validateSearch,
   component: RecipeList,
 });
 

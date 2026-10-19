@@ -10,8 +10,12 @@
 [data-theme='lavender'],
 [data-theme='sakura'] {
   color-scheme: light;
-  --font-body: 'Zen Maru Gothic', 'Noto Sans JP', system-ui, sans-serif;
-  --font-number: 'Nunito', 'Zen Maru Gothic', system-ui, sans-serif;
+  --font-body:
+    'Zen Maru Gothic', system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic UI', Meiryo, sans-serif;
+  --font-number:
+    'Nunito', 'Zen Maru Gothic', system-ui, -apple-system, 'Hiragino Sans',
+    'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', Meiryo, sans-serif;
 
   --glass-1: rgb(255 255 255 / 0.74);
   --glass-2: rgb(255 255 255 / 0.5);
@@ -122,8 +126,12 @@
 [data-theme='forest'],
 [data-theme='bordeaux'] {
   color-scheme: dark;
-  --font-body: 'Noto Sans JP', system-ui, sans-serif;
-  --font-number: 'Outfit', 'Noto Sans JP', system-ui, sans-serif;
+  --font-body:
+    system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', Meiryo,
+    sans-serif;
+  --font-number:
+    'Outfit', system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
+    'Yu Gothic UI', Meiryo, sans-serif;
 
   --glass-1: rgb(255 255 255 / 0.11);
   --glass-2: rgb(255 255 255 / 0.05);

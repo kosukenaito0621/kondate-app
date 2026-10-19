@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useState } from 'react';
-import { z } from 'zod';
 import { SECTIONS, SECTION_LABEL } from '../../../shared/constants';
 import { addDays, isIsoDate, toJstDate, weekStartOf } from '../../../shared/date';
 import type { ShoppingItemView } from '../../../shared/shopping';
@@ -14,10 +13,12 @@ import { PageHeader } from '../../components/PageHeader';
 import { ShoppingRow } from '../../components/shopping/ShoppingRow';
 import { ShoppingSkeleton } from '../../components/skeleton/Skeletons';
 import { spring } from '../../lib/motion';
+import { compact, optString } from '../../lib/search';
 import { shoppingQuery, useShoppingActions } from '../../lib/shopping';
 
 export const Route = createFileRoute('/_app/shopping')({
-  validateSearch: z.object({ w: z.string().refine(isIsoDate).optional() }),
+  validateSearch: (s: Record<string, unknown>) =>
+    compact({ w: [optString(s.w)].find((w) => w !== undefined && isIsoDate(w)) }),
   component: ShoppingPage,
 });
 

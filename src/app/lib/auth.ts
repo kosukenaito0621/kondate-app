@@ -14,7 +14,12 @@ export const meQuery = queryOptions({
   staleTime: 5 * 60_000,
 });
 
+/** オフライン用に端末へ保存した API の応答と写真（サービスワーカーのキャッシュ名は vite.config.ts と合わせる） */
+const PRIVATE_CACHES = ['kd-api', 'kd-images'];
+
 export async function logout() {
   await api.auth.logout.$post();
+  // 共用の端末で、前の人の献立や写真が残らないようにする
+  if ('caches' in window) await Promise.all(PRIVATE_CACHES.map((n) => caches.delete(n)));
   window.location.href = '/login';
 }

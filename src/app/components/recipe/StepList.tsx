@@ -40,7 +40,7 @@ export function StepTimerButton({ text, label }: { text: string; label: string }
     <motion.button
       type="button"
       onClick={() => start(label, minutes)}
-      aria-label={`${minutes}分のタイマーを開始`}
+      aria-label={`${minutes}分タイマーを開始`}
       whileTap={{ scale: 0.92 }}
       transition={spring.snappy}
       className="glass sheen mt-2.5 inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-bold text-accent-strong"

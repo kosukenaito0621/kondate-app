@@ -170,7 +170,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
           >
             <span>
               <span className="block font-bold">ゆっくりモードで作る</span>
-              <span className="block text-xs opacity-80">1ステップずつ大きく表示します</span>
+              <span className="block text-xs">1ステップずつ大きく表示します</span>
             </span>
           </motion.button>
         )}

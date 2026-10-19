@@ -20,7 +20,8 @@
     "db:seed:build": "tsx seed/build-seed-sql.ts",
     "db:seed:local": "npm run db:seed:build && wrangler d1 execute DB --local --file seed/seed.sql",
     "db:seed:remote": "npm run db:seed:build && wrangler d1 execute DB --remote --file seed/seed.sql",
-    "seed:preview": "tsx seed/preview-html.ts"
+    "seed:preview": "tsx seed/preview-html.ts",
+    "pwa:assets": "pwa-assets-generator"
   },
   "dependencies": {
     "@hono/zod-validator": "0.9.1",
@@ -42,6 +43,7 @@
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@vite-pwa/assets-generator": "2.0.0",
     "@vitejs/plugin-react": "6.1.2",
     "drizzle-kit": "0.31.11",
     "eslint": "10.13.0",
@@ -53,7 +55,9 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.4",
+    "vite-plugin-pwa": "2.0.0",
     "vitest": "4.1.12",
+    "workbox-window": "7.4.1",
     "wrangler": "4.151.1"
   },
   "allowScripts": {
