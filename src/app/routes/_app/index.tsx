@@ -24,6 +24,8 @@ import { HomeSkeleton } from '../../components/skeleton/Skeletons';
 import { greeting } from '../../lib/greeting';
 import { fadeIn, riseItem, spring, staggerContainer } from '../../lib/motion';
 import { usePlanMutation } from '../../lib/plans';
+import { DAY_MODE_LABEL, isOffDay, type DayMode } from '../../../shared/plan';
+import { DayModeIcon } from '../../components/week/DayModeIcon';
 import { ok } from '../../lib/recipes';
 
 type Today = {
@@ -61,6 +63,8 @@ function Home() {
         hour,
         weekday,
         hasPlan: !!data?.day.items.length,
+        offDay:
+          data && isOffDay(data.day.mode) ? (data.day.mode as 'eat_out' | 'takeout') : undefined,
         mainDish,
         timeLevel: data?.day.timeLevel,
         budgetLevel: data?.day.budgetLevel,
@@ -98,6 +102,8 @@ function Home() {
 
       {isPending || !data ? (
         <HomeSkeleton />
+      ) : isOffDay(data.day.mode) ? (
+        <OffToday weekStart={data.weekStart} date={data.day.date} mode={data.day.mode} />
       ) : data.day.items.length === 0 ? (
         <EmptyToday weekStart={data.weekStart} />
       ) : (
@@ -236,6 +242,36 @@ function EmptyToday({ weekStart }: { weekStart: string }) {
         }
       >
         今週の献立をつくる
+      </GlassButton>
+      <Link to="/week" className="min-h-11 text-sm font-bold text-accent-strong">
+        週間献立を見る
+      </Link>
+    </GlassCard>
+  );
+}
+
+/** 外食・テイクアウトの日：料理はお休み。やっぱり作るときは献立を作る */
+function OffToday({ weekStart, date, mode }: { weekStart: string; date: string; mode: DayMode }) {
+  const mutation = usePlanMutation(weekStart);
+  return (
+    <GlassCard
+      variants={riseItem}
+      initial="initial"
+      animate="animate"
+      padding="lg"
+      className="flex flex-col items-center gap-3 py-9 text-center"
+    >
+      <span className="grid size-16 place-items-center rounded-full bg-sub-soft text-sub-ink">
+        <DayModeIcon mode={mode} size={30} />
+      </span>
+      <p className="text-lg font-bold">今日は{DAY_MODE_LABEL[mode]}の日です</p>
+      <p className="text-sm text-ink-soft">料理はお休み。献立と買い物リストには入っていません。</p>
+      <GlassButton
+        icon={<CutleryIcon size={18} />}
+        loading={mutation.isPending}
+        onClick={() => mutation.mutate({ type: 'mode', date, mode: 'cook' })}
+      >
+        やっぱり作る
       </GlassButton>
       <Link to="/week" className="min-h-11 text-sm font-bold text-accent-strong">
         週間献立を見る

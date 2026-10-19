@@ -99,6 +99,13 @@
       "when": 1792386581221,
       "tag": "0013_news_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1792391351672,
+      "tag": "0014_day_modes",
+      "breakpoints": true
     }
   ]
 }

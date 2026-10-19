@@ -125,7 +125,7 @@ const ownedBy = (groupId: string, id: string) =>
 export const recipeRoutes = new Hono<AppEnv>()
   .use(requireAuth, requireGroup)
   .get('/', zValidator('query', recipeQuerySchema), async (c) => {
-    const { q, category, genre, difficulty, mine } = c.req.valid('query');
+    const { q, category, genre, difficulty, mine, season } = c.req.valid('query');
     const groupId = c.var.group.id;
     const conds: SQL[] = [
       mine ? eq(recipes.groupId, groupId) : visibleTo(groupId),
@@ -134,6 +134,9 @@ export const recipeRoutes = new Hono<AppEnv>()
     if (category) conds.push(eq(recipes.category, category));
     if (genre) conds.push(eq(recipes.genre, genre));
     if (difficulty) conds.push(eq(recipes.difficulty, difficulty));
+    if (season) {
+      conds.push(sql`exists (select 1 from json_each(${recipes.seasons}) where value = ${season})`);
+    }
     if (q) {
       const like = `%${q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`;
       const ing = `%${normalizeIngredientName(q).replace(/[%_\\]/g, (m) => `\\${m}`)}%`;

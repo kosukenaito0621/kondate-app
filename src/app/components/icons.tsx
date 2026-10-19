@@ -227,3 +227,17 @@ export const BellIcon = (p: IconProps) => (
     <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16ZM10 20.5a2 2 0 0 0 4 0" />
   </Icon>
 );
+
+/** 外食（お店） */
+export const StoreIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9.5 5.5 4h13L20 9.5M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5 12v8h14v-8M10 20v-5h4v5" />
+  </Icon>
+);
+
+/** テイクアウト（持ち帰りの袋） */
+export const BagIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5.5 8h13l-1 12.5h-11L5.5 8ZM9 8V6.5a3 3 0 0 1 6 0V8" />
+  </Icon>
+);

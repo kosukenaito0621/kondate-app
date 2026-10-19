@@ -22,6 +22,7 @@ export async function loadSettings(db: Db, groupId: string): Promise<PlanSetting
       timeLevel: r?.timeLevel ?? 'normal',
       sideMode: r?.sideMode ?? 'auto',
       level: r?.level ?? 'inherit',
+      mode: r?.mode ?? 'cook',
     } as const;
   });
   return {

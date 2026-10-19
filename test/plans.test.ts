@@ -183,3 +183,87 @@ describe('献立API', () => {
     expect(res.day.items).toEqual([]);
   });
 });
+
+describe('外食・テイクアウトの日', () => {
+  const dateOf = (v: PlanView, weekday: number) => v.days.find((d) => d.weekday === weekday)!.date;
+
+  it('曜日の設定で外食にした日は献立を作らず、買い物リストにも入らない', async () => {
+    const u = await login(`off-${crypto.randomUUID()}`);
+    const s = await json<PlanSettings>(await api(u, '/api/settings'));
+    const days = s.days.map((d) => (d.weekday === 4 ? { ...d, mode: 'eat_out' as const } : d));
+    await api(u, '/api/settings', { method: 'PUT', json: { days } });
+
+    const v = await generate(u);
+    const fri = v.days.find((d) => d.weekday === 4)!;
+    expect(fri).toMatchObject({ mode: 'eat_out', modeSetting: 'eat_out', items: [] });
+    expect(v.days.filter((d) => d.weekday !== 4).every((d) => d.items.length >= 2)).toBe(true);
+
+    const shop = await json<{ items: { sources: string[] }[] }>(
+      await api(u, `/api/shopping/${WEEK}`),
+    );
+    expect(shop.items.length).toBeGreaterThan(0);
+  });
+
+  it('あとから1日だけテイクアウトにしたり、料理する日に戻したりできる', async () => {
+    const u = await login(`off2-${crypto.randomUUID()}`);
+    const v = await generate(u);
+    const wed = dateOf(v, 2);
+
+    const off = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/days/${wed}/mode`, {
+        method: 'PUT',
+        json: { version: v.version, mode: 'takeout' },
+      }),
+    );
+    const offWed = off.days.find((d) => d.date === wed)!;
+    expect(offWed).toMatchObject({ mode: 'takeout', modeSetting: 'cook', items: [] });
+    expect(off.estimatedCost).toBeLessThan(v.estimatedCost);
+
+    // 週を作り直しても、その週の予定の変更は残る
+    const again = await generate(u, off.version);
+    expect(again.days.find((d) => d.date === wed)).toMatchObject({ mode: 'takeout', items: [] });
+
+    const back = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/days/${wed}/mode`, {
+        method: 'PUT',
+        json: { version: again.version, mode: 'cook' },
+      }),
+    );
+    const backWed = back.days.find((d) => d.date === wed)!;
+    expect(backWed.mode).toBe('cook');
+    expect(backWed.items.map((i) => i.slot)).toContain('main');
+  });
+
+  it('曜日を入れ替えると、外食の予定も一緒に入れ替わる', async () => {
+    const u = await login(`off3-${crypto.randomUUID()}`);
+    const v = await generate(u);
+    const [mon, fri] = [dateOf(v, 0), dateOf(v, 4)];
+    const off = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/days/${fri}/mode`, {
+        method: 'PUT',
+        json: { version: v.version, mode: 'eat_out' },
+      }),
+    );
+    const monItems = off.days.find((d) => d.date === mon)!.items.map((i) => i.recipe.id);
+    const swapped = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/swap`, {
+        method: 'POST',
+        json: { version: off.version, from: mon, to: fri },
+      }),
+    );
+    expect(swapped.days.find((d) => d.date === mon)).toMatchObject({ mode: 'eat_out', items: [] });
+    const friAfter = swapped.days.find((d) => d.date === fri)!;
+    expect(friAfter.mode).toBe('cook');
+    expect(friAfter.items.map((i) => i.recipe.id)).toEqual(monItems);
+  });
+
+  it('古い版からの変更は 409', async () => {
+    const u = await login(`off4-${crypto.randomUUID()}`);
+    const v = await generate(u);
+    const res = await api(u, `/api/plans/${WEEK}/days/${dateOf(v, 1)}/mode`, {
+      method: 'PUT',
+      json: { version: v.version - 1, mode: 'eat_out' },
+    });
+    expect(res.status).toBe(409);
+  });
+});

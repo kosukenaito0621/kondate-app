@@ -223,6 +223,13 @@ function WeekPage() {
         days={plan?.days ?? []}
         busy={mutation.isPending}
         onClose={() => setDaySheet(null)}
+        onMode={(mode) =>
+          daySheet &&
+          mutation.mutate(
+            { type: 'mode', date: daySheet.date, mode },
+            { onSuccess: () => setDaySheet(null) },
+          )
+        }
         onRegenerateDay={() =>
           daySheet &&
           mutation.mutate(

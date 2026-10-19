@@ -219,3 +219,19 @@ describe('レシピAPI', () => {
     });
   });
 });
+
+describe('季節で絞り込む', () => {
+  it('その季節が旬・季節限定のレシピだけを返す', async () => {
+    const u = await login(`season-filter-${crypto.randomUUID()}`);
+    const summer = (await (await api(u, '/api/recipes?season=summer')).json()) as RecipeSummary[];
+    expect(summer.length).toBeGreaterThan(0);
+    expect(summer.every((r) => r.seasons.includes('summer'))).toBe(true);
+    expect(summer.map((r) => r.name)).toContain('冷やし中華');
+    const winterMain = (await (
+      await api(u, '/api/recipes?season=winter&category=main')
+    ).json()) as RecipeSummary[];
+    expect(winterMain.map((r) => r.name)).toEqual(expect.arrayContaining(['おでん', '寄せ鍋']));
+    expect(winterMain.every((r) => r.category === 'main')).toBe(true);
+    expect((await api(u, '/api/recipes?season=rainy')).status).toBe(400);
+  });
+});

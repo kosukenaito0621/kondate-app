@@ -12,6 +12,8 @@ export type GreetingContext = {
   budgetLevel?: 'save' | 'normal' | 'rich';
   level?: 'futaba' | 'minori';
   hasPlan: boolean;
+  /** 外食・テイクアウトの日 */
+  offDay?: 'eat_out' | 'takeout';
   /** 同じ日・同じ時間帯なら同じ文言にするための種 */
   seed: number;
 };
@@ -70,7 +72,13 @@ export function greeting(ctx: GreetingContext): { title: string; line: string } 
   const title = pick(TITLES[band], rng)(ctx.name);
 
   const lines: string[] = [];
-  if (!ctx.hasPlan) {
+  if (ctx.offDay) {
+    lines.push(
+      ctx.offDay === 'eat_out'
+        ? '今日は外食の日。料理はお休みして、ゆっくり楽しみましょう'
+        : '今日はテイクアウトの日。料理はお休みです',
+    );
+  } else if (!ctx.hasPlan) {
     lines.push('まだ今日の献立がありません。1週間分をまとめて作りましょう');
   } else {
     if (ctx.timeLevel === 'quick') lines.push('今日は時短デーです。20分以内で作れるメニューです');

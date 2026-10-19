@@ -10,6 +10,8 @@ import { GenreBadge } from '../GenreBadge';
 import { GlassButton } from '../glass/GlassButton';
 import { Sheet } from '../glass/Sheet';
 import { ClockIcon, SearchIcon, YenIcon } from '../icons';
+import { DAY_MODE_LABEL, DAY_MODES, isOffDay, type DayMode } from '../../../shared/plan';
+import { DayModeIcon } from './DayModeIcon';
 import { LevelBadge } from '../LevelBadge';
 
 export type MealTarget = { day: PlanDayView; slot: Category; item?: PlanItemView };
@@ -179,6 +181,7 @@ export function DaySheet({
   onRegenerateDay,
   onAddSide,
   onSwap,
+  onMode,
 }: {
   day: PlanDayView | null;
   days: PlanDayView[];
@@ -187,6 +190,7 @@ export function DaySheet({
   onRegenerateDay: () => void;
   onAddSide: () => void;
   onSwap: (to: string) => void;
+  onMode: (mode: DayMode) => void;
 }) {
   return (
     <Sheet
@@ -196,11 +200,41 @@ export function DaySheet({
     >
       {day && (
         <div className="flex flex-col gap-3">
-          <GlassButton variant="primary" loading={busy} onClick={onRegenerateDay}>
-            この日の献立を作り直す
-          </GlassButton>
-          {!day.items.some((i) => i.slot === 'side') && (
-            <GlassButton onClick={onAddSide}>副菜を追加する</GlassButton>
+          <div>
+            <p className="mb-2 text-xs font-bold text-ink-soft">この日の予定</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {DAY_MODES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={busy || day.mode === m}
+                  aria-pressed={day.mode === m}
+                  onClick={() => onMode(m)}
+                  className={cn(
+                    'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold',
+                    day.mode === m ? 'bg-accent text-accent-ink' : 'groove',
+                  )}
+                >
+                  <DayModeIcon mode={m} size={18} />
+                  {DAY_MODE_LABEL[m]}
+                </button>
+              ))}
+            </div>
+            {day.mode !== day.modeSetting && (
+              <p className="mt-1.5 text-[11px] text-ink-soft">
+                いつもは「{DAY_MODE_LABEL[day.modeSetting]}」の曜日です（今週だけ変更中）
+              </p>
+            )}
+          </div>
+          {!isOffDay(day.mode) && (
+            <>
+              <GlassButton variant="primary" loading={busy} onClick={onRegenerateDay}>
+                この日の献立を作り直す
+              </GlassButton>
+              {!day.items.some((i) => i.slot === 'side') && (
+                <GlassButton onClick={onAddSide}>副菜を追加する</GlassButton>
+              )}
+            </>
           )}
           <div>
             <p className="mb-2 text-xs font-bold text-ink-soft">ほかの曜日と入れ替える</p>

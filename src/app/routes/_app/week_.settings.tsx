@@ -6,6 +6,9 @@ import { COST_LEVEL_LABEL, LEVELS, TIME_LEVELS, TIME_LEVEL_LABEL } from '../../.
 import { WEEKDAY_LABELS } from '../../../shared/date';
 import { LEVEL_META } from '../../../shared/levels';
 import {
+  DAY_MODES,
+  DAY_MODE_LABEL,
+  isOffDay,
   SIDE_MODES,
   SIDE_MODE_LABEL,
   type DaySetting,
@@ -22,6 +25,7 @@ import { SettingsSkeleton } from '../../components/skeleton/Skeletons';
 import { useToast } from '../../components/toast/Toaster';
 import { cn } from '../../lib/cn';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
+import { DayModeIcon } from '../../components/week/DayModeIcon';
 import { settingsQuery } from '../../lib/plans';
 
 export const Route = createFileRoute('/_app/week_/settings')({
@@ -169,11 +173,20 @@ function SettingsForm({ initial }: { initial: PlanSettings }) {
                   className="flex min-h-12 w-full items-center gap-3 px-4 text-left"
                 >
                   <span className="w-5 font-bold">{WEEKDAY_LABELS[d.weekday]}</span>
-                  <span className="flex-1 text-xs text-ink-soft">
-                    {COST_LEVEL_LABEL[d.budgetLevel]}・{TIME_LEVEL_LABEL[d.timeLevel]}・副菜
-                    {SIDE_MODE_LABEL[d.sideMode]}
-                  </span>
-                  <LevelBadge level={level} />
+                  {isOffDay(d.mode) ? (
+                    <span className="flex flex-1 items-center gap-1.5 text-xs font-bold text-sub-ink">
+                      <DayModeIcon mode={d.mode} size={15} />
+                      {DAY_MODE_LABEL[d.mode]}の日
+                    </span>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-xs text-ink-soft">
+                        {COST_LEVEL_LABEL[d.budgetLevel]}・{TIME_LEVEL_LABEL[d.timeLevel]}・副菜
+                        {SIDE_MODE_LABEL[d.sideMode]}
+                      </span>
+                      <LevelBadge level={level} />
+                    </>
+                  )}
                   <motion.span animate={{ rotate: open ? 90 : 0 }} transition={spring.snappy}>
                     <ChevronRightIcon size={16} className="text-ink-soft" />
                   </motion.span>
@@ -188,77 +201,97 @@ function SettingsForm({ initial }: { initial: PlanSettings }) {
                       className="overflow-hidden"
                     >
                       <div className="flex flex-col gap-3 px-3 pb-4 pt-1">
-                        <Row label="予算">
+                        <Row label="この曜日の予定">
                           <Segmented
                             size="sm"
-                            label={`${WEEKDAY_LABELS[d.weekday]}曜日の予算`}
-                            value={d.budgetLevel}
-                            onChange={(budgetLevel) => updateDay(d.weekday, { budgetLevel })}
-                            options={LEVELS.map((l) => ({ value: l, label: COST_LEVEL_LABEL[l] }))}
+                            label={`${WEEKDAY_LABELS[d.weekday]}曜日の予定`}
+                            value={d.mode}
+                            onChange={(mode) => updateDay(d.weekday, { mode })}
+                            options={DAY_MODES.map((m) => ({ value: m, label: DAY_MODE_LABEL[m] }))}
                           />
                         </Row>
-                        <Row label="料理時間">
-                          <Segmented
-                            size="sm"
-                            label={`${WEEKDAY_LABELS[d.weekday]}曜日の料理時間`}
-                            value={d.timeLevel}
-                            onChange={(timeLevel) => updateDay(d.weekday, { timeLevel })}
-                            options={TIME_LEVELS.map((t) => ({
-                              value: t,
-                              label: TIME_LEVEL_LABEL[t],
-                              hint:
-                                t === 'quick'
-                                  ? '20分以内'
-                                  : t === 'normal'
-                                    ? '40分以内'
-                                    : '時間をかける',
-                            }))}
-                          />
-                        </Row>
-                        <Row label="副菜">
-                          <Segmented
-                            size="sm"
-                            label={`${WEEKDAY_LABELS[d.weekday]}曜日の副菜`}
-                            value={d.sideMode}
-                            onChange={(sideMode) => updateDay(d.weekday, { sideMode })}
-                            options={SIDE_MODES.map((m) => ({
-                              value: m,
-                              label: SIDE_MODE_LABEL[m],
-                              hint: m === 'auto' ? '時短・節約はなし' : undefined,
-                            }))}
-                          />
-                        </Row>
-                        <Row label="料理レベル">
-                          <Segmented
-                            size="sm"
-                            label={`${WEEKDAY_LABELS[d.weekday]}曜日の料理レベル`}
-                            value={d.level}
-                            onChange={(lv) => updateDay(d.weekday, { level: lv })}
-                            options={[
-                              {
-                                value: 'inherit' as const,
-                                label: `既定 ${LEVEL_META[initial.defaultLevel].emoji}`,
-                                hint: 'グループの設定',
-                                ariaLabel: `グループの既定（${LEVEL_META[initial.defaultLevel].name}）`,
-                              },
-                              {
-                                value: 'futaba' as const,
-                                label: LEVEL_META.futaba.emoji,
-                                ariaLabel: LEVEL_META.futaba.name,
-                              },
-                              {
-                                value: 'minori' as const,
-                                label: LEVEL_META.minori.emoji,
-                                ariaLabel: LEVEL_META.minori.name,
-                              },
-                            ]}
-                          />
-                          <p className="mt-1.5 text-[11px] text-ink-soft">
-                            {d.level === 'inherit'
-                              ? `グループ設定の「いつもの料理レベル」に従います。${LEVEL_META[level].description}`
-                              : LEVEL_META[level].description}
+                        {isOffDay(d.mode) ? (
+                          <p className="px-1 text-xs text-ink-soft">
+                            毎週この曜日は献立を作らず、買い物リストにも入りません。今週だけ変えたいときは、週間献立の曜日の「…」から変えられます。
                           </p>
-                        </Row>
+                        ) : (
+                          <>
+                            <Row label="予算">
+                              <Segmented
+                                size="sm"
+                                label={`${WEEKDAY_LABELS[d.weekday]}曜日の予算`}
+                                value={d.budgetLevel}
+                                onChange={(budgetLevel) => updateDay(d.weekday, { budgetLevel })}
+                                options={LEVELS.map((l) => ({
+                                  value: l,
+                                  label: COST_LEVEL_LABEL[l],
+                                }))}
+                              />
+                            </Row>
+                            <Row label="料理時間">
+                              <Segmented
+                                size="sm"
+                                label={`${WEEKDAY_LABELS[d.weekday]}曜日の料理時間`}
+                                value={d.timeLevel}
+                                onChange={(timeLevel) => updateDay(d.weekday, { timeLevel })}
+                                options={TIME_LEVELS.map((t) => ({
+                                  value: t,
+                                  label: TIME_LEVEL_LABEL[t],
+                                  hint:
+                                    t === 'quick'
+                                      ? '20分以内'
+                                      : t === 'normal'
+                                        ? '40分以内'
+                                        : '時間をかける',
+                                }))}
+                              />
+                            </Row>
+                            <Row label="副菜">
+                              <Segmented
+                                size="sm"
+                                label={`${WEEKDAY_LABELS[d.weekday]}曜日の副菜`}
+                                value={d.sideMode}
+                                onChange={(sideMode) => updateDay(d.weekday, { sideMode })}
+                                options={SIDE_MODES.map((m) => ({
+                                  value: m,
+                                  label: SIDE_MODE_LABEL[m],
+                                  hint: m === 'auto' ? '時短・節約はなし' : undefined,
+                                }))}
+                              />
+                            </Row>
+                            <Row label="料理レベル">
+                              <Segmented
+                                size="sm"
+                                label={`${WEEKDAY_LABELS[d.weekday]}曜日の料理レベル`}
+                                value={d.level}
+                                onChange={(lv) => updateDay(d.weekday, { level: lv })}
+                                options={[
+                                  {
+                                    value: 'inherit' as const,
+                                    label: `既定 ${LEVEL_META[initial.defaultLevel].emoji}`,
+                                    hint: 'グループの設定',
+                                    ariaLabel: `グループの既定（${LEVEL_META[initial.defaultLevel].name}）`,
+                                  },
+                                  {
+                                    value: 'futaba' as const,
+                                    label: LEVEL_META.futaba.emoji,
+                                    ariaLabel: LEVEL_META.futaba.name,
+                                  },
+                                  {
+                                    value: 'minori' as const,
+                                    label: LEVEL_META.minori.emoji,
+                                    ariaLabel: LEVEL_META.minori.name,
+                                  },
+                                ]}
+                              />
+                              <p className="mt-1.5 text-[11px] text-ink-soft">
+                                {d.level === 'inherit'
+                                  ? `グループ設定の「いつもの料理レベル」に従います。${LEVEL_META[level].description}`
+                                  : LEVEL_META[level].description}
+                              </p>
+                            </Row>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   )}

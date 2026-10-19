@@ -4,11 +4,15 @@ import { Hono, type Context } from 'hono';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
 import {
+  DAY_MODE_LABEL,
+  dayModeSchema,
+  isOffDay,
   regenerateSchema,
   setSlotSchema,
   swapSchema,
   versionSchema,
   weekStartParam,
+  type DayMode,
   type PlanView,
 } from '../../shared/plan';
 import {
@@ -72,7 +76,15 @@ async function recentHistory(db: Db, groupId: string, weekStart: string) {
   return history;
 }
 
-async function plannerInput(db: Db, groupId: string, weekStart: string): Promise<PlannerInput> {
+/** その週の予定の変更（日付 → 予定）。曜日の設定より優先 */
+type DayModes = Record<string, DayMode>;
+
+async function plannerInput(
+  db: Db,
+  groupId: string,
+  weekStart: string,
+  dayModes: DayModes = {},
+): Promise<PlannerInput> {
   const [settings, recipeList, history] = await Promise.all([
     loadSettings(db, groupId),
     plannerRecipes(db, groupId),
@@ -86,6 +98,7 @@ async function plannerInput(db: Db, groupId: string, weekStart: string): Promise
       timeLevel: s.timeLevel,
       sideMode: s.sideMode,
       level: s.level === 'inherit' ? settings.defaultLevel : s.level,
+      off: isOffDay(dayModes[date] ?? s.mode),
     };
   });
   return {
@@ -169,6 +182,8 @@ export async function buildPlanView(
         sideMode: s.sideMode,
         levelSetting: s.level,
         level: s.level === 'inherit' ? settings.defaultLevel : s.level,
+        mode: plan?.dayModes[date] ?? s.mode,
+        modeSetting: s.mode,
         items: rows
           .filter((r) => r.item.date === date)
           .sort((a, b) => slotOrder[a.item.slot] - slotOrder[b.item.slot])
@@ -293,7 +308,7 @@ export const planRoutes = new Hono<AppEnv>()
     if (!ws) return c.json({ error: 'invalid_week' }, 400);
     const plan = await bumpVersion(c, ws, c.req.valid('json').version);
     if (!plan) return stale(c);
-    const input = await plannerInput(c.var.db, c.var.group.id, ws);
+    const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
     const result = generateWeek(input);
     await replaceItems(c, plan.id, result.items, {});
     await saveCost(c.var.db, c.var.group.id, plan.id, ws);
@@ -313,7 +328,7 @@ export const planRoutes = new Hono<AppEnv>()
     const { version, slot } = c.req.valid('json');
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
-    const input = await plannerInput(c.var.db, c.var.group.id, ws);
+    const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
     const current = await planItems(c.var.db, plan.id);
     const result = regenerate(input, current, date, slot);
     await replaceItems(c, plan.id, result.items, { date, slot });
@@ -325,6 +340,41 @@ export const planRoutes = new Hono<AppEnv>()
       summary: `${dayName(date)}の${slot ? CATEGORY_LABEL[slot] : '献立'}を変更しました`,
     });
     return c.json(await buildPlanView(c.var.db, c.var.group.id, ws, result.warnings));
+  })
+  // 「/days/:date/:slot」より先に置く（mode が slot として扱われないように）
+  /**
+   * その日の予定を変える（料理する／外食／テイクアウト）。
+   * 外食・テイクアウトにしたらその日の献立を外し、料理する日に戻したら献立を作る
+   */
+  .put('/:weekStart/days/:date/mode', zValidator('json', dayModeSchema), async (c) => {
+    const ws = validWeekStart(c);
+    const date = c.req.param('date');
+    if (!ws || !inWeek(ws, date)) return c.json({ error: 'invalid_date' }, 400);
+    const { version, mode } = c.req.valid('json');
+    const plan = await bumpVersion(c, ws, version);
+    if (!plan) return stale(c);
+    const db = c.var.db;
+    const dayModes: DayModes = { ...plan.dayModes, [date]: mode };
+    await db.update(mealPlans).set({ dayModes }).where(eq(mealPlans.id, plan.id));
+    let warnings: string[] = [];
+    if (isOffDay(mode)) {
+      await replaceItems(c, plan.id, [], { date });
+    } else if (!(await planItems(db, plan.id)).some((it) => it.date === date)) {
+      const input = await plannerInput(db, c.var.group.id, ws, dayModes);
+      const result = regenerate(input, await planItems(db, plan.id), date);
+      await replaceItems(c, plan.id, result.items, { date });
+      warnings = result.warnings;
+    }
+    await saveCost(db, c.var.group.id, plan.id, ws);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: [date],
+      summary: isOffDay(mode)
+        ? `${dayName(date)}を${DAY_MODE_LABEL[mode]}の日にしました`
+        : `${dayName(date)}を料理する日にしました`,
+    });
+    return c.json(await buildPlanView(db, c.var.group.id, ws, warnings));
   })
   /** レシピを手動で指定（null で外す） */
   .put('/:weekStart/days/:date/:slot', zValidator('json', setSlotSchema), async (c) => {
@@ -354,7 +404,7 @@ export const planRoutes = new Hono<AppEnv>()
     });
     return c.json(await buildPlanView(db, c.var.group.id, ws));
   })
-  /** 2つの曜日の献立を入れ替える */
+  /** 2つの曜日の献立を入れ替える（外食・テイクアウトの予定も一緒に入れ替える） */
   .post('/:weekStart/swap', zValidator('json', swapSchema), async (c) => {
     const ws = validWeekStart(c);
     const { from, to, version } = c.req.valid('json');
@@ -371,8 +421,17 @@ export const planRoutes = new Hono<AppEnv>()
         .update(mealPlanItems)
         .set({ date: b, updatedBy: c.var.user.id, updatedAt: now })
         .where(and(eq(mealPlanItems.planId, plan.id), eq(mealPlanItems.date, a)));
+    // 予定（外食など）も入れ替える。曜日の設定どおりの日も、明示した予定として入れ替える
+    const settings = await loadSettings(db, c.var.group.id);
+    const modeOf = (d: string) => plan.dayModes[d] ?? settings.days[weekdayIndex(d)]!.mode;
+    const dayModes: DayModes = { ...plan.dayModes, [from]: modeOf(to), [to]: modeOf(from) };
     // ユニーク制約（plan, date, slot）に当たらないよう一時日付を経由する
-    await db.batch([move(from, tmp), move(to, from), move(tmp, to)]);
+    await db.batch([
+      move(from, tmp),
+      move(to, from),
+      move(tmp, to),
+      db.update(mealPlans).set({ dayModes }).where(eq(mealPlans.id, plan.id)),
+    ]);
     notifyGroup(c, {
       type: 'plan.updated',
       weekStart: ws,

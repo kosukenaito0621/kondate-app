@@ -11,6 +11,8 @@ import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
 import { spring, staggerContainer } from '../../../lib/motion';
 import { compact, optOneOf, optString } from '../../../lib/search';
+import { toJstDate } from '../../../../shared/date';
+import { SEASON_LABEL, SEASONS, seasonOf } from '../../../../shared/season';
 import { recipesQuery } from '../../../lib/recipes';
 
 const validateSearch = (s: Record<string, unknown>) =>
@@ -20,6 +22,8 @@ const validateSearch = (s: Record<string, unknown>) =>
     genre: optOneOf(s.genre, GENRES),
     difficulty: optOneOf(s.difficulty, COOKING_LEVELS),
     mine: optOneOf(s.mine, ['1'] as const),
+    /** now は「今が旬」（開いた日の季節） */
+    season: optOneOf(s.season, ['now', ...SEASONS] as const),
   });
 
 export const Route = createFileRoute('/_app/recipes/')({
@@ -31,7 +35,10 @@ function RecipeList() {
   const filters = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [text, setText] = useState(filters.q ?? '');
-  const { data, isPending, isError, refetch } = useQuery(recipesQuery(filters));
+  const nowSeason = seasonOf(toJstDate());
+  const { data, isPending, isError, refetch } = useQuery(
+    recipesQuery({ ...filters, season: filters.season === 'now' ? nowSeason : filters.season }),
+  );
 
   // 入力が止まってから検索（URL に反映して戻るボタンでも条件が残る）
   useEffect(() => {
@@ -122,6 +129,16 @@ function RecipeList() {
               ariaLabel: LEVEL_META[l].name,
             })),
             { value: 'mine', label: 'うちのレシピ' },
+          ]}
+        />
+        <FilterChips
+          label="季節"
+          value={filters.season}
+          onChange={(v) => set('season', v)}
+          options={[
+            { value: undefined, label: '季節すべて' },
+            { value: 'now' as const, label: `今が旬（${SEASON_LABEL[nowSeason]}）` },
+            ...SEASONS.map((x) => ({ value: x, label: SEASON_LABEL[x] })),
           ]}
         />
       </div>

@@ -340,3 +340,26 @@ describe('季節', () => {
     expect(r.warnings.join()).toContain('季節外');
   });
 });
+
+describe('外食・テイクアウトの日', () => {
+  it('お休みの日は献立を作らず、ジャンルは料理する日に割り当てる', () => {
+    const res = generateWeek(
+      input({
+        days: days((i) => ({ off: i === 4 || i === 6 })),
+        ratio: { wa: 100, yo: 0, chu: 0 },
+      }),
+    );
+    expect(res.items.some((it) => it.date === WEEK[4] || it.date === WEEK[6])).toBe(false);
+    const mains = mainsOf(res.items);
+    expect(mains).toHaveLength(5);
+    expect(mains.every((r) => r.genre === 'wa')).toBe(true);
+  });
+
+  it('お休みの日を作り直しても、何も足さない', () => {
+    const base = input();
+    const week = generateWeek(base);
+    const off = { ...base, days: base.days.map((d, i) => (i === 2 ? { ...d, off: true } : d)) };
+    const res = regenerate(off, week.items, WEEK[2]!);
+    expect(res.items.some((it) => it.date === WEEK[2])).toBe(false);
+  });
+});

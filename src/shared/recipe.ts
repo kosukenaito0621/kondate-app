@@ -136,6 +136,8 @@ export const recipeQuerySchema = z.object({
   genre: z.enum(GENRES).optional(),
   difficulty: z.enum(COOKING_LEVELS).optional(),
   mine: z.enum(['1']).optional(),
+  /** その季節が旬・季節限定のレシピだけ */
+  season: z.enum(SEASONS).optional(),
 });
 
 // ===== APIの返却型 =====

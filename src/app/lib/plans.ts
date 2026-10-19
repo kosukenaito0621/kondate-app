@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Slot } from '../../shared/planner';
-import type { PlanSettings, PlanView } from '../../shared/plan';
+import type { DayMode, PlanSettings, PlanView } from '../../shared/plan';
 import { api } from '../api';
 import { useToast } from '../components/toast/Toaster';
 import { ok } from './recipes';
@@ -24,7 +24,8 @@ export type PlanAction =
   | { type: 'generate' }
   | { type: 'regenerate'; date: string; slot?: Slot }
   | { type: 'set'; date: string; slot: Slot; recipeId: string | null }
-  | { type: 'swap'; from: string; to: string };
+  | { type: 'swap'; from: string; to: string }
+  | { type: 'mode'; date: string; mode: DayMode };
 
 /**
  * 献立の変更。版番号を付けて送り、古ければ（409）最新を読み直して知らせる。
@@ -50,10 +51,15 @@ export function usePlanMutation(weekStart: string) {
                   param: { ...param, date: action.date, slot: action.slot },
                   json: { version, recipeId: action.recipeId },
                 })
-              : await api.plans[':weekStart'].swap.$post({
-                  param,
-                  json: { version, from: action.from, to: action.to },
-                });
+              : action.type === 'mode'
+                ? await api.plans[':weekStart'].days[':date'].mode.$put({
+                    param: { ...param, date: action.date },
+                    json: { version, mode: action.mode },
+                  })
+                : await api.plans[':weekStart'].swap.$post({
+                    param,
+                    json: { version, from: action.from, to: action.to },
+                  });
       if (res.status === 409) throw new StaleError();
       return ok<PlanView>(res);
     },

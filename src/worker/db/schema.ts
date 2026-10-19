@@ -136,6 +136,10 @@ export const daySettings = sqliteTable(
     level: text('level', { enum: ['inherit', ...LEVEL] })
       .notNull()
       .default('inherit'),
+    /** 予定：料理する／外食／テイクアウト */
+    mode: text('day_mode', { enum: ['cook', 'eat_out', 'takeout'] })
+      .notNull()
+      .default('cook'),
   },
   (t) => [primaryKey({ columns: [t.groupId, t.weekday] })],
 );
@@ -227,6 +231,11 @@ export const mealPlans = sqliteTable(
     groupId: text('group_id').references(() => groups.id, { onDelete: 'cascade' }),
     weekStart: text('week_start').notNull(), // YYYY-MM-DD（月曜）
     estimatedCost: integer('estimated_cost').notNull().default(0),
+    /** その週だけの予定の変更（日付 → 料理する／外食／テイクアウト）。曜日の設定より優先 */
+    dayModes: text('day_modes', { mode: 'json' })
+      .$type<Record<string, 'cook' | 'eat_out' | 'takeout'>>()
+      .notNull()
+      .default(sql`'{}'`),
     version: integer('version').notNull().default(1),
     updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
     updatedAt: integer('updated_at', { mode: 'number' }).notNull().default(0),

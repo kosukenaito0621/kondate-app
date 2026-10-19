@@ -12,12 +12,24 @@ export const SIDE_MODE_LABEL: Record<SideModeValue, string> = {
   off: 'なし',
 };
 
+/** その日の予定：料理する／外食／テイクアウト（外食とテイクアウトの日は献立を作らない） */
+export const DAY_MODES = ['cook', 'eat_out', 'takeout'] as const;
+export type DayMode = (typeof DAY_MODES)[number];
+export const DAY_MODE_LABEL: Record<DayMode, string> = {
+  cook: '料理する',
+  eat_out: '外食',
+  takeout: 'テイクアウト',
+};
+export const isOffDay = (mode: DayMode) => mode !== 'cook';
+
 export const daySettingSchema = z.object({
   weekday: z.number().int().min(0).max(6),
   budgetLevel: z.enum(LEVELS),
   timeLevel: z.enum(TIME_LEVELS),
   sideMode: z.enum(SIDE_MODES),
   level: z.enum(DAY_LEVELS),
+  /** 曜日ごとの予定（毎週金曜は外食 など） */
+  mode: z.enum(DAY_MODES).default('cook'),
 });
 export type DaySetting = z.infer<typeof daySettingSchema>;
 
@@ -57,6 +69,7 @@ export const weekStartParam = z.string().refine(isIsoDate, '日付の形式が�
 export const versionSchema = z.object({ version: z.number().int().min(0).optional() });
 export const regenerateSchema = versionSchema.extend({ slot: z.enum(CATEGORIES).optional() });
 export const setSlotSchema = versionSchema.extend({ recipeId: z.string().min(1).nullable() });
+export const dayModeSchema = versionSchema.extend({ mode: z.enum(DAY_MODES) });
 export const swapSchema = versionSchema.extend({
   from: z.string().refine(isIsoDate),
   to: z.string().refine(isIsoDate),
@@ -79,6 +92,10 @@ export type PlanDayView = {
   levelSetting: DayLevel;
   /** 解決済みのレベル */
   level: CookingLevel;
+  /** この日の予定（その週だけの変更があればそちら） */
+  mode: DayMode;
+  /** 曜日の設定どおりの予定 */
+  modeSetting: DayMode;
   items: PlanItemView[];
 };
 

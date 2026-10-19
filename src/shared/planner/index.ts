@@ -42,6 +42,8 @@ export type PlannerDay = {
   sideMode: SideMode;
   /** グループ既定と曜日の上書きを解決済みのレベル */
   level: CookingLevel;
+  /** 外食・テイクアウトの日は献立を作らない（省略時は料理する） */
+  off?: boolean;
 };
 
 export type PlanItem = { date: string; slot: Slot; recipeId: string };
@@ -322,7 +324,10 @@ function fitBudget(input: PlannerInput, items: PlanItem[], ctx: PickContext) {
 /** 1週間分の献立を生成する */
 export function generateWeek(input: PlannerInput): PlanResult {
   const rng = createRng(input.seed);
-  const genres = allocateGenres(input.ratio, input.days.length, rng);
+  // ジャンルは料理する日にだけ割り当てる
+  const cookDays = input.days.filter((d) => !d.off);
+  const cookGenres = allocateGenres(input.ratio, cookDays.length, rng);
+  const genres = input.days.map((d) => (d.off ? undefined : cookGenres[cookDays.indexOf(d)]));
   const ctx: PickContext = { recipes: input.recipes, history: input.history, used: new Set(), rng };
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
 
@@ -330,6 +335,7 @@ export function generateWeek(input: PlannerInput): PlanResult {
   const warnings: string[] = [];
   let prevMain: PlannerRecipe | undefined;
   input.days.forEach((day, i) => {
+    if (day.off) return;
     const res = planDay(ctx, day, genres[i], [prevMain], SLOTS);
     items.push(...res.items);
     warnings.push(...res.warnings);
@@ -355,6 +361,11 @@ export function regenerate(
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
   const day = input.days.find((d) => d.date === date);
   if (!day) throw new Error(`unknown date ${date}`);
+  if (day.off) {
+    const items = current.filter((it) => it.date !== date);
+    const estimatedCost = estimateCost(items, input.recipes, input.servings);
+    return { items, estimatedCost, overBudget: estimatedCost > input.weeklyBudget, warnings: [] };
+  }
 
   const replacing = (it: PlanItem) => it.date === date && (!slot || it.slot === slot);
   const kept = current.filter((it) => !replacing(it));

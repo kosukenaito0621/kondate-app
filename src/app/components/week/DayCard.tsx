@@ -6,6 +6,8 @@ import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { GenreBadge } from '../GenreBadge';
 import { ClockIcon, GripIcon } from '../icons';
+import { DAY_MODE_LABEL, isOffDay } from '../../../shared/plan';
+import { DayModeIcon } from './DayModeIcon';
 import { LevelBadge } from '../LevelBadge';
 
 const md = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
@@ -58,7 +60,9 @@ export function DayCard({
   onDragEnd: () => void;
 }) {
   const controls = useDragControls();
-  const missing = (['main', 'soup'] as const).filter((s) => !day.items.some((i) => i.slot === s));
+  const missing = isOffDay(day.mode)
+    ? []
+    : (['main', 'soup'] as const).filter((s) => !day.items.some((i) => i.slot === s));
   // 生成のたびに、カードがシャッフルされて並ぶ演出（角度は日ごとに少しずつ変える）
   const tilt = ((index * 37) % 11) - 5;
 
@@ -115,10 +119,14 @@ export function DayCard({
               今日
             </span>
           )}
-          <span className="ml-auto flex items-center gap-1.5 text-[10px] text-ink-soft">
-            {TIME_LEVEL_LABEL[day.timeLevel]}・{COST_LEVEL_LABEL[day.budgetLevel]}
-            <LevelBadge level={day.level} />
-          </span>
+          {isOffDay(day.mode) ? (
+            <span className="ml-auto" />
+          ) : (
+            <span className="ml-auto flex items-center gap-1.5 text-[10px] text-ink-soft">
+              {TIME_LEVEL_LABEL[day.timeLevel]}・{COST_LEVEL_LABEL[day.budgetLevel]}
+              <LevelBadge level={day.level} />
+            </span>
+          )}
           <button
             type="button"
             onClick={onMenu}
@@ -128,25 +136,39 @@ export function DayCard({
             …
           </button>
         </header>
-        <div className="flex flex-col">
-          {day.items.map((item) => (
-            <MealRow
-              key={`${item.slot}-${item.recipe.id}`}
-              item={item}
-              onClick={() => onItem(item)}
-            />
-          ))}
-          {missing.map((slot) => (
-            <button
-              key={slot}
-              type="button"
-              onClick={() => onAddSlot(slot)}
-              className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
-            >
-              <span className="w-7 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
-            </button>
-          ))}
-        </div>
+        {isOffDay(day.mode) ? (
+          <button
+            type="button"
+            onClick={onMenu}
+            className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-sub-soft px-3 text-left text-sub-ink"
+          >
+            <DayModeIcon mode={day.mode} size={22} />
+            <span className="flex-1">
+              <span className="block font-bold">{DAY_MODE_LABEL[day.mode]}の日</span>
+              <span className="block text-[11px]">料理はお休み。タップで予定を変えられます</span>
+            </span>
+          </button>
+        ) : (
+          <div className="flex flex-col">
+            {day.items.map((item) => (
+              <MealRow
+                key={`${item.slot}-${item.recipe.id}`}
+                item={item}
+                onClick={() => onItem(item)}
+              />
+            ))}
+            {missing.map((slot) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => onAddSlot(slot)}
+                className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
+              >
+                <span className="w-7 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
+              </button>
+            ))}
+          </div>
+        )}
       </motion.article>
     </Reorder.Item>
   );

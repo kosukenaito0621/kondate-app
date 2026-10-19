@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { Category, Genre } from '../../shared/constants';
 import type { CookingLevel } from '../../shared/levels';
+import type { Season } from '../../shared/season';
 import type { RecipeDetail, RecipeSummary } from '../../shared/recipe';
 import { api } from '../api';
 
@@ -10,6 +11,7 @@ export type RecipeFilters = {
   genre?: Genre;
   difficulty?: CookingLevel;
   mine?: '1';
+  season?: Season;
 };
 
 type JsonResponse = { ok: boolean; status: number; json(): Promise<unknown> };
