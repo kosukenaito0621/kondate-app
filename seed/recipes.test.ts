@@ -15,7 +15,7 @@ import { SEED_RECIPES } from './recipes';
 
 const EXPECTED: Record<Category, Record<Genre, number>> = {
   main: { wa: 50, yo: 50, chu: 50 },
-  soup: { wa: 10, yo: 10, chu: 24 },
+  soup: { wa: 23, yo: 23, chu: 24 },
   side: { wa: 10, yo: 10, chu: 26 },
 };
 

@@ -41,6 +41,7 @@ export const SEASONAL_INGREDIENTS: Readonly<Record<string, Season>> = {
   ズッキーニ: 'summer',
   枝豆: 'summer',
   なす: 'summer',
+  なめこ: 'autumn',
   かぼちゃ: 'autumn',
   さつまいも: 'autumn',
   里芋: 'autumn',
