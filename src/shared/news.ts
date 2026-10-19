@@ -20,6 +20,15 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-10-19-about',
+    date: '2026-10-19',
+    kind: 'feature',
+    title: '「仕組みノート」を追加しました',
+    body: [
+      '設定の「仕組みノート」で、機能や献立作成・AI取り込みの仕組み、こだわりポイントを読めます。人にアプリを紹介するときにどうぞ。',
+    ],
+  },
+  {
     id: '2026-10-19-off-days',
     date: '2026-10-19',
     kind: 'feature',

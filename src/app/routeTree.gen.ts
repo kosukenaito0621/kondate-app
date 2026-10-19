@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as StyleguideRouteImport } from './routes/styleguide'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppAboutRouteImport } from './routes/_app/about'
 import { Route as AppGroupRouteImport } from './routes/_app/group'
 import { Route as AppLogRouteImport } from './routes/_app/log'
 import { Route as AppNewsRouteImport } from './routes/_app/news'
@@ -51,6 +52,11 @@ const StyleguideRoute = StyleguideRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAboutRoute = AppAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGroupRoute = AppGroupRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/styleguide': typeof StyleguideRoute
+  '/about': typeof AppAboutRoute
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
   '/news': typeof AppNewsRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/styleguide': typeof StyleguideRoute
+  '/about': typeof AppAboutRoute
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
   '/news': typeof AppNewsRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/styleguide': typeof StyleguideRoute
+  '/_app/about': typeof AppAboutRoute
   '/_app/group': typeof AppGroupRoute
   '/_app/log': typeof AppLogRoute
   '/_app/news': typeof AppNewsRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/styleguide'
+    | '/about'
     | '/group'
     | '/log'
     | '/news'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/styleguide'
+    | '/about'
     | '/group'
     | '/log'
     | '/news'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/styleguide'
+    | '/_app/about'
     | '/_app/group'
     | '/_app/log'
     | '/_app/news'
@@ -294,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/about': {
+      id: '/_app/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AppAboutRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/group': {
@@ -398,6 +417,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAboutRoute: typeof AppAboutRoute
   AppGroupRoute: typeof AppGroupRoute
   AppLogRoute: typeof AppLogRoute
   AppNewsRoute: typeof AppNewsRoute
@@ -414,6 +434,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAboutRoute: AppAboutRoute,
   AppGroupRoute: AppGroupRoute,
   AppLogRoute: AppLogRoute,
   AppNewsRoute: AppNewsRoute,

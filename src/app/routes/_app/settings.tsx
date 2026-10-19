@@ -7,7 +7,7 @@ import { api } from '../../api';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { GroupDot } from '../../components/GroupSwitcher';
-import { BellIcon, BookIcon, ChevronRightIcon } from '../../components/icons';
+import { BellIcon, BookIcon, ChevronRightIcon, SparkleIcon } from '../../components/icons';
 import { useGuide } from '../../components/guide/Guide';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
@@ -116,6 +116,20 @@ function Settings() {
             </span>
             <ChevronRightIcon size={18} className="text-ink-soft" />
           </button>
+        </motion.div>
+
+        <motion.div variants={riseItem}>
+          <Link
+            to="/about"
+            className="glass sheen flex min-h-16 items-center gap-3 rounded-[var(--radius-card)] px-5"
+          >
+            <SparkleIcon size={20} className="text-accent-strong" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs text-ink-soft">機能と裏側の仕組み・こだわり</span>
+              <span className="block font-bold">仕組みノート</span>
+            </span>
+            <ChevronRightIcon size={18} className="text-ink-soft" />
+          </Link>
         </motion.div>
 
         <GlassCard variants={riseItem} padding="lg">
