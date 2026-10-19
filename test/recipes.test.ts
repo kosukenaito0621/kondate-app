@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SEED_RECIPES } from '../seed/recipes';
 import type { RecipeDetail, RecipeInput, RecipeSummary } from '../src/shared/recipe';
 import { api, login } from './helpers';
 
@@ -24,16 +25,18 @@ const sample: RecipeInput = {
 };
 
 describe('レシピAPI', () => {
-  it('初期レシピ110件が見える（ふたば・カテゴリで絞り込める）', async () => {
+  it('初期レシピがすべて見える（ふたば・カテゴリで絞り込める）', async () => {
     const u = await login('recipe-list');
     const all = (await (await api(u, '/api/recipes')).json()) as RecipeSummary[];
-    expect(all).toHaveLength(110);
+    expect(all).toHaveLength(SEED_RECIPES.length);
     expect(all.every((r) => r.isSystem)).toBe(true);
 
     const futabaMain = (await (
       await api(u, '/api/recipes?category=main&difficulty=futaba')
     ).json()) as RecipeSummary[];
-    expect(futabaMain.length).toBe(30);
+    expect(futabaMain.length).toBe(
+      SEED_RECIPES.filter((r) => r.category === 'main' && r.difficulty === 'futaba').length,
+    );
     expect(futabaMain.every((r) => r.category === 'main' && r.difficulty === 'futaba')).toBe(true);
   });
 
