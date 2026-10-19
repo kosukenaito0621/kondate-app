@@ -8,7 +8,7 @@ import {
   GENRE_LABEL,
   SECTION_LABEL,
 } from '../../../../shared/constants';
-import { formatAmount, type RecipeDetail } from '../../../../shared/recipe';
+import { formatAmount, groupIngredients, type RecipeDetail } from '../../../../shared/recipe';
 import { api } from '../../../api';
 import { CookedButton } from '../../../components/CookedButton';
 import { Photo, PhotoPicker } from '../../../components/PhotoPicker';
@@ -109,8 +109,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
     },
   });
 
-  const main = recipe.ingredients.filter((i) => i.section !== 'seasoning');
-  const seasonings = recipe.ingredients.filter((i) => i.section === 'seasoning');
+  const blocks = groupIngredients(recipe.ingredients);
   const error = copy.error ?? hide.error ?? remove.error;
 
   return (
@@ -207,13 +206,22 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
               </button>
             </div>
           </div>
-          <IngredientTable items={main} scale={scale} />
-          {seasonings.length > 0 && (
-            <>
-              <h3 className="mt-4 text-xs font-bold text-ink-soft">{SECTION_LABEL.seasoning}</h3>
-              <IngredientTable items={seasonings} scale={scale} />
-            </>
-          )}
+          {blocks.map((b) => (
+            <section key={b.label ?? b.kind} aria-label={b.label ?? undefined}>
+              {b.kind === 'group' ? (
+                <h3 className="mt-4 inline-block rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-strong">
+                  {b.label}
+                </h3>
+              ) : (
+                b.kind === 'seasoning' && (
+                  <h3 className="mt-4 text-xs font-bold text-ink-soft">
+                    {SECTION_LABEL.seasoning}
+                  </h3>
+                )
+              )}
+              <IngredientTable items={b.items} scale={scale} />
+            </section>
+          ))}
         </GlassCard>
 
         <GlassCard variants={riseItem} padding="lg">

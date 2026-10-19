@@ -26,9 +26,23 @@ describe('AI の結果を整える', () => {
   it('材料名をそろえ、区分は辞書を優先し、分量を読み取る', () => {
     const { draft, warnings } = toRecipeDraft(aiRecipeSchema.parse(base));
     expect(draft.ingredients).toEqual([
-      { name: '豚ロース肉', section: 'meat', quantity: 250, unit: 'g', amountText: null },
-      { name: '玉ねぎ', section: 'veg', quantity: 0.5, unit: '個', amountText: null },
-      { name: 'しょうゆ', section: 'seasoning', quantity: 2, unit: '大さじ', amountText: null },
+      {
+        name: '豚ロース肉',
+        section: 'meat',
+        quantity: 250,
+        unit: 'g',
+        amountText: null,
+        group: null,
+      },
+      { name: '玉ねぎ', section: 'veg', quantity: 0.5, unit: '個', amountText: null, group: null },
+      {
+        name: 'しょうゆ',
+        section: 'seasoning',
+        quantity: 2,
+        unit: '大さじ',
+        amountText: null,
+        group: null,
+      },
     ]);
     expect(draft.difficulty).toBe('futaba');
     expect(draft.tags).toEqual(['定番']);
@@ -46,6 +60,26 @@ describe('AI の結果を整える', () => {
       }),
     );
     expect(draft.ingredients.map((i) => i.name)).toEqual(['ぶり', '玉ねぎ']);
+  });
+
+  it('「A」「【B】」などのグループを読み取り、同じ調味料も別々に残す', () => {
+    const { draft } = toRecipeDraft(
+      aiRecipeSchema.parse({
+        ...base,
+        ingredients: [
+          { name: '醤油', amount: '大さじ1', section: 'seasoning', group: 'A' },
+          { name: 'みりん', amount: '大さじ1', section: 'seasoning', group: 'A' },
+          { name: '醤油', amount: '小さじ1', section: 'seasoning', group: '【B】' },
+          { name: '塩', amount: '少々', section: 'seasoning', group: '' },
+        ],
+      }),
+    );
+    expect(draft.ingredients.map((i) => [i.name, i.group, i.quantity])).toEqual([
+      ['しょうゆ', 'A', 1],
+      ['みりん', 'A', 1],
+      ['しょうゆ', 'B', 1],
+      ['塩', null, null],
+    ]);
   });
 
   it('揚げ物や手順が多いレシピはふたばにしない', () => {

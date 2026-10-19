@@ -181,6 +181,8 @@ export const recipeIngredients = sqliteTable(
     quantity: real('quantity'),
     unit: text('unit'),
     amountText: text('amount_text'),
+    /** 「A（たれ）」「B」など、まとめて使う材料の見出し。同じ調味料でも別のグループなら別物として扱う */
+    groupLabel: text('group_label'),
     section: text('section', {
       enum: ['veg', 'meat', 'fish', 'dairy_egg', 'soy', 'dry', 'seasoning', 'other'],
     }).notNull(),

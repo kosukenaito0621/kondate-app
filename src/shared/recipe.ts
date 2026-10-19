@@ -6,6 +6,7 @@ import {
   MAIN_INGREDIENTS,
   SECTIONS,
   UNITS,
+  type Section,
   type Unit,
 } from './constants';
 import { COOKING_LEVELS, type CookingLevel } from './levels';
@@ -94,6 +95,8 @@ export const ingredientInputSchema = z.object({
   unit: z.enum(UNITS).nullable(),
   amountText: z.string().trim().max(20).nullable(),
   section: z.enum(SECTIONS),
+  /** 「A（たれ）」「B」などの見出し。null はグループなし */
+  group: z.string().trim().max(20).nullish(),
 });
 
 /** 手順。tip は初心者向けのひとことコツ（ふたばのレシピでは全手順に入れる） */
@@ -153,3 +156,27 @@ export type RecipeDetail = RecipeSummary & {
   sourceUrl: string | null;
   ingredients: (IngredientInput & { id: string })[];
 };
+
+/**
+ * レシピ詳細での材料の並べ方。
+ * グループなしの材料 → グループなしの調味料（「調味料」見出し）→ 各グループ（最初に出てきた順）。
+ * 同じ調味料が別のグループにあっても合算しない。
+ */
+export function groupIngredients<T extends { section: Section; group?: string | null }>(
+  items: T[],
+) {
+  const plain: T[] = [];
+  const seasonings: T[] = [];
+  const groups = new Map<string, T[]>();
+  for (const i of items) {
+    const g = i.group?.trim();
+    if (g) groups.set(g, [...(groups.get(g) ?? []), i]);
+    else if (i.section === 'seasoning') seasonings.push(i);
+    else plain.push(i);
+  }
+  return [
+    { label: null, kind: 'plain' as const, items: plain },
+    { label: null, kind: 'seasoning' as const, items: seasonings },
+    ...[...groups].map(([label, items]) => ({ label, kind: 'group' as const, items })),
+  ].filter((b) => b.items.length > 0);
+}

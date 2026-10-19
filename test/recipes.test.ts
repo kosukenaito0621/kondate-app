@@ -57,6 +57,42 @@ describe('レシピAPI', () => {
     expect(r.steps.every((s) => s.tip)).toBe(true);
   });
 
+  it('材料のグループ（A・B）を保存し、同じ調味料も別々に返す', async () => {
+    const u = await login('recipe-ing-group');
+    const res = await api(u, '/api/recipes', {
+      method: 'POST',
+      json: {
+        ...sample,
+        ingredients: [
+          ...sample.ingredients,
+          {
+            name: 'しょうゆ',
+            quantity: 1,
+            unit: '大さじ',
+            amountText: null,
+            section: 'seasoning',
+            group: 'A（たれ）',
+          },
+          {
+            name: 'しょうゆ',
+            quantity: 1,
+            unit: '小さじ',
+            amountText: null,
+            section: 'seasoning',
+            group: 'B',
+          },
+        ],
+      },
+    });
+    const r = (await res.json()) as RecipeDetail;
+    expect(r.ingredients.map((i) => [i.name, i.group])).toEqual([
+      ['玉ねぎ', null],
+      ['豚こま切れ肉', null],
+      ['しょうゆ', 'A（たれ）'],
+      ['しょうゆ', 'B'],
+    ]);
+  });
+
   it('グループのレシピを作成・編集・削除できる（材料名は正規化、費用段階は自動）', async () => {
     const u = await login('recipe-crud');
     const created = await api(u, '/api/recipes', { method: 'POST', json: sample });

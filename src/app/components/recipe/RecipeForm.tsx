@@ -26,7 +26,7 @@ import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
 import { GripIcon, PlusIcon, TrashIcon } from '../icons';
 
-type IngredientRow = { key: string; name: string; amount: string; section: Section };
+type IngredientRow = { key: string; name: string; amount: string; section: Section; group: string };
 type StepRow = { key: string; text: string; tip: string };
 
 export type RecipeFormValue = {
@@ -65,6 +65,7 @@ export function toFormValue(r?: Partial<RecipeInput>): RecipeFormValue {
       name: i?.name ?? '',
       amount: i ? formatAmount(i) : '',
       section: i?.section ?? 'veg',
+      group: i?.group ?? '',
     })),
     steps: (r?.steps?.length ? r.steps : [null, null]).map((s) => ({
       key: key(),
@@ -93,7 +94,12 @@ export function parseForm(v: RecipeFormValue) {
     imageKey: v.imageKey,
     ingredients: v.ingredients
       .filter((i) => i.name.trim())
-      .map((i) => ({ name: i.name.trim(), section: i.section, ...parseAmount(i.amount) })),
+      .map((i) => ({
+        name: i.name.trim(),
+        section: i.section,
+        group: i.group.trim() || null,
+        ...parseAmount(i.amount),
+      })),
     steps: v.steps
       .filter((s) => s.text.trim())
       .map((s) => ({ text: s.text.trim(), ...(s.tip.trim() && { tip: s.tip.trim() }) })),
@@ -118,6 +124,11 @@ export function RecipeForm({
   const [v, setV] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const listId = useId();
+  const groupListId = useId();
+  // 入力済みのグループ名＋A〜C を候補に出す
+  const groupNames = [
+    ...new Set([...v.ingredients.map((i) => i.group.trim()).filter(Boolean), 'A', 'B', 'C']),
+  ];
   const set = <K extends keyof RecipeFormValue>(k: K, val: RecipeFormValue[K]) =>
     setV((prev) => ({ ...prev, [k]: val }));
 
@@ -239,7 +250,13 @@ export function RecipeForm({
         <h2 className="font-bold">材料</h2>
         <p className="mt-1 text-xs text-ink-soft">
           分量は「300g」「大さじ2」「1/2個」「少々」のように書けます。区分は材料名から自動で入ります。
+          「A（たれ）」のように合わせて使う材料は、グループに同じ名前を入れるとまとまって表示されます。
         </p>
+        <datalist id={groupListId}>
+          {groupNames.map((n) => (
+            <option key={n} value={n} />
+          ))}
+        </datalist>
         <datalist id={listId}>
           {INGREDIENT_NAMES.map((n) => (
             <option key={n} value={n} />
@@ -300,19 +317,32 @@ export function RecipeForm({
                     <TrashIcon size={18} />
                   </button>
                 </div>
-                <select
-                  aria-label={`材料${idx + 1}の区分`}
-                  value={i.section}
-                  onChange={(e) => updateIngredient(i.key, { section: e.target.value as Section })}
-                  className="ml-8 min-h-9 self-start rounded-full bg-transparent px-2 text-xs text-ink-soft"
-                >
-                  {SECTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {SECTION_LABEL[s]}
-                      {s === 'seasoning' ? '（買い物リストに出さない）' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="ml-8 flex items-center gap-2">
+                  <input
+                    aria-label={`材料${idx + 1}のグループ`}
+                    list={groupListId}
+                    value={i.group}
+                    onChange={(e) => updateIngredient(i.key, { group: e.target.value })}
+                    placeholder="グループ"
+                    maxLength={20}
+                    className="field min-h-9 w-24 rounded-full px-3 text-xs"
+                  />
+                  <select
+                    aria-label={`材料${idx + 1}の区分`}
+                    value={i.section}
+                    onChange={(e) =>
+                      updateIngredient(i.key, { section: e.target.value as Section })
+                    }
+                    className="min-h-9 min-w-0 rounded-full bg-transparent px-2 text-xs text-ink-soft"
+                  >
+                    {SECTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {SECTION_LABEL[s]}
+                        {s === 'seasoning' ? '（買い物リストに出さない）' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </Reorder.Item>
             ))}
           </AnimatePresence>
@@ -324,7 +354,14 @@ export function RecipeForm({
           onClick={() =>
             set('ingredients', [
               ...v.ingredients,
-              { key: key(), name: '', amount: '', section: 'veg' },
+              {
+                key: key(),
+                name: '',
+                amount: '',
+                section: 'veg',
+                // 続けて同じグループの材料を入れやすいように、直前の行のグループを引き継ぐ
+                group: v.ingredients.at(-1)?.group ?? '',
+              },
             ])
           }
         >

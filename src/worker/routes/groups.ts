@@ -146,7 +146,9 @@ export const groupRoutes = new Hono<AppEnv>()
     if ('error' in g) return g.error;
     const headers = new Headers(c.req.raw.headers);
     headers.set('x-kondate-user', c.var.user.id);
-    const res = await c.env.GROUP_ROOM.getByName(g.groupId).fetch(new Request(c.req.url, { headers }));
+    const res = await c.env.GROUP_ROOM.getByName(g.groupId).fetch(
+      new Request(c.req.url, { headers }),
+    );
     // DO の応答はヘッダーを変更できないので、共通ミドルウェアが触れるよう作り直す
     return res.webSocket
       ? new Response(null, { status: 101, webSocket: res.webSocket })
@@ -187,7 +189,11 @@ export const groupRoutes = new Hono<AppEnv>()
       .get();
     await ensureCurrentGroup(c.var.db, target, left?.displayName ?? null);
     // 抜けた人のリアルタイム接続を切り、残ったメンバーに知らせる
-    c.executionCtx.waitUntil(c.env.GROUP_ROOM.getByName(g.groupId).disconnect(target).catch(() => {}));
+    c.executionCtx.waitUntil(
+      c.env.GROUP_ROOM.getByName(g.groupId)
+        .disconnect(target)
+        .catch(() => {}),
+    );
     notifyGroup(c, { type: 'group.updated' }, g.groupId);
     return c.json({ ok: true });
   })

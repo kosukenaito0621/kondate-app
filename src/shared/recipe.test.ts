@@ -30,3 +30,23 @@ describe('formatAmount', () => {
     expect(formatQuantity(3)).toBe('3');
   });
 });
+
+describe('groupIngredients', () => {
+  it('グループごとに分け、同じ調味料でも合算しない', async () => {
+    const { groupIngredients } = await import('./recipe');
+    const items = [
+      { name: '鶏もも肉', section: 'meat' as const, group: null },
+      { name: 'しょうゆ', section: 'seasoning' as const, group: 'A' },
+      { name: '塩', section: 'seasoning' as const, group: null },
+      { name: 'みりん', section: 'seasoning' as const, group: 'A' },
+      { name: 'しょうゆ', section: 'seasoning' as const, group: 'B' },
+      { name: 'ねぎ', section: 'veg' as const, group: null },
+    ];
+    expect(groupIngredients(items).map((b) => [b.label, b.items.map((i) => i.name)])).toEqual([
+      [null, ['鶏もも肉', 'ねぎ']],
+      [null, ['塩']],
+      ['A', ['しょうゆ', 'みりん']],
+      ['B', ['しょうゆ']],
+    ]);
+  });
+});

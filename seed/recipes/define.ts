@@ -7,6 +7,7 @@ import { parseAmount, type RecipeInput } from '../../src/shared/recipe';
 /**
  * 初期レシピの短縮記法（すべて2人前）。
  * - i: 材料「名前 分量」（例: "鶏もも肉 300g", "しょうゆ 大さじ2", "塩 少々"）。区分は材料辞書から引く
+ *   グループ分けするときは "A: しょうゆ 大さじ1" のように見出しとコロンを前に付ける
  * - s: 手順。ふたばは [手順, コツ] の組で書く
  * - lv: 'f' = ふたば / 'm' = みのり
  * - 並び順が ID になるので、追加は各配列の末尾に行うこと
@@ -32,13 +33,16 @@ export const group = (category: Category, genre: Genre, specs: SeedSpec[]): Seed
   specs,
 });
 
-function parseIngredientLine(line: string, recipe: string) {
+function parseIngredientLine(raw: string, recipe: string) {
+  const m = /^([^:]{1,20}):s*(.+)$/.exec(raw);
+  const group = m ? m[1]!.trim() : null;
+  const line = m ? m[2]! : raw;
   const at = line.lastIndexOf(' ');
   if (at <= 0) throw new Error(`[${recipe}] 材料の書式が不正: "${line}"`);
   const name = normalizeIngredientName(line.slice(0, at));
   const section = sectionOf(name);
   if (!section) throw new Error(`[${recipe}] 材料辞書にない材料: "${name}"`);
-  return { name, section, ...parseAmount(line.slice(at + 1)) };
+  return { name, section, group, ...parseAmount(line.slice(at + 1)) };
 }
 
 export function expand(g: SeedGroup): SeedRecipe[] {

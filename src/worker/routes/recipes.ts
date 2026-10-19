@@ -67,6 +67,7 @@ async function loadDetail(db: Db, row: RecipeRow): Promise<RecipeDetail> {
       unit: i.unit as RecipeDetail['ingredients'][number]['unit'],
       amountText: i.amountText,
       section: i.section,
+      group: i.groupLabel,
     })),
   };
 }
@@ -89,6 +90,9 @@ function rowValues(input: RecipeInput) {
   };
 }
 
+/** recipe_ingredients に1行あたり入れる列の数（D1 の変数上限で分割するのに使う） */
+const INGREDIENT_COLUMNS = 9;
+
 function ingredientRows(recipeId: string, input: RecipeInput) {
   return input.ingredients.map((i, sort) => ({
     id: crypto.randomUUID(),
@@ -98,6 +102,7 @@ function ingredientRows(recipeId: string, input: RecipeInput) {
     quantity: i.quantity,
     unit: i.unit,
     amountText: i.amountText,
+    groupLabel: i.group || null,
     section: i.section,
   }));
 }
@@ -156,7 +161,7 @@ export const recipeRoutes = new Hono<AppEnv>()
         createdBy: c.var.user.id,
         ...rowValues(input),
       }),
-      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+      ...chunkRows(ingredientRows(id, input), INGREDIENT_COLUMNS).map((chunk) =>
         db.insert(recipeIngredients).values(chunk),
       ),
     ]);
@@ -183,7 +188,7 @@ export const recipeRoutes = new Hono<AppEnv>()
         .set({ ...rowValues(input), updatedAt: Date.now() })
         .where(ownedBy(c.var.group.id, id)),
       db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id)),
-      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+      ...chunkRows(ingredientRows(id, input), INGREDIENT_COLUMNS).map((chunk) =>
         db.insert(recipeIngredients).values(chunk),
       ),
     ]);
@@ -218,7 +223,7 @@ export const recipeRoutes = new Hono<AppEnv>()
       db
         .insert(recipes)
         .values({ id, groupId: c.var.group.id, createdBy: c.var.user.id, ...rowValues(input) }),
-      ...chunkRows(ingredientRows(id, input), 8).map((chunk) =>
+      ...chunkRows(ingredientRows(id, input), INGREDIENT_COLUMNS).map((chunk) =>
         db.insert(recipeIngredients).values(chunk),
       ),
     ]);

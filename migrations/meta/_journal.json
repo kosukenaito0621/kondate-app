@@ -57,6 +57,13 @@
       "when": 1792331175737,
       "tag": "0007_cook_log_image",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792367746556,
+      "tag": "0008_ingredient_group",
+      "breakpoints": true
     }
   ]
 }

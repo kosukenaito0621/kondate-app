@@ -26,6 +26,7 @@ export const aiRecipeSchema = z.object({
         name: z.string().min(1).max(60),
         amount: z.string().max(30).catch(''),
         section: z.enum(SECTIONS).catch('other'),
+        group: z.string().max(20).nullish().catch(null),
       }),
     )
     .min(1)
@@ -65,6 +66,10 @@ export const AI_RECIPE_JSON_SCHEMA = {
             description: '書かれている分量そのまま（例: 200g, 大さじ2, 少々）',
           },
           section: { type: 'string', enum: [...SECTIONS] },
+          group: {
+            type: 'string',
+            description: '「A」「B」「たれ」など見出しの下にある材料ならその見出し。なければ空文字',
+          },
         },
         required: ['name', 'amount', 'section'],
       },
@@ -109,9 +114,11 @@ export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
   const warnings: string[] = [];
   const ingredients = ai.ingredients.map((i) => {
     // 「ぶり（切り身）」のような補足は外してから表記をそろえる
-    const name = normalizeIngredientName(i.name.replace(/s*[（(][^）)]*[）)]s*/g, '') || i.name);
+    const name = normalizeIngredientName(i.name.replace(/\s*[（(][^）)]*[）)]\s*/g, '') || i.name);
     const section: Section = sectionOf(name) ?? i.section;
-    return { name, section, ...parseAmount(i.amount) };
+    // 「【A】」「〈たれ〉」のような囲みは外す
+    const group = i.group?.trim().replace(/^[【[〈＜<]|[】\]〉＞>]$/g, '') || null;
+    return { name, section, group, ...parseAmount(i.amount) };
   });
 
   const nonSeasoning = ingredients.filter((i) => i.section !== 'seasoning').length;

@@ -6,7 +6,7 @@ import type { RealtimeEvent } from '../src/shared/realtime';
 import type { ShoppingListView } from '../src/shared/shopping';
 import { api, BASE, login, type TestUser } from './helpers';
 
-const json = async <T,>(res: Response) => (await res.json()) as T;
+const json = async <T>(res: Response) => (await res.json()) as T;
 const WEEK = '2026-10-19';
 
 async function connect(u: TestUser, groupId: string) {
@@ -62,7 +62,10 @@ describe('リアルタイム同期', () => {
 
     const shop = await json<ShoppingListView>(await api(member, `/api/shopping/${WEEK}`));
     const item = shop.items[0]!;
-    await api(member, `/api/shopping/items/${item.id}`, { method: 'PATCH', json: { checked: true } });
+    await api(member, `/api/shopping/items/${item.id}`, {
+      method: 'PATCH',
+      json: { checked: true },
+    });
     await until(() => live.events.some((e) => e.type === 'shopping.updated'));
     expect(live.events.find((e) => e.type === 'shopping.updated')).toMatchObject({
       weekStart: WEEK,

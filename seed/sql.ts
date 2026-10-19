@@ -35,7 +35,7 @@ export function seedStatements(): string[] {
     out.push(`DELETE FROM recipe_ingredients WHERE recipe_id = ${q(r.id)}`);
     r.ingredients.forEach((i, idx) => {
       out.push(
-        `INSERT INTO recipe_ingredients (id, recipe_id, sort, name, quantity, unit, amount_text, section) VALUES (${[
+        `INSERT INTO recipe_ingredients (id, recipe_id, sort, name, quantity, unit, amount_text, section, group_label) VALUES (${[
           q(`${r.id}-${String(idx + 1).padStart(2, '0')}`),
           q(r.id),
           idx,
@@ -44,6 +44,7 @@ export function seedStatements(): string[] {
           q(i.unit),
           q(i.amountText),
           q(i.section),
+          q(i.group ?? null),
         ].join(', ')})`,
       );
     });
