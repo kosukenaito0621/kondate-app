@@ -267,3 +267,31 @@ describe('外食・テイクアウトの日', () => {
     expect(res.status).toBe(409);
   });
 });
+
+describe('週間献立の「作った」', () => {
+  it('その日に作ったと記録した料理に印が付き、取り消すと消える', async () => {
+    const u = await login(`cooked-${crypto.randomUUID()}`);
+    const v = await generate(u);
+    const mon = v.days[0]!;
+    const main = mon.items.find((i) => i.slot === 'main')!;
+    expect(main.cookedLogId).toBeNull();
+
+    const log = await json<{ id: string }>(
+      await api(u, '/api/logs', {
+        method: 'POST',
+        json: { recipeId: main.recipe.id, date: mon.date },
+      }),
+    );
+    const after = await json<PlanView>(await api(u, `/api/plans/${WEEK}`));
+    const item = after.days[0]!.items.find((i) => i.slot === 'main')!;
+    expect(item.cookedLogId).toBe(log.id);
+    // ほかの日の同じ料理には付かない
+    expect(after.days.slice(1).every((d) => d.items.every((i) => i.cookedLogId === null))).toBe(
+      true,
+    );
+
+    await api(u, `/api/logs/${log.id}`, { method: 'DELETE' });
+    const back = await json<PlanView>(await api(u, `/api/plans/${WEEK}`));
+    expect(back.days[0]!.items.find((i) => i.slot === 'main')!.cookedLogId).toBeNull();
+  });
+});

@@ -49,6 +49,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
           break;
         case 'logs.updated':
           queryClient.invalidateQueries({ queryKey: ['logs'] });
+          queryClient.invalidateQueries({ queryKey: ['plan'] });
           break;
         case 'settings.updated':
           queryClient.invalidateQueries({ queryKey: ['settings'] });

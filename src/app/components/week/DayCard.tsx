@@ -5,9 +5,10 @@ import type { PlanDayView, PlanItemView } from '../../../shared/plan';
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { GenreBadge } from '../GenreBadge';
-import { ClockIcon, GripIcon } from '../icons';
+import { CheckDraw, ClockIcon, GripIcon } from '../icons';
 import { DAY_MODE_LABEL, isOffDay } from '../../../shared/plan';
 import { DayModeIcon } from './DayModeIcon';
+import { holidayName } from '../../../shared/holidays';
 import { LevelBadge } from '../LevelBadge';
 
 const md = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
@@ -27,7 +28,20 @@ export function MealRow({ item, onClick }: { item: PlanItemView; onClick: () => 
         {CATEGORY_LABEL[item.slot]}
       </span>
       <GenreBadge genre={r.genre} className="size-5 text-[10px]" />
-      <span className="min-w-0 flex-1 truncate text-[15px] font-bold">{r.name}</span>
+      <span
+        className={cn(
+          'min-w-0 flex-1 truncate text-[15px] font-bold',
+          item.cookedLogId && 'text-ink-soft',
+        )}
+      >
+        {r.name}
+      </span>
+      {item.cookedLogId && (
+        <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-success-ink">
+          <CheckDraw checked size={11} />
+          作った
+        </span>
+      )}
       <span className="flex shrink-0 items-center gap-0.5 text-[11px] text-ink-soft">
         <ClockIcon size={12} />
         <span className="num">{r.timeMinutes}</span>
@@ -60,6 +74,9 @@ export function DayCard({
   onDragEnd: () => void;
 }) {
   const controls = useDragControls();
+  // 土曜は水色、日曜と祝日は赤（カレンダーと同じ）
+  const holiday = holidayName(day.date);
+  const tone = day.weekday === 6 || holiday ? 'sun' : day.weekday === 5 ? 'sat' : null;
   const missing = isOffDay(day.mode)
     ? []
     : (['main', 'soup'] as const).filter((s) => !day.items.some((i) => i.slot === s));
@@ -89,8 +106,17 @@ export function DayCard({
           'glass relative rounded-[var(--radius-card)] p-3',
           isToday && 'ring-2 ring-accent',
         )}
-        aria-label={`${WEEKDAY_LABELS[day.weekday]}曜日 ${md(day.date)}`}
+        aria-label={`${WEEKDAY_LABELS[day.weekday]}曜日 ${md(day.date)}${holiday ? ` ${holiday}` : ''}`}
       >
+        {tone && (
+          <span
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute inset-0 -z-10 rounded-[var(--radius-card)]',
+              tone === 'sun' ? 'bg-sun-soft' : 'bg-sat-soft',
+            )}
+          />
+        )}
         {highlightAt && (
           <motion.span
             key={highlightAt}
@@ -110,10 +136,31 @@ export function DayCard({
           >
             <GripIcon size={18} />
           </button>
-          <span className={cn('text-lg font-bold', isToday && 'text-accent-strong')}>
+          <span
+            className={cn(
+              'text-lg font-bold',
+              tone === 'sun'
+                ? 'text-sun'
+                : tone === 'sat'
+                  ? 'text-sat'
+                  : isToday && 'text-accent-strong',
+            )}
+          >
             {WEEKDAY_LABELS[day.weekday]}
           </span>
-          <span className="num text-xs text-ink-soft">{md(day.date)}</span>
+          <span
+            className={cn(
+              'num text-xs',
+              tone === 'sun' ? 'text-sun' : tone === 'sat' ? 'text-sat' : 'text-ink-soft',
+            )}
+          >
+            {md(day.date)}
+          </span>
+          {holiday && (
+            <span className="truncate rounded-full bg-sun-chip px-2 py-0.5 text-[10px] font-bold text-sun">
+              {holiday}
+            </span>
+          )}
           {isToday && (
             <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-ink">
               今日

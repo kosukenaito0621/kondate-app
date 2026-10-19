@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, eq, gte, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
@@ -27,7 +27,7 @@ import {
 } from '../../shared/planner';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
-import { hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
+import { cookLogs, hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
@@ -154,6 +154,13 @@ export async function buildPlanView(
         .where(eq(users.id, plan.updatedBy))
         .get()
     : null;
+  // その週に「作った」と記録した料理（日付と料理の組 → 記録の id）
+  const dates = weekDates(weekStart);
+  const logs = await db
+    .select({ id: cookLogs.id, date: cookLogs.date, recipeId: cookLogs.recipeId })
+    .from(cookLogs)
+    .where(and(eq(cookLogs.groupId, groupId), inArray(cookLogs.date, dates)));
+  const cooked = new Map(logs.map((l) => [`${l.date}|${l.recipeId}`, l.id]));
   const slotOrder = { main: 0, soup: 1, side: 2 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
@@ -192,6 +199,7 @@ export async function buildPlanView(
             recipe: toSummary(r.recipe),
             updatedBy: r.item.updatedBy,
             updatedAt: r.item.updatedAt,
+            cookedLogId: cooked.get(`${date}|${r.item.recipeId}`) ?? null,
           })),
       };
     }),

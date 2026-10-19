@@ -17,6 +17,13 @@
     'Nunito', 'Zen Maru Gothic', system-ui, -apple-system, 'Hiragino Sans',
     'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', Meiryo, sans-serif;
 
+  /* 週間献立の土曜（水色）・日曜と祝日（赤） */
+  --sat: #236fa6;
+  --sat-soft: rgb(214 236 251 / 0.92);
+  --sun: #c3303f;
+  --sun-soft: rgb(253 226 229 / 0.92);
+  --sun-chip: #f9cdd2;
+
   --glass-1: rgb(255 255 255 / 0.74);
   --glass-2: rgb(255 255 255 / 0.5);
   --glass-strong-1: rgb(255 255 255 / 0.86);
@@ -132,6 +139,13 @@
   --font-number:
     'Outfit', system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN',
     'Yu Gothic UI', Meiryo, sans-serif;
+
+  /* 週間献立の土曜（水色）・日曜と祝日（赤）。暗い背景では文字を明るく */
+  --sat: #9fd0f5;
+  --sat-soft: rgb(110 180 240 / 0.2);
+  --sun: #ff9ea8;
+  --sun-soft: rgb(255 110 125 / 0.18);
+  --sun-chip: rgb(255 110 125 / 0.28);
 
   --glass-1: rgb(255 255 255 / 0.11);
   --glass-2: rgb(255 255 255 / 0.05);

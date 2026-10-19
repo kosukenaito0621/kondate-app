@@ -27,6 +27,11 @@
   --color-success: var(--success);
   --color-success-ink: var(--success-ink);
   --color-danger: var(--danger);
+  --color-sat: var(--sat);
+  --color-sat-soft: var(--sat-soft);
+  --color-sun: var(--sun);
+  --color-sun-soft: var(--sun-soft);
+  --color-sun-chip: var(--sun-chip);
 
   --color-pill: var(--pill);
   --color-field: var(--field);

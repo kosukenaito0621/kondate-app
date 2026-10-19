@@ -53,6 +53,35 @@ export function useCookToggle() {
       queryClient.setQueryData(todayLogsQuery.queryKey, ctx?.prev);
       toast(e.message || '記録できませんでした', 'error');
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['logs'] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['logs'] });
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+    },
+  });
+}
+
+/**
+ * 週間献立から、その日に「作った」を記録・取り消す（過去の日も可）。
+ * 記録は自炊記録・ホームの「作った」と同じもの。
+ */
+export function useCookOnDate() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (v: { recipeId: string; date: string; logId: string | null }) => {
+      if (v.logId) {
+        const res = await api.logs[':id'].$delete({ param: { id: v.logId } });
+        if (!res.ok) throw new Error('取り消せませんでした');
+        return;
+      }
+      const res = await api.logs.$post({ json: { recipeId: v.recipeId, date: v.date } });
+      if (!res.ok) throw new Error('記録できませんでした');
+    },
+    onSuccess: (_d, v) => toast(v.logId ? '「作った」を取り消しました' : '作ったと記録しました'),
+    onError: (e) => toast(e.message, 'error'),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['logs'] });
+      queryClient.invalidateQueries({ queryKey: ['plan'] });
+    },
   });
 }

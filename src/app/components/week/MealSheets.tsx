@@ -12,6 +12,9 @@ import { Sheet } from '../glass/Sheet';
 import { ClockIcon, SearchIcon, YenIcon } from '../icons';
 import { DAY_MODE_LABEL, DAY_MODES, isOffDay, type DayMode } from '../../../shared/plan';
 import { DayModeIcon } from './DayModeIcon';
+import { toJstDate } from '../../../shared/date';
+import { useCookOnDate } from '../../lib/cooklog';
+import { CheckDraw } from '../icons';
 import { LevelBadge } from '../LevelBadge';
 
 export type MealTarget = { day: PlanDayView; slot: Category; item?: PlanItemView };
@@ -78,6 +81,11 @@ function MealSheetBody({
         </span>
         <LevelBadge level={target.item.recipe.difficulty} />
       </Link>
+      <CookOnDateButton
+        recipeId={target.item.recipe.id}
+        date={target.day.date}
+        logId={target.item.cookedLogId}
+      />
       <GlassButton variant="primary" loading={busy} onClick={onRegenerate}>
         別のレシピにする（おまかせ）
       </GlassButton>
@@ -258,5 +266,36 @@ export function DaySheet({
         </div>
       )}
     </Sheet>
+  );
+}
+
+/** その日に「作った」を記録・取り消す（未来の日は出さない） */
+function CookOnDateButton({
+  recipeId,
+  date,
+  logId,
+}: {
+  recipeId: string;
+  date: string;
+  logId: string | null;
+}) {
+  const cook = useCookOnDate();
+  // 押した直後の表示（読み直しが届くまでのあいだ）
+  const [done, setDone] = useState(!!logId);
+  if (date > toJstDate()) return null;
+  return (
+    <GlassButton
+      variant={done ? 'ghost' : 'glass'}
+      icon={<CheckDraw checked={done} size={16} />}
+      loading={cook.isPending}
+      onClick={() =>
+        cook.mutate(
+          { recipeId, date, logId: done ? logId : null },
+          { onSuccess: () => setDone((d) => !d) },
+        )
+      }
+    >
+      {done ? '「作った」を取り消す' : 'この日に作ったと記録する'}
+    </GlassButton>
   );
 }

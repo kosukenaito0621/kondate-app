@@ -20,6 +20,23 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-10-20-week-cooked',
+    date: '2026-10-20',
+    kind: 'improve',
+    title: '週間献立に「作った」が表示されるようになりました',
+    body: [
+      '作った料理には、週間献立で「作った」の印が付きます。',
+      '週間献立の料理をタップすると、その日に作ったと記録したり、取り消したりできます（過去の日も記録できます）。自炊記録とつながっています。',
+    ],
+  },
+  {
+    id: '2026-10-20-weekend-colors',
+    date: '2026-10-20',
+    kind: 'improve',
+    title: '週間献立で土曜は水色、日曜・祝日は赤で表示します',
+    body: ['祝日には「文化の日」などの名前も表示します。振替休日にも対応しています。'],
+  },
+  {
     id: '2026-10-20-share-bundle',
     date: '2026-10-20',
     kind: 'feature',
