@@ -20,7 +20,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SettingsSkeleton } from '../../components/skeleton/Skeletons';
 import { currentGroupQuery, invitesQuery, inviteUrl } from '../../lib/groups';
 import { GroupNameField } from '../../components/GroupNameField';
-import { LEVEL_COLOR, LevelIcon } from '../../components/LevelIcon';
+import { LevelIcon } from '../../components/LevelIcon';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/group')({
@@ -142,8 +142,8 @@ function GroupBody({ group }: { group: GroupDetail }) {
             options={COOKING_LEVELS.map((l) => ({
               value: l,
               label: (
-                <span className={`inline-flex ${LEVEL_COLOR[l]}`}>
-                  <LevelIcon level={l} size={18} />
+                <span className={`inline-flex`}>
+                  <LevelIcon level={l} size={22} />
                 </span>
               ),
               ariaLabel: LEVEL_META[l].name,

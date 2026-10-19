@@ -1,3 +1,4 @@
+import { LevelIcon } from '../LevelIcon';
 import { cn } from '../../lib/cn';
 import {
   CameraIcon,
@@ -6,7 +7,6 @@ import {
   LinkIcon,
   PlusIcon,
   RefreshIcon,
-  SproutIcon,
   ShuffleIcon,
   SparkleIcon,
 } from '../icons';
@@ -199,9 +199,7 @@ export function ArtRecipe() {
             和食
           </span>
           <span className="rounded-full bg-pill px-1.5 text-[9px] font-bold">主菜</span>
-          <span className="inline-flex text-success-ink">
-            <SproutIcon size={12} />
-          </span>
+          <LevelIcon level="futaba" size={14} />
         </span>
         <Bar w="90%" />
         <Bar w="70%" />

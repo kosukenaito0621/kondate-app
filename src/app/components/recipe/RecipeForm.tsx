@@ -25,7 +25,7 @@ import { GlassButton } from '../glass/GlassButton';
 import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
 import { SEASON_LABEL, SEASONS, seasonsFromIngredients, type Season } from '../../../shared/season';
-import { LEVEL_COLOR, LevelIcon } from '../LevelIcon';
+import { LevelIcon } from '../LevelIcon';
 import { ChevronDownIcon, ChevronUpIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from '../icons';
 
 type IngredientRow = { key: string; name: string; amount: string; section: Section; group: string };
@@ -213,8 +213,8 @@ export function RecipeForm({
             options={COOKING_LEVELS.map((l) => ({
               value: l,
               label: (
-                <span className={`inline-flex ${LEVEL_COLOR[l]}`}>
-                  <LevelIcon level={l} size={18} />
+                <span className={`inline-flex`}>
+                  <LevelIcon level={l} size={22} />
                 </span>
               ),
               ariaLabel: LEVEL_META[l].name,

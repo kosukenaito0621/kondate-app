@@ -13,7 +13,7 @@ import { spring, staggerContainer } from '../../../lib/motion';
 import { compact, optOneOf, optString } from '../../../lib/search';
 import { toJstDate } from '../../../../shared/date';
 import { SEASON_LABEL, SEASONS, seasonOf } from '../../../../shared/season';
-import { LEVEL_COLOR, LevelIcon } from '../../../components/LevelIcon';
+import { LevelIcon } from '../../../components/LevelIcon';
 import { recipesQuery } from '../../../lib/recipes';
 
 const validateSearch = (s: Record<string, unknown>) =>
@@ -127,8 +127,8 @@ function RecipeList() {
             ...COOKING_LEVELS.map((l) => ({
               value: l as string,
               label: (
-                <span className={`inline-flex ${LEVEL_COLOR[l]}`}>
-                  <LevelIcon level={l} size={18} />
+                <span className={`inline-flex`}>
+                  <LevelIcon level={l} size={22} />
                 </span>
               ),
               ariaLabel: LEVEL_META[l].name,

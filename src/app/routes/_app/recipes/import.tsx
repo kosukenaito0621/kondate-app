@@ -14,7 +14,7 @@ import { PageHeader } from '../../../components/PageHeader';
 import { RecipeForm, toFormValue } from '../../../components/recipe/RecipeForm';
 import { AiProgressSkeleton } from '../../../components/skeleton/Skeletons';
 import { resizeImage } from '../../../lib/images';
-import { LEVEL_COLOR, LevelIcon } from '../../../components/LevelIcon';
+import { LevelIcon } from '../../../components/LevelIcon';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 
 export const Route = createFileRoute('/_app/recipes/import')({
@@ -135,8 +135,8 @@ function ImportPage() {
                 aria-label={LEVEL_META[d.difficulty].name}
                 title={LEVEL_META[d.difficulty].name}
               >
-                <span className={`inline-flex align-middle ${LEVEL_COLOR[d.difficulty]}`}>
-                  <LevelIcon level={d.difficulty} size={16} />
+                <span className={`inline-flex align-middle`}>
+                  <LevelIcon level={d.difficulty} size={20} />
                 </span>
               </span>
               <span className="pill-active num rounded-full px-3 py-1">{d.timeMinutes}分</span>
