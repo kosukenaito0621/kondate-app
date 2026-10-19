@@ -187,3 +187,14 @@ export function groupIngredients<T extends { section: Section; group?: string | 
     ...[...groups].map(([label, items]) => ({ label, kind: 'group' as const, items })),
   ].filter((b) => b.items.length > 0);
 }
+
+// ===== レシピの共有 =====
+
+export type CreatedShare = { token: string; url: string; expiresAt: number };
+
+/** 共有リンクを開いた人に見せる内容 */
+export type SharedRecipe = {
+  recipe: RecipeDetail;
+  sharedBy: string | null;
+  expiresAt: number;
+};

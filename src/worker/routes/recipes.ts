@@ -7,14 +7,17 @@ import { normalizeIngredientName } from '../../shared/ingredients';
 import {
   recipeInputSchema,
   recipeQuerySchema,
+  type CreatedShare,
   type RecipeDetail,
   type RecipeInput,
   type RecipeSummary,
 } from '../../shared/recipe';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
-import { hiddenRecipes, recipeIngredients, recipes } from '../db/schema';
+import { hiddenRecipes, recipeIngredients, recipes, recipeShares } from '../db/schema';
+import { randomToken, sha256Hex } from '../lib/crypto';
 import { isGroupImageKey } from '../lib/images';
+import { hitRateLimit } from '../lib/rate-limit';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
@@ -22,6 +25,10 @@ import type { AppEnv } from '../types';
 import { deleteImage } from './images';
 
 type RecipeRow = typeof recipes.$inferSelect;
+
+/** 共有リンクの有効期限（30日）と、1人が1日に作れる数 */
+const SHARE_TTL_MS = 30 * 86_400_000;
+const SHARES_PER_DAY = 30;
 
 export const toSummary = (r: RecipeRow): RecipeSummary => ({
   id: r.id,
@@ -52,7 +59,7 @@ async function findVisible(db: Db, groupId: string, id: string) {
     .get();
 }
 
-async function loadDetail(db: Db, row: RecipeRow): Promise<RecipeDetail> {
+export async function loadDetail(db: Db, row: RecipeRow): Promise<RecipeDetail> {
   const ingredients = await db
     .select()
     .from(recipeIngredients)
@@ -218,20 +225,33 @@ export const recipeRoutes = new Hono<AppEnv>()
     const src = await findVisible(db, c.var.group.id, c.req.param('id'));
     if (!src) return c.json({ error: 'not_found' }, 404);
     const detail = await loadDetail(db, src);
-    const id = crypto.randomUUID();
-    const input = recipeInputSchema.parse({
-      ...detail,
-      name: `${detail.name}（アレンジ）`.slice(0, 60),
+    const id = await copyRecipeInto(db, detail, {
+      groupId: c.var.group.id,
+      userId: c.var.user.id,
+      name: `${detail.name}（アレンジ）`,
     });
-    await db.batch([
-      db
-        .insert(recipes)
-        .values({ id, groupId: c.var.group.id, createdBy: c.var.user.id, ...rowValues(input) }),
-      ...chunkRows(ingredientRows(id, input), INGREDIENT_COLUMNS).map((chunk) =>
-        db.insert(recipeIngredients).values(chunk),
-      ),
-    ]);
+    notifyGroup(c, { type: 'recipes.updated' });
     return c.json({ id }, 201);
+  })
+  /** 共有リンクを作る（家族・友だちに送り、相手のグループのレシピとして保存してもらう） */
+  .post('/:id/share', async (c) => {
+    const db = c.var.db;
+    const src = await findVisible(db, c.var.group.id, c.req.param('id'));
+    if (!src) return c.json({ error: 'not_found' }, 404);
+    if (await hitRateLimit(db, `share:${c.var.user.id}`, SHARES_PER_DAY, 86_400_000)) {
+      return c.json({ error: 'rate_limited', message: '今日はこれ以上リンクを作れません' }, 429);
+    }
+    const token = randomToken(18);
+    const expiresAt = Date.now() + SHARE_TTL_MS;
+    await db.insert(recipeShares).values({
+      id: crypto.randomUUID(),
+      tokenHash: await sha256Hex(token),
+      recipeId: src.id,
+      createdBy: c.var.user.id,
+      expiresAt,
+    });
+    const url = new URL(`/r/${token}`, c.req.url).toString();
+    return c.json({ token, url, expiresAt } satisfies CreatedShare, 201);
   })
   .post('/:id/hide', zValidator('json', z.object({ hidden: z.boolean() })), async (c) => {
     const db = c.var.db;
@@ -248,3 +268,26 @@ export const recipeRoutes = new Hono<AppEnv>()
     }
     return c.json({ ok: true });
   });
+
+/** レシピ（材料つき）を、指定のグループのレシピとして複製する。写真は引き継がない */
+export async function copyRecipeInto(
+  db: Db,
+  detail: RecipeDetail,
+  to: { groupId: string; userId: string; name?: string },
+) {
+  const id = crypto.randomUUID();
+  const input = recipeInputSchema.parse({
+    ...detail,
+    name: (to.name ?? detail.name).slice(0, 60),
+    imageKey: null,
+  });
+  await db.batch([
+    db
+      .insert(recipes)
+      .values({ id, groupId: to.groupId, createdBy: to.userId, ...rowValues(input) }),
+    ...chunkRows(ingredientRows(id, input), INGREDIENT_COLUMNS).map((chunk) =>
+      db.insert(recipeIngredients).values(chunk),
+    ),
+  ]);
+  return id;
+}

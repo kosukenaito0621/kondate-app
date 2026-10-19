@@ -18,6 +18,8 @@ export const updateMeSchema = z
     cookingLevel: cookingLevelSchema,
     /** 使い方ガイドを見終えた */
     guideSeen: z.literal(true),
+    /** ここまでお知らせを読んだ */
+    newsSeen: z.string().min(1).max(60),
   })
   .partial()
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
@@ -36,6 +38,8 @@ export type GroupSummary = {
 export type Me = {
   /** 使い方ガイドを見終えたか（初回ログイン時に表示する） */
   guideSeen: boolean;
+  /** 最後に見たお知らせの id */
+  newsSeen: string | null;
   id: string;
   email: string;
   displayName: string | null;

@@ -16,10 +16,12 @@ import { Route as StyleguideRouteImport } from './routes/styleguide'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppGroupRouteImport } from './routes/_app/group'
 import { Route as AppLogRouteImport } from './routes/_app/log'
+import { Route as AppNewsRouteImport } from './routes/_app/news'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShoppingRouteImport } from './routes/_app/shopping'
 import { Route as AppWeekRouteImport } from './routes/_app/week'
 import { Route as InviteKeyRouteImport } from './routes/invite.$key'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesIdRouteImport } from './routes/_app/recipes/$id'
 import { Route as AppRecipesImportRouteImport } from './routes/_app/recipes/import'
@@ -61,6 +63,11 @@ const AppLogRoute = AppLogRouteImport.update({
   path: '/log',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNewsRoute = AppNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -79,6 +86,11 @@ const AppWeekRoute = AppWeekRouteImport.update({
 const InviteKeyRoute = InviteKeyRouteImport.update({
   id: '/invite/$key',
   path: '/invite/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRecipesIndexRoute = AppRecipesIndexRouteImport.update({
@@ -119,10 +131,12 @@ export interface FileRoutesByFullPath {
   '/styleguide': typeof StyleguideRoute
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
+  '/news': typeof AppNewsRoute
   '/settings': typeof AppSettingsRoute
   '/shopping': typeof AppShoppingRoute
   '/week': typeof AppWeekRoute
   '/invite/$key': typeof InviteKeyRoute
+  '/r/$token': typeof RTokenRoute
   '/recipes/$id': typeof AppRecipesIdRoute
   '/recipes/import': typeof AppRecipesImportRoute
   '/recipes/new': typeof AppRecipesNewRoute
@@ -136,10 +150,12 @@ export interface FileRoutesByTo {
   '/styleguide': typeof StyleguideRoute
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
+  '/news': typeof AppNewsRoute
   '/settings': typeof AppSettingsRoute
   '/shopping': typeof AppShoppingRoute
   '/week': typeof AppWeekRoute
   '/invite/$key': typeof InviteKeyRoute
+  '/r/$token': typeof RTokenRoute
   '/': typeof AppIndexRoute
   '/recipes/$id': typeof AppRecipesIdRoute
   '/recipes/import': typeof AppRecipesImportRoute
@@ -156,10 +172,12 @@ export interface FileRoutesById {
   '/styleguide': typeof StyleguideRoute
   '/_app/group': typeof AppGroupRoute
   '/_app/log': typeof AppLogRoute
+  '/_app/news': typeof AppNewsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shopping': typeof AppShoppingRoute
   '/_app/week': typeof AppWeekRoute
   '/invite/$key': typeof InviteKeyRoute
+  '/r/$token': typeof RTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/$id': typeof AppRecipesIdRoute
   '/_app/recipes/import': typeof AppRecipesImportRoute
@@ -177,10 +195,12 @@ export interface FileRouteTypes {
     | '/styleguide'
     | '/group'
     | '/log'
+    | '/news'
     | '/settings'
     | '/shopping'
     | '/week'
     | '/invite/$key'
+    | '/r/$token'
     | '/recipes/$id'
     | '/recipes/import'
     | '/recipes/new'
@@ -194,10 +214,12 @@ export interface FileRouteTypes {
     | '/styleguide'
     | '/group'
     | '/log'
+    | '/news'
     | '/settings'
     | '/shopping'
     | '/week'
     | '/invite/$key'
+    | '/r/$token'
     | '/'
     | '/recipes/$id'
     | '/recipes/import'
@@ -213,10 +235,12 @@ export interface FileRouteTypes {
     | '/styleguide'
     | '/_app/group'
     | '/_app/log'
+    | '/_app/news'
     | '/_app/settings'
     | '/_app/shopping'
     | '/_app/week'
     | '/invite/$key'
+    | '/r/$token'
     | '/_app/'
     | '/_app/recipes/$id'
     | '/_app/recipes/import'
@@ -232,6 +256,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   StyleguideRoute: typeof StyleguideRoute
   InviteKeyRoute: typeof InviteKeyRoute
+  RTokenRoute: typeof RTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLogRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/news': {
+      id: '/_app/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof AppNewsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -311,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/invite/$key'
       fullPath: '/invite/$key'
       preLoaderRoute: typeof InviteKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/recipes/': {
@@ -361,6 +400,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppGroupRoute: typeof AppGroupRoute
   AppLogRoute: typeof AppLogRoute
+  AppNewsRoute: typeof AppNewsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShoppingRoute: typeof AppShoppingRoute
   AppWeekRoute: typeof AppWeekRoute
@@ -376,6 +416,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppGroupRoute: AppGroupRoute,
   AppLogRoute: AppLogRoute,
+  AppNewsRoute: AppNewsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShoppingRoute: AppShoppingRoute,
   AppWeekRoute: AppWeekRoute,
@@ -396,6 +437,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   StyleguideRoute: StyleguideRoute,
   InviteKeyRoute: InviteKeyRoute,
+  RTokenRoute: RTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

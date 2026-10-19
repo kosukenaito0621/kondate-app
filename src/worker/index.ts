@@ -10,6 +10,7 @@ import { imageRoutes } from './routes/images';
 import { logRoutes } from './routes/logs';
 import { meRoutes } from './routes/me';
 import { planRoutes, todayItems } from './routes/plans';
+import { recipeShareRoutes } from './routes/recipe-shares';
 import { recipeRoutes } from './routes/recipes';
 import { settingsRoutes } from './routes/settings';
 import { shoppingRoutes } from './routes/shopping';
@@ -33,6 +34,7 @@ const api = new Hono<AppEnv>()
   .route('/auth', authRoutes)
   .route('/me', meRoutes)
   .route('/recipes', recipeRoutes)
+  .route('/recipe-shares', recipeShareRoutes)
   .route('/groups', groupRoutes)
   .route('/invites', inviteRoutes)
   .route('/settings', settingsRoutes)

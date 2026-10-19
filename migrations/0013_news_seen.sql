@@ -1,0 +1,1 @@
+ALTER TABLE `user_settings` ADD `news_seen_id` text;

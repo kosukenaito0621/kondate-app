@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, Reorder } from 'motion/react';
+import { AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useId, useState } from 'react';
 import {
   CATEGORIES,
@@ -25,7 +25,7 @@ import { GlassButton } from '../glass/GlassButton';
 import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
 import { SEASON_LABEL, SEASONS, seasonsFromIngredients, type Season } from '../../../shared/season';
-import { GripIcon, PlusIcon, TrashIcon } from '../icons';
+import { ChevronDownIcon, ChevronUpIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from '../icons';
 
 type IngredientRow = { key: string; name: string; amount: string; section: Section; group: string };
 type StepRow = { key: string; text: string; tip: string };
@@ -395,55 +395,41 @@ export function RecipeForm({
             🌱のレシピは、手順ごとに「ひとことコツ」を入れると初めての人も安心です（5ステップ以内がおすすめ）。
           </p>
         )}
-        <ol className="mt-3 flex flex-col gap-3">
+        <p className="mt-1 text-xs text-ink-soft">
+          左の点々をドラッグするか、↑↓ボタンで順番を入れ替えられます。
+        </p>
+        <Reorder.Group
+          as="ol"
+          axis="y"
+          values={v.steps}
+          onReorder={(rows) => set('steps', rows)}
+          className="mt-3 flex flex-col gap-3"
+        >
           <AnimatePresence initial={false}>
             {v.steps.map((s, idx) => (
-              <motion.li
+              <StepEditor
                 key={s.key}
-                layout
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={spring.soft}
-                className="flex gap-2"
-              >
-                <span className="btn-primary num mt-2 grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold">
-                  {idx + 1}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <textarea
-                    aria-label={`手順${idx + 1}`}
-                    value={s.text}
-                    onChange={(e) => updateStep(s.key, { text: e.target.value })}
-                    rows={2}
-                    placeholder="例：中火で5分焼く（「◯分」はタイマーになります）"
-                    className="field w-full resize-none rounded-2xl px-3 py-2.5"
-                  />
-                  <input
-                    aria-label={`手順${idx + 1}のコツ`}
-                    value={s.tip}
-                    onChange={(e) => updateStep(s.key, { tip: e.target.value })}
-                    placeholder={futaba ? 'ひとことコツ' : 'コツ（任意）'}
-                    className="field min-h-10 w-full rounded-xl px-3 text-sm"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    set(
-                      'steps',
-                      v.steps.filter((x) => x.key !== s.key),
-                    )
-                  }
-                  className="grid size-11 shrink-0 place-items-center text-ink-soft"
-                  aria-label={`手順${idx + 1}を削除`}
-                >
-                  <TrashIcon size={18} />
-                </button>
-              </motion.li>
+                step={s}
+                index={idx}
+                count={v.steps.length}
+                futaba={futaba}
+                onChange={(patch) => updateStep(s.key, patch)}
+                onMove={(to) => {
+                  const rows = [...v.steps];
+                  const [moved] = rows.splice(idx, 1);
+                  rows.splice(to, 0, moved!);
+                  set('steps', rows);
+                }}
+                onRemove={() =>
+                  set(
+                    'steps',
+                    v.steps.filter((x) => x.key !== s.key),
+                  )
+                }
+              />
             ))}
           </AnimatePresence>
-        </ol>
+        </Reorder.Group>
         <GlassButton
           size="sm"
           className="mt-3"
@@ -581,5 +567,110 @@ function SeasonField({
         </label>
       )}
     </fieldset>
+  );
+}
+
+/** 手順1つ分。点々のつまみでドラッグ、↑↓で並べ替え。コツは×で消せる */
+function StepEditor({
+  step,
+  index,
+  count,
+  futaba,
+  onChange,
+  onMove,
+  onRemove,
+}: {
+  step: StepRow;
+  index: number;
+  count: number;
+  futaba: boolean;
+  onChange: (patch: Partial<StepRow>) => void;
+  onMove: (to: number) => void;
+  onRemove: () => void;
+}) {
+  const controls = useDragControls();
+  const n = index + 1;
+  return (
+    <Reorder.Item
+      value={step}
+      dragListener={false}
+      dragControls={controls}
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0 }}
+      whileDrag={{ scale: 1.02, boxShadow: '0 12px 30px -12px rgb(0 0 0 / 0.35)' }}
+      transition={spring.soft}
+      className="flex list-none gap-1.5 rounded-2xl bg-canvas/40"
+    >
+      <div className="flex shrink-0 flex-col items-center gap-1 pt-1">
+        <span className="btn-primary num grid size-7 place-items-center rounded-full text-sm font-bold">
+          {n}
+        </span>
+        <span
+          onPointerDown={(e) => controls.start(e)}
+          className="grid size-9 cursor-grab touch-none place-items-center text-ink-soft active:cursor-grabbing"
+          aria-hidden="true"
+        >
+          <GripIcon size={18} />
+        </span>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <textarea
+          aria-label={`手順${n}`}
+          value={step.text}
+          onChange={(e) => onChange({ text: e.target.value })}
+          rows={2}
+          placeholder="例：中火で5分焼く（「◯分」はタイマーになります）"
+          className="field w-full resize-none rounded-2xl px-3 py-2.5"
+        />
+        <div className="field flex min-h-10 items-center rounded-xl pr-1">
+          <input
+            aria-label={`手順${n}のコツ`}
+            value={step.tip}
+            onChange={(e) => onChange({ tip: e.target.value })}
+            placeholder={futaba ? 'ひとことコツ' : 'コツ（任意）'}
+            className="min-h-10 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+          />
+          {step.tip && (
+            <button
+              type="button"
+              onClick={() => onChange({ tip: '' })}
+              className="grid size-9 shrink-0 place-items-center rounded-full text-ink-soft hover:bg-pill"
+              aria-label={`手順${n}のコツを消す`}
+            >
+              <CloseIcon size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-center">
+        <button
+          type="button"
+          onClick={() => onMove(index - 1)}
+          disabled={index === 0}
+          className="grid size-9 place-items-center text-ink-soft disabled:opacity-30"
+          aria-label={`手順${n}を上へ`}
+        >
+          <ChevronUpIcon size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(index + 1)}
+          disabled={index === count - 1}
+          className="grid size-9 place-items-center text-ink-soft disabled:opacity-30"
+          aria-label={`手順${n}を下へ`}
+        >
+          <ChevronDownIcon size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="grid size-9 place-items-center text-ink-soft"
+          aria-label={`手順${n}を削除`}
+        >
+          <TrashIcon size={18} />
+        </button>
+      </div>
+    </Reorder.Item>
   );
 }

@@ -21,3 +21,15 @@ describe('使い方ガイド', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('お知らせ', () => {
+  it('どこまで読んだかを記録できる', async () => {
+    const u = await login(`news-${crypto.randomUUID()}`);
+    expect(((await (await api(u, '/api/me')).json()) as Me).newsSeen).toBeNull();
+    const res = await api(u, '/api/me', {
+      method: 'PATCH',
+      json: { newsSeen: '2026-10-19-share' },
+    });
+    expect(((await res.json()) as Me).newsSeen).toBe('2026-10-19-share');
+  });
+});

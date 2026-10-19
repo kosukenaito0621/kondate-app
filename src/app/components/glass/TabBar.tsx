@@ -1,5 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { motion } from 'motion/react';
+import { unreadNewsCount } from '../../../shared/news';
+import { meQuery } from '../../lib/auth';
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { BookIcon, CalendarIcon, CartIcon, GearIcon, HomeIcon } from '../icons';
@@ -19,6 +22,8 @@ function isActive(pathname: string, to: string) {
 /** 親指で届く、下部フローティングのガラス調タブバー */
 export function TabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { data: me } = useQuery(meQuery);
+  const unread = me ? unreadNewsCount(me.newsSeen) : 0;
 
   return (
     <nav
@@ -54,6 +59,12 @@ export function TabBar() {
                   <Icon size={22} strokeWidth={active ? 2.1 : 1.8} />
                 </motion.span>
                 <span className="relative">{label}</span>
+                {to === '/settings' && unread > 0 && (
+                  <span
+                    className="absolute right-[22%] top-2 size-2.5 rounded-full bg-danger ring-2 ring-canvas"
+                    aria-label={`未読のお知らせ ${unread}件`}
+                  />
+                )}
               </Link>
             </li>
           );

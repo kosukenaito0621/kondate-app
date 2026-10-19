@@ -7,12 +7,13 @@ import { api } from '../../api';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { GroupDot } from '../../components/GroupSwitcher';
-import { BookIcon, ChevronRightIcon } from '../../components/icons';
+import { BellIcon, BookIcon, ChevronRightIcon } from '../../components/icons';
 import { useGuide } from '../../components/guide/Guide';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
 import { logout, meQuery } from '../../lib/auth';
 import { groupDisplayName } from '../../../shared/groups';
+import { unreadNewsCount } from '../../../shared/news';
 import { riseItem, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/settings')({
@@ -23,6 +24,7 @@ function Settings() {
   const { me: initialMe } = Route.useRouteContext();
   const me = useQuery(meQuery).data ?? initialMe;
   const guide = useGuide();
+  const unread = unreadNewsCount(me.newsSeen);
   const queryClient = useQueryClient();
   const router = useRouter();
   const [name, setName] = useState(me.displayName ?? '');
@@ -78,6 +80,25 @@ function Settings() {
                 {groupDisplayName(me.groups.find((g) => g.id === me.currentGroupId)?.name ?? '')}
               </span>
             </span>
+            <ChevronRightIcon size={18} className="text-ink-soft" />
+          </Link>
+        </motion.div>
+
+        <motion.div variants={riseItem}>
+          <Link
+            to="/news"
+            className="glass sheen flex min-h-16 items-center gap-3 rounded-[var(--radius-card)] px-5"
+          >
+            <BellIcon size={20} className="text-accent-strong" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs text-ink-soft">追加した機能・直したところ</span>
+              <span className="block font-bold">お知らせ</span>
+            </span>
+            {unread > 0 && (
+              <span className="num rounded-full bg-danger px-2 py-0.5 text-xs font-bold text-white">
+                {unread}
+              </span>
+            )}
             <ChevronRightIcon size={18} className="text-ink-soft" />
           </Link>
         </motion.div>

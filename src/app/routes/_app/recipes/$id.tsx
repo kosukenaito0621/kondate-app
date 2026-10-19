@@ -18,6 +18,7 @@ import { GlassButton } from '../../../components/glass/GlassButton';
 import { GlassCard } from '../../../components/glass/GlassCard';
 import { ChevronLeftIcon, ClockIcon, YenIcon } from '../../../components/icons';
 import { LevelBadge } from '../../../components/LevelBadge';
+import { ShareRecipeButton } from '../../../components/recipe/ShareRecipeButton';
 import { SlowMode } from '../../../components/recipe/SlowMode';
 import { StepList } from '../../../components/recipe/StepList';
 import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
@@ -253,6 +254,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
         )}
 
         <motion.div variants={riseItem} className="flex flex-col gap-2.5">
+          <ShareRecipeButton recipeId={recipe.id} recipeName={recipe.name} />
           {recipe.isSystem ? (
             <>
               <GlassButton loading={copy.isPending} onClick={() => copy.mutate()} block>

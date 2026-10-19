@@ -54,6 +54,8 @@ export const userSettings = sqliteTable('user_settings', {
   cookingLevel: text('cooking_level', { enum: LEVEL }),
   /** 使い方ガイドを最後まで見た（またはスキップした）時刻。NULL なら初回に表示する */
   guideSeenAt: integer('guide_seen_at'),
+  /** 最後に見たお知らせの id（shared/news.ts） */
+  newsSeenId: text('news_seen_id'),
 });
 
 /** 家庭（グループ）。献立・設定・買い物リスト・独自レシピを共有する単位 */
@@ -324,4 +326,23 @@ export const cookLogs = sqliteTable(
     uniqueIndex('cook_logs_group_recipe_date_uq').on(t.groupId, t.recipeId, t.date),
     index('cook_logs_group_date_idx').on(t.groupId, t.date),
   ],
+);
+
+/** レシピの共有リンク（別のグループの人に送って、相手のレシピとして保存してもらう） */
+export const recipeShares = sqliteTable(
+  'recipe_shares',
+  {
+    id: text('id').primaryKey(),
+    /** 共有リンク用トークンの SHA-256（生トークンは保存しない） */
+    tokenHash: text('token_hash').notNull().unique(),
+    recipeId: text('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: integer('expires_at', { mode: 'number' }).notNull(),
+    createdAt: timestamp('created_at'),
+  },
+  (t) => [index('recipe_shares_recipe_idx').on(t.recipeId)],
 );

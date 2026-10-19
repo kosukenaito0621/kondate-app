@@ -85,6 +85,20 @@
       "when": 1792378405372,
       "tag": "0011_recipe_seasons",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1792386337222,
+      "tag": "0012_recipe_shares",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792386581221,
+      "tag": "0013_news_seen",
+      "breakpoints": true
     }
   ]
 }
