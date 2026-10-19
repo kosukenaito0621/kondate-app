@@ -14,8 +14,8 @@
     {
       "binding": "DB",
       "database_name": "kondate-db",
-      // フェーズ12で `wrangler d1 create kondate-db` の結果に置き換える（ローカル開発ではこのままで動く）
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // 本番の D1（ローカル開発・テストでは .wrangler/ のローカル DB を使う）
+      "database_id": "7fbea7f7-20b5-42a8-a4d1-aff125e613be",
       "migrations_dir": "migrations",
     },
   ],
@@ -29,5 +29,7 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupRoom"] }],
   "vars": {
     "AI_DAILY_LIMIT": "20",
+    // 本番の URL（Google のリダイレクト先に使う）。ローカルでは .dev.vars の値で上書きされる
+    "APP_URL": "https://kondate-app.naikou7110.workers.dev",
   },
 }
