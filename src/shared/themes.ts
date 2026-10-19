@@ -95,8 +95,8 @@ export const THEMES: readonly ThemeMeta[] = [
 ];
 
 export const SERIES_LABEL: Record<ThemeSeries, string> = {
-  pastel: '淡いシリーズ',
-  cool: 'かっこいいシリーズ',
+  pastel: 'パステル',
+  cool: 'ノワール',
 };
 
 export function isThemeId(v: unknown): v is ThemeId {

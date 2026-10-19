@@ -2,7 +2,7 @@ import type { ThemeSeries } from '../../shared/themes';
 
 /**
  * テーマのシリーズごとに必要な Web フォントだけを読む（index.html の先読みスクリプトと内容を合わせる）。
- * かっこいいシリーズの本文は端末の日本語フォントを使い、数字だけ Outfit にする。
+ * ノワール（暗いテーマ）の本文は端末の日本語フォントを使い、数字だけ Outfit にする。
  */
 export const FONT_CSS: Record<ThemeSeries, string> = {
   pastel:
