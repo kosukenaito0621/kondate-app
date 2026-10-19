@@ -19,11 +19,28 @@ export function groupColor(id: string): string {
   return GROUP_COLORS.find((c) => c.id === id)?.value ?? GROUP_COLORS[0].value;
 }
 
+/** グループ名は「○○の食卓」。保存するのは ○○ の部分だけで、表示のときに付ける */
+export const GROUP_NAME_SUFFIX = 'の食卓';
+
+export function groupDisplayName(name: string) {
+  return `${name}${GROUP_NAME_SUFFIX}`;
+}
+
+export const GROUP_NAME_MAX = 16;
+
 export const groupNameSchema = z
   .string()
   .trim()
-  .min(1, 'グループ名を入力してください')
-  .max(20, '20文字以内で入力してください');
+  // 「はなこの食卓」と全部入力されても ○○ の部分だけにする
+  .transform((s) =>
+    s.endsWith(GROUP_NAME_SUFFIX) ? s.slice(0, -GROUP_NAME_SUFFIX.length).trim() : s,
+  )
+  .pipe(
+    z
+      .string()
+      .min(1, '「○○の食卓」の○○を入力してください')
+      .max(GROUP_NAME_MAX, `${GROUP_NAME_MAX}文字以内で入力してください`),
+  );
 
 export const createGroupSchema = z.object({
   name: groupNameSchema,

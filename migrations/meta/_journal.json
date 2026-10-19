@@ -64,6 +64,13 @@
       "when": 1792367746556,
       "tag": "0008_ingredient_group",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792373966791,
+      "tag": "0009_group_name_table",
+      "breakpoints": true
     }
   ]
 }

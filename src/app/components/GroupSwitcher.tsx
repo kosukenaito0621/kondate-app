@@ -5,6 +5,7 @@ import { useState } from 'react';
 import {
   GROUP_COLORS,
   groupColor,
+  groupDisplayName,
   groupNameSchema,
   normalizeInviteCode,
   type GroupColorId,
@@ -16,6 +17,7 @@ import { switchGroup } from '../lib/groups';
 import { spring } from '../lib/motion';
 import { GlassButton } from './glass/GlassButton';
 import { Sheet } from './glass/Sheet';
+import { GroupNameField } from './GroupNameField';
 import { CheckDraw, ChevronRightIcon } from './icons';
 
 export function GroupDot({ color, size = 10 }: { color: string; size?: number }) {
@@ -59,7 +61,7 @@ export function GroupSwitcher() {
         aria-haspopup="dialog"
       >
         <GroupDot color={current?.color ?? 'rose'} />
-        <span className="truncate">{current?.name ?? 'グループ'}</span>
+        <span className="truncate">{current ? groupDisplayName(current.name) : 'グループ'}</span>
         {current && current.memberCount > 1 && (
           <span className="num text-xs font-normal text-ink-soft">{current.memberCount}人</span>
         )}
@@ -93,7 +95,7 @@ export function GroupSwitcher() {
                     >
                       <GroupDot color={g.color} size={14} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-bold">{g.name}</span>
+                        <span className="block truncate font-bold">{groupDisplayName(g.name)}</span>
                         <span className="text-xs text-ink-soft">
                           {g.memberCount}人{g.role === 'owner' ? '・オーナー' : ''}
                         </span>
@@ -156,14 +158,7 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
     >
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold text-ink-soft">グループ名</span>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={20}
-          placeholder="例：実家"
-          className="field min-h-12 rounded-2xl px-4"
-          autoFocus
-        />
+        <GroupNameField value={name} onChange={setName} placeholder="例：実家" autoFocus />
       </label>
       <ColorPicker value={color} onChange={setColor} />
       {error && (

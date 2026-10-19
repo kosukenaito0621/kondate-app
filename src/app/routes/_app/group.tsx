@@ -19,6 +19,7 @@ import { ColorPicker, GroupSwitcher } from '../../components/GroupSwitcher';
 import { PageHeader } from '../../components/PageHeader';
 import { SettingsSkeleton } from '../../components/skeleton/Skeletons';
 import { currentGroupQuery, invitesQuery, inviteUrl } from '../../lib/groups';
+import { GroupNameField } from '../../components/GroupNameField';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/group')({
@@ -112,17 +113,11 @@ function GroupBody({ group }: { group: GroupDetail }) {
             グループ名
           </label>
           <div className="flex gap-2">
-            <input
-              id="group-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={20}
-              className="field min-h-12 min-w-0 flex-1 rounded-2xl px-4"
-            />
+            <GroupNameField id="group-name" value={name} onChange={setName} className="flex-1" />
             <GlassButton
               type="submit"
               variant="primary"
-              disabled={name === group.name}
+              disabled={name.trim() === group.name}
               loading={update.isPending}
             >
               保存

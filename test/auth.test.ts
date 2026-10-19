@@ -92,10 +92,10 @@ describe('auth', () => {
       .bind(a)
       .all<{ group_id: string; role: string; name: string; days: number }>();
     expect(groups.results).toHaveLength(1);
-    expect(groups.results[0]).toMatchObject({ role: 'owner', name: 'わたしの家', days: 7 });
+    expect(groups.results[0]).toMatchObject({ role: 'owner', name: 'わたし', days: 7 });
   });
 
-  it('ユーザーネームを決めると「わたしの家」が「◯◯の家」になり、初回のレベル選択がグループ既定になる', async () => {
+  it('ユーザーネームを決めると「わたしの食卓」が「◯◯の食卓」になり、初回のレベル選択がグループ既定になる', async () => {
     const { cookie } = await login('naming');
     await env.DB.prepare('update users set display_name = null where google_sub = ?')
       .bind('naming')
@@ -109,7 +109,7 @@ describe('auth', () => {
     const me = await (
       await patch({ displayName: 'はなこ' })
     ).json<{ groups: { name: string }[]; cookingLevel: null }>();
-    expect(me.groups[0]?.name).toBe('はなこの家');
+    expect(me.groups[0]?.name).toBe('はなこ');
     expect(me.cookingLevel).toBeNull();
 
     await patch({ cookingLevel: 'futaba' });

@@ -16,6 +16,8 @@
       "database_name": "kondate-db",
       // 本番の D1（ローカル開発・テストでは .wrangler/ のローカル DB を使う）
       "database_id": "7fbea7f7-20b5-42a8-a4d1-aff125e613be",
+      // ローカルの DB ファイルはこの ID で決まる（本番の ID を入れる前から使っている開発データを引き続き使う）
+      "preview_database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations",
     },
   ],

@@ -41,7 +41,7 @@ export const meRoutes = new Hono<AppEnv>()
 
     if (displayName !== undefined) {
       await db.update(users).set({ displayName }).where(eq(users.id, user.id));
-      // 自動で付けた「わたしの家」は、名前が決まったら「◯◯の家」にする
+      // 自動で付けた「わたしの食卓」は、名前が決まったら「◯◯の食卓」にする
       if (user.displayName === null) {
         await db
           .update(groups)

@@ -49,7 +49,7 @@ describe('マイグレーション: グループ化', () => {
     ).toEqual([
       {
         id: 'solo-u1',
-        name: 'こうすけの家',
+        name: 'こうすけ',
         color: 'midnight',
         servings: 3,
         weekly_budget: 12000,
@@ -58,7 +58,7 @@ describe('マイグレーション: グループ化', () => {
       },
       {
         id: 'solo-u2',
-        name: 'わたしの家',
+        name: 'わたし',
         color: 'ichigo',
         servings: 2,
         weekly_budget: 10000,

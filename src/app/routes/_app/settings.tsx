@@ -11,6 +11,7 @@ import { ChevronRightIcon } from '../../components/icons';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
 import { logout, meQuery } from '../../lib/auth';
+import { groupDisplayName } from '../../../shared/groups';
 import { riseItem, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/settings')({
@@ -72,7 +73,7 @@ function Settings() {
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-ink-soft">グループ・家族の招待</span>
               <span className="block truncate font-bold">
-                {me.groups.find((g) => g.id === me.currentGroupId)?.name}
+                {groupDisplayName(me.groups.find((g) => g.id === me.currentGroupId)?.name ?? '')}
               </span>
             </span>
             <ChevronRightIcon size={18} className="text-ink-soft" />

@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { GROUP_NAME_MAX } from '../../shared/groups';
 import type { CookingLevel } from '../../shared/levels';
 import type { Db } from '../db/client';
 import { daySettings, groupMembers, groups, mealPlans, recipes, users } from '../db/schema';
@@ -101,8 +102,9 @@ export async function ensureCurrentGroup(db: Db, userId: string, displayName: st
   return createGroup(db, { ownerId: userId, name: defaultGroupName(displayName) });
 }
 
+/** 自動で作るグループの名前（「○○の食卓」の○○。表示は groupDisplayName で） */
 export function defaultGroupName(displayName: string | null) {
-  return `${displayName ?? 'わたし'}の家`;
+  return (displayName ?? 'わたし').slice(0, GROUP_NAME_MAX);
 }
 
 export async function memberCount(db: Db, groupId: string) {

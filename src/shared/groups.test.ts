@@ -13,3 +13,15 @@ describe('normalizeInviteCode', () => {
     expect(normalizeInviteCode(raw)).toBe(expected);
   });
 });
+
+describe('グループ名（○○の食卓）', () => {
+  it('○○の部分だけを保存し、表示のときに「の食卓」を付ける', async () => {
+    const { groupNameSchema, groupDisplayName } = await import('./groups');
+    expect(groupNameSchema.parse(' はなこ ')).toBe('はなこ');
+    // 「の食卓」まで入力されても二重にならない
+    expect(groupNameSchema.parse('はなこの食卓')).toBe('はなこ');
+    expect(groupDisplayName('はなこ')).toBe('はなこの食卓');
+    expect(groupNameSchema.safeParse('の食卓').success).toBe(false);
+    expect(groupNameSchema.safeParse('あ'.repeat(17)).success).toBe(false);
+  });
+});

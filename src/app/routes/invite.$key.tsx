@@ -8,6 +8,7 @@ import { GlassCard } from '../components/glass/GlassCard';
 import { GroupDot } from '../components/GroupSwitcher';
 import { Skeleton } from '../components/skeleton/Skeletons';
 import { meQuery } from '../lib/auth';
+import { groupDisplayName } from '../../shared/groups';
 import { riseItem, staggerContainer } from '../lib/motion';
 
 export const Route = createFileRoute('/invite/$key')({
@@ -87,7 +88,7 @@ function InvitePage() {
             <>
               <div className="flex items-center gap-3">
                 <GroupDot color={preview.data.color} size={18} />
-                <h1 className="text-2xl font-bold">{preview.data.groupName}</h1>
+                <h1 className="text-2xl font-bold">{groupDisplayName(preview.data.groupName)}</h1>
               </div>
               <p className="text-sm text-ink-soft">
                 {preview.data.inviterName ?? 'メンバー'}さんから招待されています。

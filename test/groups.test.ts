@@ -44,9 +44,7 @@ describe('グループ', () => {
 
     const me = await json<Me>(await api(u, '/api/me'));
     expect(me.currentGroupId).toBe(created.id);
-    expect(me.groups.map((g: GroupSummary) => g.name).sort()).toEqual(
-      ['わたしの家', '実家'].sort(),
-    );
+    expect(me.groups.map((g: GroupSummary) => g.name).sort()).toEqual(['わたし', '実家'].sort());
 
     await api(u, `/api/groups/${u.groupId}/switch`, { method: 'POST' });
     expect((await json<Me>(await api(u, '/api/me'))).currentGroupId).toBe(u.groupId);
