@@ -141,11 +141,11 @@
     'Yu Gothic UI', Meiryo, sans-serif;
 
   /* 週間献立の土曜（水色）・日曜と祝日（赤）。暗い背景では文字を明るく */
-  --sat: #9fd0f5;
-  --sat-soft: rgb(110 180 240 / 0.2);
-  --sun: #ff9ea8;
-  --sun-soft: rgb(255 110 125 / 0.18);
-  --sun-chip: rgb(255 110 125 / 0.28);
+  --sat: #cdeaff;
+  --sat-soft: rgb(70 160 235 / 0.34);
+  --sun: #ffd0d5;
+  --sun-soft: rgb(240 90 110 / 0.34);
+  --sun-chip: rgb(255 150 160 / 0.35);
 
   --glass-1: rgb(255 255 255 / 0.11);
   --glass-2: rgb(255 255 255 / 0.05);
