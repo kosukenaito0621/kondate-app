@@ -3,6 +3,7 @@ import { costLevelFor } from '../../src/shared/constants';
 import { normalizeIngredientName, sectionOf } from '../../src/shared/ingredients';
 import type { CookingLevel } from '../../src/shared/levels';
 import { parseAmount, type RecipeInput } from '../../src/shared/recipe';
+import { seasonsFromIngredients, type Season } from '../../src/shared/season';
 
 /**
  * 初期レシピの短縮記法（すべて2人前）。
@@ -10,6 +11,8 @@ import { parseAmount, type RecipeInput } from '../../src/shared/recipe';
  *   グループ分けするときは "A: しょうゆ 大さじ1" のように見出しとコロンを前に付ける
  * - s: 手順。ふたばは [手順, コツ] の組で書く
  * - lv: 'f' = ふたば / 'm' = みのり
+ * - se: 旬の季節。省略時は材料から推定（shared/season.ts の SEASONAL_INGREDIENTS）。[] で通年に固定
+ * - only: true なら季節限定（季節外は献立に出さない。冷やし中華・おでん など）
  * - 並び順が ID になるので、追加は各配列の末尾に行うこと
  */
 export type SeedSpec = {
@@ -21,6 +24,8 @@ export type SeedSpec = {
   i: string[];
   s: (string | [string, string])[];
   tags?: string[];
+  se?: Season[];
+  only?: true;
 };
 
 export type SeedRecipe = RecipeInput & { id: string; costLevel: ReturnType<typeof costLevelFor> };
@@ -48,6 +53,10 @@ function parseIngredientLine(raw: string, recipe: string) {
 export function expand(g: SeedGroup): SeedRecipe[] {
   return g.specs.map((spec, idx) => {
     const difficulty: CookingLevel = spec.lv === 'f' ? 'futaba' : 'minori';
+    const ingredients = spec.i.map((line) => parseIngredientLine(line, spec.n));
+    const seasons = spec.se ?? seasonsFromIngredients(ingredients.map((i) => i.name));
+    if (spec.only && seasons.length === 0)
+      throw new Error(`[${spec.n}] 季節限定なのに季節がありません`);
     return {
       id: `sys-${g.category}-${g.genre}-${String(idx + 1).padStart(2, '0')}`,
       name: spec.n,
@@ -59,11 +68,13 @@ export function expand(g: SeedGroup): SeedRecipe[] {
       costLevel: costLevelFor(g.category, spec.c),
       mainIngredient: spec.m ?? 'veg',
       difficulty,
-      ingredients: spec.i.map((line) => parseIngredientLine(line, spec.n)),
+      ingredients,
       steps: spec.s.map((s) => (typeof s === 'string' ? { text: s } : { text: s[0], tip: s[1] })),
       tags: spec.tags ?? [],
       imageKey: null,
       sourceUrl: null,
+      seasons,
+      seasonOnly: !!spec.only,
     };
   });
 }

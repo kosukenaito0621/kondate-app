@@ -19,6 +19,8 @@ const sample: RecipeInput = {
   tags: ['家庭の味'],
   imageKey: null,
   sourceUrl: null,
+  seasons: [],
+  seasonOnly: false,
 };
 
 describe('レシピAPI', () => {
@@ -91,6 +93,24 @@ describe('レシピAPI', () => {
       ['しょうゆ', 'A（たれ）'],
       ['しょうゆ', 'B'],
     ]);
+  });
+
+  it('季節（旬・季節限定）を保存できる。季節がなければ季節限定にはしない', async () => {
+    const u = await login('recipe-season');
+    const a = (await (
+      await api(u, '/api/recipes', {
+        method: 'POST',
+        json: { ...sample, seasons: ['summer'], seasonOnly: true },
+      })
+    ).json()) as RecipeDetail;
+    expect([a.seasons, a.seasonOnly]).toEqual([['summer'], true]);
+    const b = (await (
+      await api(u, '/api/recipes', {
+        method: 'POST',
+        json: { ...sample, seasons: [], seasonOnly: true },
+      })
+    ).json()) as RecipeDetail;
+    expect([b.seasons, b.seasonOnly]).toEqual([[], false]);
   });
 
   it('グループのレシピを作成・編集・削除できる（材料名は正規化、費用段階は自動）', async () => {

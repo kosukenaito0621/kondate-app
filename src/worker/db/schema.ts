@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { Season } from '../../shared/season';
 import {
   index,
   integer,
@@ -165,6 +166,13 @@ export const recipes = sqliteTable(
       .default(sql`'[]'`),
     imageKey: text('image_key'),
     sourceUrl: text('source_url'),
+    /** 旬・季節限定の季節（空なら通年）。shared/season.ts */
+    seasons: text('seasons', { mode: 'json' })
+      .$type<Season[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    /** true なら季節限定（季節外は献立に出さない） */
+    seasonOnly: integer('season_only', { mode: 'boolean' }).notNull().default(false),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at'),
   },

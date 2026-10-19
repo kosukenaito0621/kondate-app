@@ -24,6 +24,7 @@ import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 import { recipeCookQuery } from '../../../lib/cooklog';
 import { imageUrl } from '../../../lib/images';
+import { SeasonBadge } from '../../../components/SeasonBadge';
 import { recipeQuery } from '../../../lib/recipes';
 
 export const Route = createFileRoute('/_app/recipes/$id')({
@@ -119,6 +120,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
           <GenreBadge genre={recipe.genre} />
           {GENRE_LABEL[recipe.genre]}・{CATEGORY_LABEL[recipe.category]}
           <LevelBadge level={recipe.difficulty} size="md" />
+          <SeasonBadge recipe={recipe} className="px-2 py-0.5 text-xs" />
           {!recipe.isSystem && (
             <span className="rounded-full bg-sub-soft px-2 py-0.5 font-bold text-sub-ink">
               うちのレシピ

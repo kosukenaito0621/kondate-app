@@ -28,7 +28,9 @@ const SYSTEM_PROMPT = `あなたは料理本の写真やレシピサイトから
 - timeMinutes: 書かれていればその値、なければ手順から推定。
 - costYen: 書かれた人数分の材料費の目安（円）を推定。
 - servings: 書かれていなければ 2。
-- tags: 0〜3個（例: 作り置き, お弁当, 時短, 節約）。`;
+- tags: 0〜3個（例: 作り置き, お弁当, 時短, 節約）。
+- seasons: 季節の料理ならその季節（spring/summer/autumn/winter）。冷やし中華・そうめん・冷製スープ→summer、おでん・鍋→winter など。通年の料理は空。
+- seasonOnly: その季節にしか食べない料理（冷やし中華・おでん など）なら true。旬の材料を使うだけなら false。`;
 
 type AiInput =
   { kind: 'image'; bytes: Uint8Array; contentType: string } | { kind: 'text'; text: string };

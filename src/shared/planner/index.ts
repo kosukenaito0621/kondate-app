@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import { WEEKDAY_LABELS, weekdayIndex } from '../date';
 import { MINORI_PREFERENCE_WEIGHT, type CookingLevel } from '../levels';
+import { isInSeason, isOutOfSeasonOnly, seasonOf, type Season } from '../season';
 import { createRng, shuffle, weightedPick } from './random';
 
 export type Slot = Category;
@@ -26,6 +27,10 @@ export type PlannerRecipe = {
   costLevel: CostLevel;
   mainIngredient: MainIngredient;
   difficulty: CookingLevel;
+  /** 旬・季節限定の季節（空なら通年） */
+  seasons: Season[];
+  /** 季節限定（季節外は出さない） */
+  seasonOnly: boolean;
 };
 
 export type SideMode = 'auto' | 'on' | 'off';
@@ -69,6 +74,9 @@ const HISTORY_FACTOR: Record<number, number> = { 1: 0.15, 2: 0.35, 3: 0.6 };
 const SAME_MAIN_INGREDIENT_FACTOR = 0.1;
 /** 汁物・副菜は主菜と同じジャンルを優先 */
 const SAME_GENRE_FACTOR = 4;
+/** 旬のレシピは出やすく、旬でない季節は少し出にくくする */
+const IN_SEASON_FACTOR = 2;
+const OFF_SEASON_FACTOR = 0.5;
 
 /** 副菜を付けるか（自動なら、時短か節約の日は付けない） */
 export function includeSide(day: PlannerDay): boolean {
@@ -110,17 +118,55 @@ type Relax = {
   time: boolean;
   budget: boolean;
   genre: boolean;
+  /** 季節限定のレシピを季節外にも使わない */
+  season: boolean;
   dup: boolean;
   reason: string | null;
 };
 
 /** 候補がないとき、上から順に条件をゆるめる。料理レベル（ふたばの日はふたばのみ）はゆるめない */
 const RELAX_STEPS: Relax[] = [
-  { time: true, budget: true, genre: true, dup: false, reason: null },
-  { time: false, budget: true, genre: true, dup: false, reason: '調理時間の条件をゆるめました' },
-  { time: false, budget: false, genre: true, dup: false, reason: '予算の条件をゆるめました' },
-  { time: false, budget: false, genre: false, dup: false, reason: 'ジャンルの条件をゆるめました' },
-  { time: false, budget: false, genre: false, dup: true, reason: '同じ週のレシピをくり返しました' },
+  { time: true, budget: true, genre: true, season: true, dup: false, reason: null },
+  {
+    time: false,
+    budget: true,
+    genre: true,
+    season: true,
+    dup: false,
+    reason: '調理時間の条件をゆるめました',
+  },
+  {
+    time: false,
+    budget: false,
+    genre: true,
+    season: true,
+    dup: false,
+    reason: '予算の条件をゆるめました',
+  },
+  {
+    time: false,
+    budget: false,
+    genre: false,
+    season: true,
+    dup: false,
+    reason: 'ジャンルの条件をゆるめました',
+  },
+  {
+    time: false,
+    budget: false,
+    genre: false,
+    season: true,
+    dup: true,
+    reason: '同じ週のレシピをくり返しました',
+  },
+  {
+    time: false,
+    budget: false,
+    genre: false,
+    season: false,
+    dup: true,
+    reason: '季節外のレシピも使いました',
+  },
 ];
 
 type PickContext = {
@@ -140,6 +186,7 @@ function pick(
   slot: Slot,
   opts: { genre?: Genre; mainGenre?: Genre; neighborIngredients: MainIngredient[] },
 ): { recipe: PlannerRecipe | undefined; warning: string | null } {
+  const season = seasonOf(day.date);
   const pool = ctx.recipes.filter(
     (r) => r.category === slot && (day.level === 'minori' || r.difficulty === 'futaba'),
   );
@@ -148,6 +195,7 @@ function pick(
     const candidates = pool.filter(
       (r) =>
         (step.dup || !ctx.used.has(r.id)) &&
+        (!step.season || !isOutOfSeasonOnly(r, season)) &&
         (!step.time || timeLevelFits(day.timeLevel, r.timeMinutes)) &&
         (!step.budget || budgetFits(day.budgetLevel, r.costLevel)) &&
         (!step.genre || slot !== 'main' || !opts.genre || r.genre === opts.genre),
@@ -166,6 +214,8 @@ function pick(
         }
         if (day.level === 'minori' && r.difficulty === 'minori') w *= MINORI_PREFERENCE_WEIGHT;
         if (slot !== 'main' && opts.mainGenre && r.genre === opts.mainGenre) w *= SAME_GENRE_FACTOR;
+        if (isInSeason(r, season)) w *= IN_SEASON_FACTOR;
+        else if (r.seasons.length > 0) w *= OFF_SEASON_FACTOR;
         return w;
       },
       ctx.rng,
@@ -253,6 +303,7 @@ function fitBudget(input: PlannerInput, items: PlanItem[], ctx: PickContext) {
           (r) =>
             r.category === item.slot &&
             !ctx.used.has(r.id) &&
+            !isOutOfSeasonOnly(r, seasonOf(day.date)) &&
             (day.level === 'minori' || r.difficulty === 'futaba') &&
             timeLevelFits(day.timeLevel, r.timeMinutes) &&
             (item.slot !== 'main' || r.genre === current.genre) &&

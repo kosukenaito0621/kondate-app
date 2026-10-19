@@ -37,6 +37,8 @@ export const toSummary = (r: RecipeRow): RecipeSummary => ({
   imageKey: r.imageKey,
   tags: r.tags,
   isSystem: r.groupId === null,
+  seasons: r.seasons,
+  seasonOnly: r.seasonOnly,
 });
 
 /** そのグループから見えるレシピ（システム共通＋自グループ） */
@@ -87,6 +89,8 @@ function rowValues(input: RecipeInput) {
     tags: input.tags,
     imageKey: input.imageKey,
     sourceUrl: input.sourceUrl,
+    seasons: input.seasons,
+    seasonOnly: input.seasons.length > 0 && input.seasonOnly,
   };
 }
 

@@ -76,6 +76,8 @@ describe('写真', () => {
       tags: [],
       imageKey: key,
       sourceUrl: null,
+      seasons: [],
+      seasonOnly: false,
     };
     expect((await api(other, '/api/recipes', { method: 'POST', json: recipe })).status).toBe(400);
     expect((await api(owner, '/api/recipes', { method: 'POST', json: recipe })).status).toBe(201);

@@ -11,7 +11,7 @@ export function seedStatements(): string[] {
   const out: string[] = [];
   for (const r of SEED_RECIPES) {
     out.push(
-      `INSERT INTO recipes (id, group_id, created_by, name, category, genre, servings, time_minutes, cost_yen, cost_level, main_ingredient, difficulty, steps, tags, image_key, source_url) VALUES (${[
+      `INSERT INTO recipes (id, group_id, created_by, name, category, genre, servings, time_minutes, cost_yen, cost_level, main_ingredient, difficulty, steps, tags, image_key, source_url, seasons, season_only) VALUES (${[
         q(r.id),
         'NULL',
         'NULL',
@@ -28,9 +28,11 @@ export function seedStatements(): string[] {
         q(JSON.stringify(r.tags)),
         'NULL',
         'NULL',
+        q(JSON.stringify(r.seasons)),
+        r.seasonOnly ? 1 : 0,
       ].join(
         ', ',
-      )}) ON CONFLICT(id) DO UPDATE SET name = excluded.name, category = excluded.category, genre = excluded.genre, servings = excluded.servings, time_minutes = excluded.time_minutes, cost_yen = excluded.cost_yen, cost_level = excluded.cost_level, main_ingredient = excluded.main_ingredient, difficulty = excluded.difficulty, steps = excluded.steps, tags = excluded.tags, updated_at = unixepoch() * 1000`,
+      )}) ON CONFLICT(id) DO UPDATE SET name = excluded.name, category = excluded.category, genre = excluded.genre, servings = excluded.servings, time_minutes = excluded.time_minutes, cost_yen = excluded.cost_yen, cost_level = excluded.cost_level, main_ingredient = excluded.main_ingredient, difficulty = excluded.difficulty, steps = excluded.steps, tags = excluded.tags, seasons = excluded.seasons, season_only = excluded.season_only, updated_at = unixepoch() * 1000`,
     );
     out.push(`DELETE FROM recipe_ingredients WHERE recipe_id = ${q(r.id)}`);
     r.ingredients.forEach((i, idx) => {

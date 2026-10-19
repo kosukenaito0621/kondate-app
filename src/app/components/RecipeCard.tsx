@@ -5,6 +5,7 @@ import type { RecipeSummary } from '../../shared/recipe';
 import { riseItem, spring } from '../lib/motion';
 import { GenreBadge } from './GenreBadge';
 import { ClockIcon, YenIcon } from './icons';
+import { SeasonBadge } from './SeasonBadge';
 import { LevelBadge } from './LevelBadge';
 
 /** ジャンル色の細いライン（サムネイルの代わりに控えめな色の目印） */
@@ -31,6 +32,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
             <div className="flex items-center gap-1.5 text-[11px] text-ink-soft">
               <GenreBadge genre={recipe.genre} className="size-5 text-[10px]" />
               {CATEGORY_LABEL[recipe.category]}
+              <SeasonBadge recipe={recipe} />
               {!recipe.isSystem && (
                 <span className="rounded-full bg-sub-soft px-1.5 text-[10px] font-bold text-sub-ink">
                   うちのレシピ

@@ -284,3 +284,51 @@ describe('regenerate', () => {
     ).toBe(true);
   });
 });
+
+describe('季節', () => {
+  const summerOnly = recipes.map((r) =>
+    r.id === 'sys-main-yo-01' ? { ...r, seasons: ['summer' as const], seasonOnly: true } : r,
+  );
+  const winterDays = weekDates('2026-12-07').map((date) => ({ ...days()[0]!, date }));
+  const summerDays = weekDates('2026-07-06').map((date) => ({ ...days()[0]!, date }));
+
+  it('季節限定のレシピは、季節外の献立に出ない', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const r = generateWeek(input({ recipes: summerOnly, days: winterDays, seed }));
+      expect(r.items.some((i) => i.recipeId === 'sys-main-yo-01')).toBe(false);
+    }
+  });
+
+  it('季節限定のレシピも、その季節なら出る', () => {
+    const seen = Array.from({ length: 40 }, (_, k) =>
+      generateWeek(input({ recipes: summerOnly, days: summerDays, seed: k + 1 })),
+    ).some((r) => r.items.some((i) => i.recipeId === 'sys-main-yo-01'));
+    expect(seen).toBe(true);
+  });
+
+  it('旬のレシピは、その季節に出やすい', () => {
+    const autumn = weekDates('2026-10-19').map((date) => ({ ...days()[0]!, date }));
+    const spring = weekDates('2026-04-06').map((date) => ({ ...days()[0]!, date }));
+    const autumnIds = new Set(recipes.filter((r) => r.seasons.includes('autumn')).map((r) => r.id));
+    expect(autumnIds.size).toBeGreaterThan(0);
+    const count = (ds: PlannerDay[]) =>
+      Array.from({ length: 60 }, (_, k) => generateWeek(input({ days: ds, seed: k + 1 }))).reduce(
+        (n, r) => n + r.items.filter((i) => autumnIds.has(i.recipeId)).length,
+        0,
+      );
+    expect(count(autumn)).toBeGreaterThan(count(spring) * 1.5);
+  });
+
+  it('季節限定しか候補がなければ、季節外でも使って知らせる', () => {
+    const only = recipes
+      .filter((r) => r.category !== 'main' || r.id === 'sys-main-yo-01')
+      .map((r) =>
+        r.id === 'sys-main-yo-01' ? { ...r, seasons: ['summer' as const], seasonOnly: true } : r,
+      );
+    const r = generateWeek(
+      input({ recipes: only, days: winterDays.slice(0, 1), ratio: { wa: 0, yo: 100, chu: 0 } }),
+    );
+    expect(r.items.find((i) => i.slot === 'main')?.recipeId).toBe('sys-main-yo-01');
+    expect(r.warnings.join()).toContain('季節外');
+  });
+});

@@ -21,7 +21,6 @@ import {
   type PlannerRecipe,
   type Slot,
 } from '../../shared/planner';
-import type { RecipeSummary } from '../../shared/recipe';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
 import { hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
@@ -29,29 +28,12 @@ import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
+import { toSummary } from './recipes';
 import { loadSettings } from './settings';
 
 type Ctx = Context<AppEnv>;
 
 const dayName = (date: string) => `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
-
-function toSummary(r: typeof recipes.$inferSelect): RecipeSummary {
-  return {
-    id: r.id,
-    name: r.name,
-    category: r.category,
-    genre: r.genre,
-    servings: r.servings,
-    timeMinutes: r.timeMinutes,
-    costYen: r.costYen,
-    costLevel: r.costLevel,
-    mainIngredient: r.mainIngredient,
-    difficulty: r.difficulty,
-    imageKey: r.imageKey,
-    tags: r.tags,
-    isSystem: r.groupId === null,
-  };
-}
 
 /** グループから使えるレシピ（システム共通＋自グループ、非表示は除く） */
 async function plannerRecipes(db: Db, groupId: string) {

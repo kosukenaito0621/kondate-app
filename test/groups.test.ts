@@ -21,6 +21,8 @@ const recipe: RecipeInput = {
   tags: [],
   imageKey: null,
   sourceUrl: null,
+  seasons: [],
+  seasonOnly: false,
 };
 
 async function invite(owner: TestUser, groupId = owner.groupId) {

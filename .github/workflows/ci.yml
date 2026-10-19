@@ -65,4 +65,6 @@ jobs:
       - run: npm ci
       # 先に DB を新しい形にしてから、新しいコードを出す（列の追加だけなので古いコードも動き続ける）
       - run: npm run db:migrate:remote
+      # 初期レシピを登録・更新する（同じ ID は上書きするだけなので、何度実行しても同じ結果）
+      - run: npm run db:seed:remote
       - run: npm run deploy

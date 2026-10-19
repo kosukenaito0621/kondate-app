@@ -10,6 +10,7 @@ import {
   type Unit,
 } from './constants';
 import { COOKING_LEVELS, type CookingLevel } from './levels';
+import { SEASONS, type Season } from './season';
 
 // ===== 分量の読み取り =====
 
@@ -120,6 +121,10 @@ export const recipeInputSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(20)).max(10).default([]),
   imageKey: z.string().max(200).nullable().default(null),
   sourceUrl: z.url().max(2000).nullable().default(null),
+  /** 旬・季節限定の季節（空なら通年） */
+  seasons: z.array(z.enum(SEASONS)).max(4).default([]),
+  /** true なら季節限定 */
+  seasonOnly: z.boolean().default(false),
 });
 
 export type IngredientInput = z.infer<typeof ingredientInputSchema>;
@@ -149,6 +154,8 @@ export type RecipeSummary = {
   imageKey: string | null;
   tags: string[];
   isSystem: boolean;
+  seasons: Season[];
+  seasonOnly: boolean;
 };
 
 export type RecipeDetail = RecipeSummary & {

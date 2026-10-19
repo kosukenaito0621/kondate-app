@@ -9,6 +9,7 @@ import {
 import { normalizeIngredientName, sectionOf } from '../../shared/ingredients';
 import { FUTABA_RULES } from '../../shared/levels';
 import { parseAmount, type RecipeInput } from '../../shared/recipe';
+import { SEASONS, seasonsFromIngredients } from '../../shared/season';
 
 /** AI に返してもらう形（ゆるめに受けて、あとで整える） */
 export const aiRecipeSchema = z.object({
@@ -36,6 +37,10 @@ export const aiRecipeSchema = z.object({
     .min(1)
     .max(30),
   tags: z.array(z.string().max(20)).max(10).catch([]),
+  /** 季節の料理なら、その季節（冷やし中華→夏、おでん→冬） */
+  seasons: z.array(z.enum(SEASONS)).max(4).catch([]).default([]),
+  /** その季節にしか食べない料理か */
+  seasonOnly: z.boolean().catch(false).default(false),
 });
 export type AiRecipe = z.infer<typeof aiRecipeSchema>;
 
@@ -86,6 +91,8 @@ export const AI_RECIPE_JSON_SCHEMA = {
       },
     },
     tags: { type: 'array', items: { type: 'string' } },
+    seasons: { type: 'array', items: { type: 'string', enum: [...SEASONS] } },
+    seasonOnly: { type: 'boolean' },
   },
   required: [
     'name',
@@ -146,6 +153,14 @@ export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
     warnings.push('分量が読み取れなかった材料があります。確認してください');
   }
 
+  // AI が判断した季節（料理として季節もの）と、材料の旬を合わせる
+  const seasonSet = new Set([
+    ...ai.seasons,
+    ...seasonsFromIngredients(ingredients.map((i) => i.name)),
+  ]);
+  const seasons = SEASONS.filter((s) => seasonSet.has(s));
+  const seasonFields = { seasons, seasonOnly: ai.seasonOnly && ai.seasons.length > 0 };
+
   const draft: RecipeDraft = {
     name: ai.name.trim().slice(0, 60),
     category: ai.category,
@@ -158,6 +173,7 @@ export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
     ingredients,
     steps,
     tags: tags.slice(0, 10),
+    ...seasonFields,
     imageKey: null,
     sourceUrl,
   };

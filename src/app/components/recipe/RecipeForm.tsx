@@ -24,6 +24,7 @@ import { spring } from '../../lib/motion';
 import { GlassButton } from '../glass/GlassButton';
 import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
+import { SEASON_LABEL, SEASONS, seasonsFromIngredients, type Season } from '../../../shared/season';
 import { GripIcon, PlusIcon, TrashIcon } from '../icons';
 
 type IngredientRow = { key: string; name: string; amount: string; section: Section; group: string };
@@ -43,6 +44,10 @@ export type RecipeFormValue = {
   imageKey: string | null;
   ingredients: IngredientRow[];
   steps: StepRow[];
+  seasons: Season[];
+  seasonOnly: boolean;
+  /** 季節を自分で選んだか。選んでいなければ材料から自動で決める */
+  seasonsTouched: boolean;
 };
 
 const key = () => crypto.randomUUID();
@@ -67,6 +72,10 @@ export function toFormValue(r?: Partial<RecipeInput>): RecipeFormValue {
       section: i?.section ?? 'veg',
       group: i?.group ?? '',
     })),
+    seasons: r?.seasons ?? [],
+    seasonOnly: r?.seasonOnly ?? false,
+    // 既存のレシピや AI の下書きは、入っている季節をそのまま使う
+    seasonsTouched: !!r,
     steps: (r?.steps?.length ? r.steps : [null, null]).map((s) => ({
       key: key(),
       text: s?.text ?? '',
@@ -77,7 +86,10 @@ export function toFormValue(r?: Partial<RecipeInput>): RecipeFormValue {
 
 /** フォームの値を API 入力に変換して検証する */
 export function parseForm(v: RecipeFormValue) {
+  const seasons = effectiveSeasons(v);
   return recipeInputSchema.safeParse({
+    seasons,
+    seasonOnly: seasons.length > 0 && v.seasonOnly,
     name: v.name,
     category: v.category,
     genre: v.genre,
@@ -104,6 +116,12 @@ export function parseForm(v: RecipeFormValue) {
       .filter((s) => s.text.trim())
       .map((s) => ({ text: s.text.trim(), ...(s.tip.trim() && { tip: s.tip.trim() }) })),
   });
+}
+
+/** 季節を選んでいなければ、材料の旬から決める */
+function effectiveSeasons(v: RecipeFormValue): Season[] {
+  if (v.seasonsTouched) return v.seasons;
+  return seasonsFromIngredients(v.ingredients.map((i) => normalizeIngredientName(i.name.trim())));
 }
 
 const fieldCls = 'field min-h-12 w-full rounded-2xl px-4';
@@ -244,6 +262,7 @@ export function RecipeForm({
             ))}
           </select>
         </Field>
+        <SeasonField value={v} onChange={(patch) => setV((prev) => ({ ...prev, ...patch }))} />
       </GlassCard>
 
       <GlassCard padding="lg">
@@ -507,4 +526,60 @@ function pathLabel(path: PropertyKey[]): string {
   const head = String(path[0] ?? '');
   const label = PATH_LABEL[head] ?? '';
   return typeof path[1] === 'number' ? `${label}${path[1] + 1}番目 ` : label;
+}
+
+/** 季節：旬の季節を選ぶ。選ばなければ材料から自動。「この季節だけ」で季節限定に */
+function SeasonField({
+  value,
+  onChange,
+}: {
+  value: RecipeFormValue;
+  onChange: (patch: Partial<RecipeFormValue>) => void;
+}) {
+  const current = effectiveSeasons(value);
+  const toggle = (s: Season) => {
+    const next = current.includes(s) ? current.filter((x) => x !== s) : [...current, s];
+    onChange({ seasons: SEASONS.filter((x) => next.includes(x)), seasonsTouched: true });
+  };
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1.5 text-xs font-bold text-ink-soft">旬の季節</legend>
+      <div className="grid grid-cols-4 gap-2">
+        {SEASONS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={current.includes(s)}
+            onClick={() => toggle(s)}
+            className={cn(
+              'min-h-11 rounded-full text-sm font-bold transition-colors',
+              current.includes(s) ? 'bg-accent text-accent-ink' : 'bg-pill text-ink-soft',
+            )}
+          >
+            {SEASON_LABEL[s]}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-ink-soft">
+        {current.length === 0
+          ? '選ばなければ通年。旬の材料を入れると自動で付きます。'
+          : value.seasonsTouched
+            ? '旬の季節は献立に出やすくなります。'
+            : '材料の旬から自動で付けました。タップで変えられます。'}
+      </p>
+      {current.length > 0 && (
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={value.seasonOnly}
+            onChange={(e) =>
+              onChange({ seasonOnly: e.target.checked, seasonsTouched: true, seasons: current })
+            }
+            className="size-5 accent-[var(--accent-strong)]"
+          />
+          この季節だけ献立に出す（冷やし中華・おでん など）
+        </label>
+      )}
+    </fieldset>
+  );
 }
