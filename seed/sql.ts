@@ -1,4 +1,5 @@
 import { SEED_RECIPES } from './recipes';
+import type { SeedRecipe } from './recipes/define';
 
 const q = (v: string | number | null): string =>
   v === null ? 'NULL' : typeof v === 'number' ? String(v) : `'${v.replace(/'/g, "''")}'`;
@@ -8,8 +9,38 @@ const q = (v: string | number | null): string =>
  * レシピは ID で upsert し（献立から参照されていても消さない）、材料は入れ直す。
  */
 export function seedStatements(): string[] {
+  return SEED_RECIPES.flatMap(recipeStatements);
+}
+
+/** 1品分の内容を表すハッシュ（本番では、変わったレシピだけを書き直すのに使う） */
+export function recipeHash(r: SeedRecipe): string {
+  return hash(recipeStatements(r).join('\n'));
+}
+
+/** 文字列のハッシュ（cyrb53 を2本並べたもの。変更の検出に使うだけなので暗号強度は要らない） */
+function hash(text: string): string {
+  const run = (seed: number) => {
+    let h1 = 0xdeadbeef ^ seed;
+    let h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
+  };
+  return run(1) + run(2);
+}
+
+/** 書き込んだレシピのハッシュを記録する文 */
+export const hashStatement = (r: SeedRecipe) =>
+  `INSERT INTO seed_hashes (recipe_id, hash) VALUES (${q(r.id)}, ${q(recipeHash(r))}) ON CONFLICT(recipe_id) DO UPDATE SET hash = excluded.hash`;
+
+export function recipeStatements(r: SeedRecipe): string[] {
   const out: string[] = [];
-  for (const r of SEED_RECIPES) {
+  {
     out.push(
       `INSERT INTO recipes (id, group_id, created_by, name, category, genre, servings, time_minutes, cost_yen, cost_level, main_ingredient, difficulty, steps, tags, image_key, source_url, seasons, season_only) VALUES (${[
         q(r.id),

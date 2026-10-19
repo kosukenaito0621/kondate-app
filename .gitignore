@@ -16,3 +16,4 @@ docs/recipes-preview.html
 seed/seed.sql
 .tanstack/
 .claude/
+seed/seed-remote.sql

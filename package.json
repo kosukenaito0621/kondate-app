@@ -19,7 +19,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "db:seed:build": "tsx seed/build-seed-sql.ts",
     "db:seed:local": "npm run db:seed:build && wrangler d1 execute DB --local --file seed/seed.sql",
-    "db:seed:remote": "npm run db:seed:build && wrangler d1 execute DB --remote --file seed/seed.sql",
+    "db:seed:remote": "tsx seed/apply-remote.ts",
     "seed:preview": "tsx seed/preview-html.ts",
     "pwa:assets": "tsx scripts/build-icons.ts"
   },

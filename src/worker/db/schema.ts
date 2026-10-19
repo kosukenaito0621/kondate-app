@@ -403,3 +403,9 @@ export const dayMemos = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.groupId, t.date] }), index('day_memos_date_idx').on(t.date)],
 );
+
+/** 本番へ入れた初期レシピの内容のハッシュ（変わったレシピだけを書き直し、D1 の書き込み回数を抑える） */
+export const seedHashes = sqliteTable('seed_hashes', {
+  recipeId: text('recipe_id').primaryKey(),
+  hash: text('hash').notNull(),
+});
