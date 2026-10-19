@@ -295,7 +295,7 @@ function CookOnDateButton({
         )
       }
     >
-      {done ? '「作った」を取り消す' : 'この日に作ったと記録する'}
+      {done ? '記録を取り消す' : '作ったと記録'}
     </GlassButton>
   );
 }

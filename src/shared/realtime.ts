@@ -15,6 +15,13 @@ export type RealtimeEvent =
       summary: string;
       by: { id: string; name: string | null };
     }
+  | {
+      type: 'memo.updated';
+      weekStart: string;
+      date: string;
+      summary: string;
+      by: { id: string; name: string | null };
+    }
   | { type: 'logs.updated'; by: { id: string; name: string | null } }
   | { type: 'settings.updated'; by: { id: string; name: string | null } }
   | { type: 'recipes.updated'; by: { id: string; name: string | null } }

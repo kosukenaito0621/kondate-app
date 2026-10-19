@@ -9,6 +9,7 @@ import { GlassCard } from '../../components/glass/GlassCard';
 import { GroupDot } from '../../components/GroupSwitcher';
 import { BellIcon, BookIcon, ChevronRightIcon, SparkleIcon } from '../../components/icons';
 import { useGuide } from '../../components/guide/Guide';
+import { MemoChoiceSettings } from '../../components/MemoChoiceSettings';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
 import { logout, meQuery } from '../../lib/auth';
@@ -137,6 +138,8 @@ function Settings() {
           <p className="mb-4 text-xs text-ink-soft">その日の気分で選べます</p>
           <ThemePicker value={me.theme} />
         </GlassCard>
+
+        <MemoChoiceSettings />
 
         <GlassCard variants={riseItem} padding="lg">
           <form onSubmit={submit} className="flex flex-col gap-3" noValidate>

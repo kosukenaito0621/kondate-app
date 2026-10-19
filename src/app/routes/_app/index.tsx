@@ -20,6 +20,7 @@ import {
   YenIcon,
 } from '../../components/icons';
 import { LevelBadge } from '../../components/LevelBadge';
+import { MemoField } from '../../components/week/MemoField';
 import { HomeSkeleton } from '../../components/skeleton/Skeletons';
 import { greeting } from '../../lib/greeting';
 import { fadeIn, riseItem, spring, staggerContainer } from '../../lib/motion';
@@ -76,6 +77,18 @@ function Home() {
   );
 
   const [, mm, dd] = date.split('-');
+  // 今日のメモ（ある日だけ、ガラスの付箋で浮かび上がる）
+  const memo = data?.day.memo ? (
+    <motion.div
+      key="today-memo"
+      initial={{ opacity: 0, y: 18, scale: 0.96, rotate: -1.5 }}
+      animate={{ opacity: 1, y: 0, scale: 1, rotate: -0.6 }}
+      transition={{ ...spring.soft, delay: 0.35 }}
+      className="mt-1"
+    >
+      <MemoField variant="sticky" date={data.day.date} memo={data.day.memo} dayLabel="今日" />
+    </motion.div>
+  ) : null;
 
   return (
     <>
@@ -103,9 +116,15 @@ function Home() {
       {isPending || !data ? (
         <HomeSkeleton />
       ) : isOffDay(data.day.mode) ? (
-        <OffToday weekStart={data.weekStart} date={data.day.date} mode={data.day.mode} />
+        <>
+          <OffToday weekStart={data.weekStart} date={data.day.date} mode={data.day.mode} />
+          {memo}
+        </>
       ) : data.day.items.length === 0 ? (
-        <EmptyToday weekStart={data.weekStart} />
+        <>
+          <EmptyToday weekStart={data.weekStart} />
+          {memo}
+        </>
       ) : (
         <motion.div
           className="flex flex-col gap-3"
@@ -116,6 +135,7 @@ function Home() {
           {data.day.items.map((item) => (
             <MealHero key={item.slot} item={item} />
           ))}
+          {memo}
           <motion.div variants={riseItem} className="mt-2 grid grid-cols-3 gap-3">
             <QuickLink
               to="/week"

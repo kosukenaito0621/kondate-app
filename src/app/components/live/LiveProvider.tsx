@@ -47,6 +47,11 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
         case 'shopping.updated':
           queryClient.invalidateQueries({ queryKey: ['shopping', e.weekStart] });
           break;
+        case 'memo.updated':
+          // 入力中の欄は MemoField 側で上書きしないようにしている
+          queryClient.invalidateQueries({ queryKey: ['plan', e.weekStart] });
+          queryClient.invalidateQueries({ queryKey: ['today'] });
+          break;
         case 'logs.updated':
           queryClient.invalidateQueries({ queryKey: ['logs'] });
           queryClient.invalidateQueries({ queryKey: ['plan'] });

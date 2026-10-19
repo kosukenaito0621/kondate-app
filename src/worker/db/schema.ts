@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { EDIT_MEMO_CHOICES, SWAP_MEMO_CHOICES } from '../../shared/memo';
 import type { Season } from '../../shared/season';
 import {
   index,
@@ -56,6 +57,10 @@ export const userSettings = sqliteTable('user_settings', {
   guideSeenAt: integer('guide_seen_at'),
   /** 最後に見たお知らせの id（shared/news.ts） */
   newsSeenId: text('news_seen_id'),
+  /** 日ごとメモがある日の入れ替えで「次回から確認しない」にした選択（NULL は毎回確認） */
+  memoSwapChoice: text('memo_swap_choice', { enum: SWAP_MEMO_CHOICES }),
+  /** 差し替え・作り直し・削除で「次回から確認しない」にした選択 */
+  memoEditChoice: text('memo_edit_choice', { enum: EDIT_MEMO_CHOICES }),
 });
 
 /** 家庭（グループ）。献立・設定・買い物リスト・独自レシピを共有する単位 */
@@ -382,4 +387,19 @@ export const recipeShareBundleItems = sqliteTable(
     sort: integer('sort').notNull(),
   },
   (t) => [primaryKey({ columns: [t.bundleId, t.recipeId] })],
+);
+
+/** 日ごとメモ（グループ × 日付で1件。古いものは Cron で消す） */
+export const dayMemos = sqliteTable(
+  'day_memos',
+  {
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    date: text('date').notNull(),
+    body: text('body').notNull(),
+    updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [primaryKey({ columns: [t.groupId, t.date] }), index('day_memos_date_idx').on(t.date)],
 );

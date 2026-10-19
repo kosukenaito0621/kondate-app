@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { memoChoicesSchema, type MemoChoices } from './memo';
 import { COOKING_LEVELS, type CookingLevel } from './levels';
 import { THEME_IDS, type ThemeId } from './themes';
 
@@ -20,6 +21,8 @@ export const updateMeSchema = z
     guideSeen: z.literal(true),
     /** ここまでお知らせを読んだ */
     newsSeen: z.string().min(1).max(60),
+    /** メモの確認で覚えた選択（null で「毎回確認する」に戻す） */
+    memoChoices: memoChoicesSchema,
   })
   .partial()
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
@@ -40,6 +43,8 @@ export type Me = {
   guideSeen: boolean;
   /** 最後に見たお知らせの id */
   newsSeen: string | null;
+  /** 日ごとメモの確認で「次回から確認しない」にした選択 */
+  memoChoices: MemoChoices;
   id: string;
   email: string;
   displayName: string | null;

@@ -3,8 +3,12 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 
-type Toast = { id: number; message: string; tone: 'info' | 'warn' | 'error' };
-type ToastApi = { toast: (message: string, tone?: Toast['tone']) => void };
+type ToastAction = { label: string; onClick: () => void };
+type Toast = { id: number; message: string; tone: 'info' | 'warn' | 'error'; action?: ToastAction };
+type ToastOptions = { action?: ToastAction; duration?: number };
+type ToastApi = {
+  toast: (message: string, tone?: Toast['tone'], options?: ToastOptions) => void;
+};
 
 const ToastContext = createContext<ToastApi | null>(null);
 
@@ -13,14 +17,17 @@ export function Toaster({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const seq = useRef(0);
 
-  const toast = useCallback((message: string, tone: Toast['tone'] = 'info') => {
-    const id = ++seq.current;
-    setToasts((ts) => [...ts.slice(-2), { id, message, tone }]);
-    window.setTimeout(
-      () => setToasts((ts) => ts.filter((t) => t.id !== id)),
-      tone === 'info' ? 3500 : 6000,
-    );
-  }, []);
+  const toast = useCallback(
+    (message: string, tone: Toast['tone'] = 'info', options: ToastOptions = {}) => {
+      const id = ++seq.current;
+      setToasts((ts) => [...ts.slice(-2), { id, message, tone, action: options.action }]);
+      window.setTimeout(
+        () => setToasts((ts) => ts.filter((t) => t.id !== id)),
+        options.duration ?? (tone === 'info' ? 3500 : 6000),
+      );
+    },
+    [],
+  );
 
   const value = useMemo(() => ({ toast }), [toast]);
 
@@ -49,7 +56,24 @@ export function Toaster({ children }: { children: React.ReactNode }) {
               )}
               onClick={() => setToasts((ts) => ts.filter((x) => x.id !== t.id))}
             >
-              {t.message}
+              {t.action ? (
+                <span className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1">{t.message}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      t.action!.onClick();
+                      setToasts((ts) => ts.filter((x) => x.id !== t.id));
+                    }}
+                    className="-my-1 min-h-9 shrink-0 rounded-full bg-pill px-3 text-accent-strong"
+                  >
+                    {t.action.label}
+                  </button>
+                </span>
+              ) : (
+                t.message
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

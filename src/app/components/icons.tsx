@@ -104,6 +104,14 @@ export const PlusIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** 付箋（日ごとメモ） */
+export const MemoIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 4h14v10l-6 6H5z" />
+    <path d="M13 20v-6h6M8.5 8.5h7M8.5 12h4" />
+  </Icon>
+);
+
 export const ChevronRightIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="m9 5 7 7-7 7" />

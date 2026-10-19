@@ -60,6 +60,11 @@ export function HomeSkeleton() {
       <MealCardSkeleton big />
       <MealCardSkeleton big />
       <MealCardSkeleton big />
+      {/* 今日のメモ */}
+      <SkeletonCard>
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="mt-2 h-4 w-3/4" />
+      </SkeletonCard>
       <div className="mt-2 grid grid-cols-2 gap-3">
         <SkeletonCard>
           <Skeleton className="h-16" />
@@ -80,16 +85,18 @@ export function WeekSkeleton() {
         <Skeleton className="h-11 w-24 rounded-full" />
       </div>
       {Array.from({ length: 7 }, (_, i) => (
-        <SkeletonCard key={i} className="flex gap-3">
-          <div className="flex w-10 flex-col items-center gap-1.5">
-            <Skeleton className="h-3 w-6" />
-            <Skeleton className="size-8 rounded-full" />
+        <SkeletonCard key={i} className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-6" />
+            <Skeleton className="h-3 w-10" />
           </div>
-          <div className="flex flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-2 pl-8">
             <Skeleton className="h-4 w-4/5" />
             <Skeleton className="h-3.5 w-3/5" />
             <Skeleton className="h-3.5 w-2/5" />
           </div>
+          {/* メモ欄 */}
+          <Skeleton className="ml-8 h-6 w-28 rounded-full" />
         </SkeletonCard>
       ))}
     </Screen>

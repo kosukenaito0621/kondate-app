@@ -32,6 +32,8 @@
   --color-sun: var(--sun);
   --color-sun-soft: var(--sun-soft);
   --color-sun-chip: var(--sun-chip);
+  --color-memo: var(--memo);
+  --color-memo-ink: var(--memo-ink);
 
   --color-pill: var(--pill);
   --color-field: var(--field);

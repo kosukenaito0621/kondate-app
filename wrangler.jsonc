@@ -21,6 +21,8 @@
       "migrations_dir": "migrations",
     },
   ],
+  // 毎日 03:00（日本時間）に古い日ごとメモを消す
+  "triggers": { "crons": ["0 18 * * *"] },
   "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "kondate-images" }],
   // Workers AI はローカルでもリモート実行（利用量がカウントされる）
   "ai": { "binding": "AI", "remote": true },

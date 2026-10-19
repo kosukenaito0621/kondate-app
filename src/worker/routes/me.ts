@@ -17,13 +17,15 @@ export async function loadMe(db: Db, userId: string): Promise<Me> {
       level: userSettings.cookingLevel,
       guideSeenAt: userSettings.guideSeenAt,
       newsSeenId: userSettings.newsSeenId,
+      memoSwap: userSettings.memoSwapChoice,
+      memoEdit: userSettings.memoEditChoice,
     })
     .from(users)
     .leftJoin(userSettings, eq(userSettings.userId, users.id))
     .where(eq(users.id, userId))
     .get();
   if (!row) throw new Error('user not found');
-  const { user, theme, level, guideSeenAt, newsSeenId } = row;
+  const { user, theme, level, guideSeenAt, newsSeenId, memoSwap, memoEdit } = row;
   const currentGroupId = await ensureCurrentGroup(db, user.id, user.displayName);
   return {
     id: user.id,
@@ -34,6 +36,7 @@ export async function loadMe(db: Db, userId: string): Promise<Me> {
     cookingLevel: level ?? null,
     guideSeen: guideSeenAt != null,
     newsSeen: newsSeenId ?? null,
+    memoChoices: { swap: memoSwap ?? null, edit: memoEdit ?? null },
     currentGroupId,
     groups: await listGroupsOf(db, user.id),
   };
@@ -43,7 +46,8 @@ export const meRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .get('/', async (c) => c.json(await loadMe(c.var.db, c.var.user.id)))
   .patch('/', zValidator('json', updateMeSchema), async (c) => {
-    const { displayName, theme, cookingLevel, guideSeen, newsSeen } = c.req.valid('json');
+    const { displayName, theme, cookingLevel, guideSeen, newsSeen, memoChoices } =
+      c.req.valid('json');
     const db = c.var.db;
     const user = c.var.user;
 
@@ -77,12 +81,14 @@ export const meRoutes = new Hono<AppEnv>()
         }
       }
     }
-    if (theme !== undefined || cookingLevel !== undefined || guideSeen || newsSeen) {
+    if (theme !== undefined || cookingLevel !== undefined || guideSeen || newsSeen || memoChoices) {
       const set = {
         ...(theme && { theme }),
         ...(cookingLevel && { cookingLevel }),
         ...(guideSeen && { guideSeenAt: Date.now() }),
         ...(newsSeen && { newsSeenId: newsSeen }),
+        ...(memoChoices?.swap !== undefined && { memoSwapChoice: memoChoices.swap }),
+        ...(memoChoices?.edit !== undefined && { memoEditChoice: memoChoices.edit }),
       };
       await db
         .insert(userSettings)

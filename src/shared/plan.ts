@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EDIT_MEMO_CHOICES, SWAP_MEMO_CHOICES, type DayMemo } from './memo';
 import { CATEGORIES, LEVELS, TIME_LEVELS, type CostLevel, type TimeLevel } from './constants';
 import { isIsoDate } from './date';
 import { DAY_LEVELS, type CookingLevel, type DayLevel } from './levels';
@@ -67,12 +68,21 @@ export type PlanSettings = {
 export const weekStartParam = z.string().refine(isIsoDate, '日付の形式が不正です');
 
 export const versionSchema = z.object({ version: z.number().int().min(0).optional() });
-export const regenerateSchema = versionSchema.extend({ slot: z.enum(CATEGORIES).optional() });
-export const setSlotSchema = versionSchema.extend({ recipeId: z.string().min(1).nullable() });
+/** memo：その日のメモをどうするか（省略時は残す） */
+export const regenerateSchema = versionSchema.extend({
+  slot: z.enum(CATEGORIES).optional(),
+  memo: z.enum(EDIT_MEMO_CHOICES).optional(),
+});
+export const setSlotSchema = versionSchema.extend({
+  recipeId: z.string().min(1).nullable(),
+  memo: z.enum(EDIT_MEMO_CHOICES).optional(),
+});
 export const dayModeSchema = versionSchema.extend({ mode: z.enum(DAY_MODES) });
 export const swapSchema = versionSchema.extend({
   from: z.string().refine(isIsoDate),
   to: z.string().refine(isIsoDate),
+  /** メモをどうするか（省略時は日に残す） */
+  memo: z.enum(SWAP_MEMO_CHOICES).optional(),
 });
 
 export type PlanItemView = {
@@ -99,6 +109,8 @@ export type PlanDayView = {
   /** 曜日の設定どおりの予定 */
   modeSetting: DayMode;
   items: PlanItemView[];
+  /** その日のメモ */
+  memo: DayMemo | null;
 };
 
 export type PlanView = {

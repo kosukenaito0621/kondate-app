@@ -83,6 +83,8 @@ describe('マイグレーション: グループ化', () => {
         cooking_level: null,
         guide_seen_at: null,
         news_seen_id: null,
+        memo_swap_choice: null,
+        memo_edit_choice: null,
       },
     ]);
 

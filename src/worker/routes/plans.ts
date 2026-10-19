@@ -1,7 +1,9 @@
 import { zValidator } from '@hono/zod-validator';
 import { and, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono, type Context } from 'hono';
 import { CATEGORY_LABEL } from '../../shared/constants';
+import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../shared/memo';
 import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
 import {
   DAY_MODE_LABEL,
@@ -33,6 +35,7 @@ import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { toSummary } from './recipes';
+import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
 type Ctx = Context<AppEnv>;
@@ -161,6 +164,7 @@ export async function buildPlanView(
     .from(cookLogs)
     .where(and(eq(cookLogs.groupId, groupId), inArray(cookLogs.date, dates)));
   const cooked = new Map(logs.map((l) => [`${l.date}|${l.recipeId}`, l.id]));
+  const memos = await loadMemos(db, groupId, dates);
   const slotOrder = { main: 0, soup: 1, side: 2 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
@@ -201,6 +205,7 @@ export async function buildPlanView(
             updatedAt: r.item.updatedAt,
             cookedLogId: cooked.get(`${date}|${r.item.recipeId}`) ?? null,
           })),
+        memo: memos.get(date) ?? null,
       };
     }),
   };
@@ -243,6 +248,23 @@ async function bumpVersion(c: Ctx, weekStart: string, expected: number | undefin
   return updated ?? null;
 }
 
+/** 「メモを消す」を選んだときの文 */
+const clearMemo = (c: Ctx, date: string, memo: EditMemoChoice | undefined) =>
+  memo === 'clear' ? [memoStatement(c.var.db, c.var.group.id, c.var.user.id, date, null)] : [];
+
+/** 入れ替えに合わせてメモを交換・移動・削除する文 */
+async function swapMemoStatements(c: Ctx, from: string, to: string, choice: SwapMemoChoice) {
+  if (choice === 'keep') return [];
+  const current = await loadMemos(c.var.db, c.var.group.id, [from, to]);
+  const before = { from: current.get(from)?.body ?? null, to: current.get(to)?.body ?? null };
+  const after = swapMemos(before, choice);
+  return (['from', 'to'] as const)
+    .filter((k) => after[k] !== before[k])
+    .map((k) =>
+      memoStatement(c.var.db, c.var.group.id, c.var.user.id, k === 'from' ? from : to, after[k]),
+    );
+}
+
 const stale = (c: Ctx) =>
   c.json(
     {
@@ -258,6 +280,8 @@ async function replaceItems(
   planId: string,
   next: PlanItem[],
   scope: { date?: string; slot?: Slot },
+  /** 同じ batch で実行する文（メモの削除など） */
+  extra: BatchItem<'sqlite'>[] = [],
 ) {
   const db = c.var.db;
   const now = Date.now();
@@ -282,6 +306,7 @@ async function replaceItems(
   await db.batch([
     db.delete(mealPlanItems).where(where),
     ...chunkRows(rows, 7).map((chunk) => db.insert(mealPlanItems).values(chunk)),
+    ...extra,
   ]);
 }
 
@@ -333,13 +358,13 @@ export const planRoutes = new Hono<AppEnv>()
     const ws = validWeekStart(c);
     const date = c.req.param('date');
     if (!ws || !inWeek(ws, date)) return c.json({ error: 'invalid_date' }, 400);
-    const { version, slot } = c.req.valid('json');
+    const { version, slot, memo } = c.req.valid('json');
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
     const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
     const current = await planItems(c.var.db, plan.id);
     const result = regenerate(input, current, date, slot);
-    await replaceItems(c, plan.id, result.items, { date, slot });
+    await replaceItems(c, plan.id, result.items, { date, slot }, clearMemo(c, date, memo));
     await saveCost(c.var.db, c.var.group.id, plan.id, ws);
     notifyGroup(c, {
       type: 'plan.updated',
@@ -392,7 +417,7 @@ export const planRoutes = new Hono<AppEnv>()
     if (!ws || !inWeek(ws, date) || !['main', 'soup', 'side'].includes(slot)) {
       return c.json({ error: 'invalid_date' }, 400);
     }
-    const { version, recipeId } = c.req.valid('json');
+    const { version, recipeId, memo } = c.req.valid('json');
     const db = c.var.db;
     if (recipeId) {
       const usable = await plannerRecipes(db, c.var.group.id);
@@ -402,7 +427,13 @@ export const planRoutes = new Hono<AppEnv>()
     }
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
-    await replaceItems(c, plan.id, recipeId ? [{ date, slot, recipeId }] : [], { date, slot });
+    await replaceItems(
+      c,
+      plan.id,
+      recipeId ? [{ date, slot, recipeId }] : [],
+      { date, slot },
+      clearMemo(c, date, memo),
+    );
     await saveCost(db, c.var.group.id, plan.id, ws);
     notifyGroup(c, {
       type: 'plan.updated',
@@ -415,7 +446,7 @@ export const planRoutes = new Hono<AppEnv>()
   /** 2つの曜日の献立を入れ替える（外食・テイクアウトの予定も一緒に入れ替える） */
   .post('/:weekStart/swap', zValidator('json', swapSchema), async (c) => {
     const ws = validWeekStart(c);
-    const { from, to, version } = c.req.valid('json');
+    const { from, to, version, memo = 'keep' } = c.req.valid('json');
     if (!ws || !inWeek(ws, from) || !inWeek(ws, to) || from === to) {
       return c.json({ error: 'invalid_date' }, 400);
     }
@@ -439,6 +470,7 @@ export const planRoutes = new Hono<AppEnv>()
       move(to, from),
       move(tmp, to),
       db.update(mealPlans).set({ dayModes }).where(eq(mealPlans.id, plan.id)),
+      ...(await swapMemoStatements(c, from, to, memo)),
     ]);
     notifyGroup(c, {
       type: 'plan.updated',

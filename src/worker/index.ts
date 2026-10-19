@@ -9,6 +9,7 @@ import { groupRoutes, inviteRoutes } from './routes/groups';
 import { imageRoutes } from './routes/images';
 import { logRoutes } from './routes/logs';
 import { meRoutes } from './routes/me';
+import { memoRoutes, purgeOldMemos } from './routes/memos';
 import { planRoutes, todayItems } from './routes/plans';
 import { recipeShareRoutes } from './routes/recipe-shares';
 import { recipeRoutes } from './routes/recipes';
@@ -41,6 +42,7 @@ const api = new Hono<AppEnv>()
   .route('/plans', planRoutes)
   .route('/shopping', shoppingRoutes)
   .route('/logs', logRoutes)
+  .route('/memos', memoRoutes)
   .route('/images', imageRoutes)
   .route('/ai', aiRoutes)
   .get('/today', requireAuth, requireGroup, async (c) => {
@@ -62,4 +64,10 @@ api.onError((err, c) => {
 
 export type AppType = typeof api;
 
-export default api satisfies ExportedHandler<Env>;
+export default {
+  fetch: api.fetch,
+  /** 毎日の定期処理（wrangler.jsonc の triggers.crons）：古い日ごとメモを消す */
+  async scheduled(_controller, env, ctx) {
+    ctx.waitUntil(purgeOldMemos(getDb(env.DB)).then((n) => console.log(`purged ${n} old memos`)));
+  },
+} satisfies ExportedHandler<Env>;

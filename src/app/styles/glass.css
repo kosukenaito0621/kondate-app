@@ -221,3 +221,40 @@
     transition: none;
   }
 }
+
+/* 長押しで iOS の文字選択・リンクのメニューを出さない */
+.no-callout {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 週間献立：曜日をまたいでスライドする献立の部分 */
+.slide-slot {
+  background: transparent;
+  transition: background-color 0.2s;
+}
+.slide-slot[data-empty] {
+  background: var(--track);
+}
+.slide-body {
+  position: relative;
+}
+/* 動いているあいだの献立の写し（ページの一番上の層に置く） */
+.slide-layer {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 45;
+  pointer-events: none;
+}
+.slide-clone {
+  position: absolute;
+  margin: 0;
+  border-radius: 1rem;
+  background: var(--glass-fallback);
+  box-shadow: 0 10px 26px -16px rgb(var(--shadow-rgb) / 0.45);
+  will-change: transform;
+}
+.slide-clone[data-lifted] {
+  box-shadow: 0 22px 44px -18px rgb(var(--shadow-rgb) / 0.55);
+}
