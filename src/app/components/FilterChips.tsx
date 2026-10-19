@@ -2,7 +2,11 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/cn';
 import { spring } from '../lib/motion';
 
-type Option<T extends string> = { value: T | undefined; label: string; ariaLabel?: string };
+type Option<T extends string> = {
+  value: T | undefined;
+  label: React.ReactNode;
+  ariaLabel?: string;
+};
 
 /** 横スクロールの絞り込みチップ（1つ選択） */
 export function FilterChips<T extends string>({
@@ -26,7 +30,7 @@ export function FilterChips<T extends string>({
         const selected = o.value === value;
         return (
           <motion.button
-            key={o.label}
+            key={o.value ?? 'all'}
             type="button"
             role="radio"
             aria-checked={selected}

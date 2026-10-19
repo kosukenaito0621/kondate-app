@@ -219,7 +219,7 @@ function pick(
     const recipe = weightedPick(candidates, baseWeight, ctx.rng);
     if (recipe) {
       const warning = step.reason
-        ? `${dayLabel(day.date)}の${CATEGORY_LABEL[slot]}は${day.level === 'futaba' ? '🌱の' : ''}候補が少ないため、${step.reason}`
+        ? `${dayLabel(day.date)}の${CATEGORY_LABEL[slot]}は${day.level === 'futaba' ? 'わかばの' : ''}候補が少ないため、${step.reason}`
         : null;
       return { recipe, warning };
     }

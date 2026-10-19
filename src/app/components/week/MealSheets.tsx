@@ -135,7 +135,7 @@ function RecipePicker({
       </label>
       {level === 'futaba' && (
         <p className="text-xs text-ink-soft">
-          この日は🌱の日なので、🌱のレシピだけを表示しています
+          この日はわかばの日なので、わかばのレシピだけを表示しています
         </p>
       )}
       <ul className="-mx-1 flex max-h-[45dvh] flex-col gap-1 overflow-y-auto px-1">

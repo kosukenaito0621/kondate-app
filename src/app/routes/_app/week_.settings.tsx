@@ -26,6 +26,7 @@ import { useToast } from '../../components/toast/Toaster';
 import { cn } from '../../lib/cn';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 import { DayModeIcon } from '../../components/week/DayModeIcon';
+import { LEVEL_COLOR, LevelIcon } from '../../components/LevelIcon';
 import { settingsQuery } from '../../lib/plans';
 
 export const Route = createFileRoute('/_app/week_/settings')({
@@ -268,18 +269,35 @@ function SettingsForm({ initial }: { initial: PlanSettings }) {
                                 options={[
                                   {
                                     value: 'inherit' as const,
-                                    label: `既定 ${LEVEL_META[initial.defaultLevel].emoji}`,
+                                    label: (
+                                      <span className="inline-flex items-center gap-1">
+                                        既定
+                                        <LevelIcon level={initial.defaultLevel} size={16} />
+                                      </span>
+                                    ),
                                     hint: 'グループの設定',
                                     ariaLabel: `グループの既定（${LEVEL_META[initial.defaultLevel].name}）`,
                                   },
                                   {
                                     value: 'futaba' as const,
-                                    label: LEVEL_META.futaba.emoji,
+                                    label: (
+                                      <span
+                                        className={`inline-flex ${LEVEL_COLOR['futaba' as const]}`}
+                                      >
+                                        <LevelIcon level={'futaba' as const} size={18} />
+                                      </span>
+                                    ),
                                     ariaLabel: LEVEL_META.futaba.name,
                                   },
                                   {
                                     value: 'minori' as const,
-                                    label: LEVEL_META.minori.emoji,
+                                    label: (
+                                      <span
+                                        className={`inline-flex ${LEVEL_COLOR['minori' as const]}`}
+                                      >
+                                        <LevelIcon level={'minori' as const} size={18} />
+                                      </span>
+                                    ),
                                     ariaLabel: LEVEL_META.minori.name,
                                   },
                                 ]}

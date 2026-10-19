@@ -3,7 +3,12 @@ import { useId } from 'react';
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 
-type Option<T extends string> = { value: T; label: string; hint?: string; ariaLabel?: string };
+type Option<T extends string> = {
+  value: T;
+  label: React.ReactNode;
+  hint?: string;
+  ariaLabel?: string;
+};
 
 type Props<T extends string> = {
   label: string;

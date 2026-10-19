@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
 import { LEVEL_META, type CookingLevel } from '../../shared/levels';
+import { LEVEL_COLOR, LevelIcon } from './LevelIcon';
 import { cn } from '../lib/cn';
 
-/** 🌱／🌾 のアイコンだけの小さなガラス調チップ。わかばは芽がぴょこっと揺れる */
+/** わかば（双葉）／みのり（稲穂）のアイコンだけの小さなチップ。わかばは芽がぴょこっと揺れる */
 export function LevelBadge({
   level,
   size = 'sm',
@@ -21,6 +22,7 @@ export function LevelBadge({
       title={meta.name}
       className={cn(
         'inline-grid shrink-0 place-items-center rounded-full',
+        LEVEL_COLOR[level],
         size === 'inline'
           ? 'size-5 bg-pill text-[11px]'
           : size === 'sm'
@@ -31,7 +33,7 @@ export function LevelBadge({
     >
       <motion.span
         aria-hidden="true"
-        className="inline-block origin-bottom leading-none"
+        className="inline-grid origin-bottom leading-none"
         animate={level === 'futaba' ? { rotate: [0, -12, 10, -6, 0], y: [0, -1.5, 0] } : undefined}
         transition={
           level === 'futaba'
@@ -39,7 +41,7 @@ export function LevelBadge({
             : undefined
         }
       >
-        {meta.emoji}
+        <LevelIcon level={level} size={size === 'inline' ? 14 : size === 'sm' ? 17 : 21} />
       </motion.span>
     </span>
   );

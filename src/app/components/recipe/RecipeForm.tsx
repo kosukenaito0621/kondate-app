@@ -25,6 +25,7 @@ import { GlassButton } from '../glass/GlassButton';
 import { GlassCard } from '../glass/GlassCard';
 import { Segmented } from '../glass/Segmented';
 import { SEASON_LABEL, SEASONS, seasonsFromIngredients, type Season } from '../../../shared/season';
+import { LEVEL_COLOR, LevelIcon } from '../LevelIcon';
 import { ChevronDownIcon, ChevronUpIcon, CloseIcon, GripIcon, PlusIcon, TrashIcon } from '../icons';
 
 type IngredientRow = { key: string; name: string; amount: string; section: Section; group: string };
@@ -211,7 +212,11 @@ export function RecipeForm({
             onChange={(x) => set('difficulty', x)}
             options={COOKING_LEVELS.map((l) => ({
               value: l,
-              label: LEVEL_META[l].emoji,
+              label: (
+                <span className={`inline-flex ${LEVEL_COLOR[l]}`}>
+                  <LevelIcon level={l} size={18} />
+                </span>
+              ),
               ariaLabel: LEVEL_META[l].name,
             }))}
           />
@@ -392,7 +397,7 @@ export function RecipeForm({
         <h2 className="font-bold">作り方</h2>
         {futaba && (
           <p className="mt-1 text-xs text-ink-soft">
-            🌱のレシピは、手順ごとに「ひとことコツ」を入れると初めての人も安心です（5ステップ以内がおすすめ）。
+            わかばのレシピは、手順ごとに「ひとことコツ」を入れると初めての人も安心です（5ステップ以内がおすすめ）。
           </p>
         )}
         <p className="mt-1 text-xs text-ink-soft">

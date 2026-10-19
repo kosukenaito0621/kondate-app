@@ -137,7 +137,7 @@ export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
     (ai.steps.length > FUTABA_RULES.maxSteps || nonSeasoning > FUTABA_RULES.maxIngredients || fried)
   ) {
     difficulty = 'minori';
-    warnings.push('手順や材料が多いため、料理レベルを🌾にしました');
+    warnings.push('手順や材料が多いため、料理レベルを「みのり」にしました');
   }
   const tags = [...new Set(ai.tags.map((t) => t.replace(/^#/, '').trim()).filter(Boolean))];
   if (fried && !tags.includes('揚げ物')) tags.push('揚げ物');
@@ -147,7 +147,7 @@ export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
     ...(s.tip?.trim() && { tip: s.tip.trim() }),
   }));
   if (difficulty === 'futaba' && steps.some((s) => !s.tip)) {
-    warnings.push('🌱のレシピは、コツが空の手順に一言入れておくと安心です');
+    warnings.push('わかばのレシピは、コツが空の手順に一言入れておくと安心です');
   }
   if (ingredients.some((i) => i.quantity === null && i.amountText === null)) {
     warnings.push('分量が読み取れなかった材料があります。確認してください');

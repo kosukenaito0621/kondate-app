@@ -20,6 +20,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SettingsSkeleton } from '../../components/skeleton/Skeletons';
 import { currentGroupQuery, invitesQuery, inviteUrl } from '../../lib/groups';
 import { GroupNameField } from '../../components/GroupNameField';
+import { LEVEL_COLOR, LevelIcon } from '../../components/LevelIcon';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 
 export const Route = createFileRoute('/_app/group')({
@@ -140,7 +141,11 @@ function GroupBody({ group }: { group: GroupDetail }) {
             onChange={(defaultLevel) => update.mutate({ defaultLevel })}
             options={COOKING_LEVELS.map((l) => ({
               value: l,
-              label: LEVEL_META[l].emoji,
+              label: (
+                <span className={`inline-flex ${LEVEL_COLOR[l]}`}>
+                  <LevelIcon level={l} size={18} />
+                </span>
+              ),
               ariaLabel: LEVEL_META[l].name,
             }))}
           />

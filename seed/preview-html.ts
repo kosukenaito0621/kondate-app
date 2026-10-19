@@ -74,7 +74,7 @@ ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.
 <script>
 const R=${JSON.stringify(data)};
 const L={category:${JSON.stringify(CATEGORY_LABEL)},genre:${JSON.stringify(GENRE_LABEL)},level:${JSON.stringify(
-  Object.fromEntries(Object.entries(LEVEL_META).map(([k, v]) => [k, v.emoji + v.name])),
+  Object.fromEntries(Object.entries(LEVEL_META).map(([k, v]) => [k, v.name])),
 )}};
 const state={category:'',genre:'',level:'',q:''};
 for(const el of document.querySelectorAll('.chips')){const key=el.dataset.key;

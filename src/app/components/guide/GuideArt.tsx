@@ -6,6 +6,7 @@ import {
   LinkIcon,
   PlusIcon,
   RefreshIcon,
+  SproutIcon,
   ShuffleIcon,
   SparkleIcon,
 } from '../icons';
@@ -110,7 +111,7 @@ export function ArtSettings() {
         <span className="num text-sm font-bold">10,000円</span>
       </div>
       <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-bold">
-        {['時短', '節約', '副菜あり', '🌱'].map((t) => (
+        {['時短', '節約', '副菜あり', 'わかば'].map((t) => (
           <span key={t} className="rounded-full bg-pill py-1.5">
             {t}
           </span>
@@ -198,7 +199,9 @@ export function ArtRecipe() {
             和食
           </span>
           <span className="rounded-full bg-pill px-1.5 text-[9px] font-bold">主菜</span>
-          <span className="text-[11px]">🌱</span>
+          <span className="inline-flex text-success-ink">
+            <SproutIcon size={12} />
+          </span>
         </span>
         <Bar w="90%" />
         <Bar w="70%" />

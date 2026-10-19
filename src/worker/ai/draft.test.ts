@@ -96,7 +96,7 @@ describe('AI の結果を整える', () => {
       }),
     );
     expect(long.draft.difficulty).toBe('minori');
-    expect(long.warnings[0]).toMatch(/🌾/);
+    expect(long.warnings[0]).toMatch(/みのり/);
   });
 
   it('わかばでコツが空の手順があれば知らせる', () => {

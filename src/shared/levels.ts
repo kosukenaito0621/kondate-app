@@ -2,17 +2,12 @@
 export const COOKING_LEVELS = ['futaba', 'minori'] as const;
 export type CookingLevel = (typeof COOKING_LEVELS)[number];
 
-export const LEVEL_META: Record<
-  CookingLevel,
-  { emoji: string; name: string; description: string }
-> = {
+export const LEVEL_META: Record<CookingLevel, { name: string; description: string }> = {
   futaba: {
-    emoji: '🌱',
     name: 'わかば',
     description: 'まずは気軽に。手順が少なく、失敗しにくいメニュー中心',
   },
   minori: {
-    emoji: '🌾',
     name: 'みのり',
     description: 'レパートリーを広げたい人に。手の込んだ料理もおまかせ',
   },

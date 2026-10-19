@@ -9,6 +9,7 @@ import { GlassButton } from '../components/glass/GlassButton';
 import { GlassCard } from '../components/glass/GlassCard';
 import { meQuery } from '../lib/auth';
 import { cn } from '../lib/cn';
+import { LEVEL_COLOR, LevelIcon } from '../components/LevelIcon';
 import { riseItem, spring, staggerContainer } from '../lib/motion';
 
 export const Route = createFileRoute('/onboarding')({
@@ -170,7 +171,7 @@ function LevelStep({ name }: { name: string }) {
               )}
             >
               <motion.span
-                className="text-4xl"
+                className={`inline-grid ${LEVEL_COLOR[l]}`}
                 aria-hidden="true"
                 animate={
                   selected
@@ -179,7 +180,7 @@ function LevelStep({ name }: { name: string }) {
                 }
                 transition={{ duration: 0.6 }}
               >
-                {meta.emoji}
+                <LevelIcon level={l} size={40} />
               </motion.span>
               <span>
                 <span className="block text-lg font-bold">{meta.name}</span>
