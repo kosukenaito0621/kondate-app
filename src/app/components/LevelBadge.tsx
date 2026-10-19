@@ -9,7 +9,8 @@ export function LevelBadge({
   className,
 }: {
   level: CookingLevel;
-  size?: 'sm' | 'md';
+  /** inline は時間・金額などの文字の並びに置く小さいサイズ（影なし） */
+  size?: 'inline' | 'sm' | 'md';
   className?: string;
 }) {
   const meta = LEVEL_META[level];
@@ -19,8 +20,12 @@ export function LevelBadge({
       aria-label={meta.name}
       title={meta.name}
       className={cn(
-        'glass inline-grid shrink-0 place-items-center rounded-full',
-        size === 'sm' ? 'size-7 text-[14px]' : 'size-9 text-[18px]',
+        'inline-grid shrink-0 place-items-center rounded-full',
+        size === 'inline'
+          ? 'size-5 bg-pill text-[11px]'
+          : size === 'sm'
+            ? 'glass size-7 text-[14px]'
+            : 'glass size-9 text-[18px]',
         className,
       )}
     >

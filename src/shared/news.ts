@@ -20,6 +20,13 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-10-19-level-icon',
+    date: '2026-10-19',
+    kind: 'improve',
+    title: '料理レベルのアイコン（🌱🌾）を時間・金額の横に並べました',
+    body: ['ホームとレシピ一覧で、作る前に知りたい「時間・金額・むずかしさ」が1行で見られます。'],
+  },
+  {
     id: '2026-10-19-genre-match',
     date: '2026-10-19',
     kind: 'improve',

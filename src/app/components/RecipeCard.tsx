@@ -55,7 +55,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
                 <YenIcon size={14} />
                 <span className="num">{recipe.costYen}</span>円
               </span>
-              <LevelBadge level={recipe.difficulty} className="ml-auto" />
+              <LevelBadge level={recipe.difficulty} size="inline" />
             </div>
           </div>
         </motion.div>

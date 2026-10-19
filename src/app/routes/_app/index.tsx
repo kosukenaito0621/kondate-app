@@ -170,7 +170,7 @@ function MealHero({ item }: { item: PlanItemView }) {
                 <YenIcon size={14} />
                 <span className="num">{r.costYen}</span>円
               </span>
-              <LevelBadge level={r.difficulty} className="ml-auto" />
+              <LevelBadge level={r.difficulty} size="inline" />
             </div>
           </div>
         </motion.div>
