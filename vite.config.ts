@@ -25,8 +25,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
       manifest: {
-        name: 'こんだて — 1週間の献立と買い物リスト',
-        short_name: 'こんだて',
+        name: '今日のごはん — 1週間の献立と買い物リスト',
+        short_name: '今日のごはん',
         description: '1週間の献立と買い物リストを、かんたんに。',
         lang: 'ja',
         start_url: '/',

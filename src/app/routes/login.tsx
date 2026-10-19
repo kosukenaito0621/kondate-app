@@ -39,7 +39,7 @@ function Login() {
         animate="animate"
       >
         <GlassCard variants={riseItem} strong padding="lg" className="px-6 py-8 text-center">
-          <h1 className="text-[32px] font-bold tracking-tight">こんだて</h1>
+          <h1 className="text-[32px] font-bold tracking-tight">今日のごはん</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-soft">
             1週間の献立と買い物リストを、
             <br />

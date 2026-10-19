@@ -342,10 +342,10 @@ function InviteCard({ groupId }: { groupId: string }) {
 
   const share = async (inv: CreatedInvite) => {
     const url = inviteUrl(inv.token);
-    const text = `献立アプリ「こんだて」に招待します。リンクを開くか、招待コード ${inv.code} を入力してください。`;
+    const text = `献立アプリ「今日のごはん」に招待します。リンクを開くか、招待コード ${inv.code} を入力してください。`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'こんだてへの招待', text, url });
+        await navigator.share({ title: '「今日のごはん」への招待', text, url });
         return;
       } catch {
         // キャンセル時はコピーにフォールバックしない
