@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { motion } from 'motion/react';
+import { ArchDiagram } from '../../components/about/ArchDiagram';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { PageHeader } from '../../components/PageHeader';
 import { ABOUT_NOTE, type NoteBlock } from '../../lib/aboutNote';
@@ -70,6 +71,8 @@ function AboutPage() {
 
 function Block({ block: b }: { block: NoteBlock }) {
   switch (b.kind) {
+    case 'arch':
+      return <ArchDiagram />;
     case 'p':
       return <p className="text-[15px] leading-relaxed">{b.text}</p>;
     case 'h':

@@ -179,14 +179,14 @@ describe('generateWeek', () => {
   });
 
   describe('料理レベル', () => {
-    it('ふたばの日はふたばのレシピだけ', () => {
+    it('わかばの日はわかばのレシピだけ', () => {
       for (let seed = 0; seed < 20; seed++) {
         const res = generateWeek(input({ seed, days: days({ level: 'futaba' }) }));
         expect(res.items.every((i) => byId.get(i.recipeId)!.difficulty === 'futaba')).toBe(true);
       }
     });
 
-    it('曜日ごとの上書き：土曜だけふたば', () => {
+    it('曜日ごとの上書き：土曜だけわかば', () => {
       const res = generateWeek(
         input({ days: days((i) => ({ level: i === 5 ? 'futaba' : 'minori' })) }),
       );
@@ -194,7 +194,7 @@ describe('generateWeek', () => {
       expect(sat.every((i) => byId.get(i.recipeId)!.difficulty === 'futaba')).toBe(true);
     });
 
-    it('みのりの日は手の込んだ料理が優先され、ふたばばかりにならない', () => {
+    it('みのりの日は手の込んだ料理が優先され、わかばばかりにならない', () => {
       // じっくり・ゆとりの日（時間・予算で候補が偏らない条件）で比べる
       const d = days({ timeLevel: 'slow', budgetLevel: 'rich' });
       const pool = recipes.filter((r) => r.category === 'main');
@@ -210,7 +210,7 @@ describe('generateWeek', () => {
       expect(minori / total).toBeGreaterThan(baseline + 0.05);
     });
 
-    it('ふたばで候補が足りないときは条件をゆるめて埋め、理由を知らせる', () => {
+    it('わかばで候補が足りないときは条件をゆるめて埋め、理由を知らせる', () => {
       // 初期の110品（各カテゴリ×ジャンルの20番目まで）だけで、候補が足りない状況を作る
       const few = recipes.filter((r) => Number(r.id.slice(-2)) <= 20);
       const res = generateWeek(
@@ -227,7 +227,7 @@ describe('generateWeek', () => {
       ).toBe(true);
     });
 
-    it('ふたばの候補がまったくなければ空欄にして知らせる', () => {
+    it('わかばの候補がまったくなければ空欄にして知らせる', () => {
       const onlyMinori = recipes
         .filter((r) => r.category !== 'side' || r.difficulty === 'minori')
         .map((r) => (r.category === 'side' ? r : r));
@@ -237,7 +237,7 @@ describe('generateWeek', () => {
           days: days({ level: 'futaba' }),
         }),
       );
-      // 副菜はみのりしかないので、ふたばの日は付かない
+      // 副菜はみのりしかないので、わかばの日は付かない
       expect(res.items.some((i) => i.slot === 'side')).toBe(false);
       expect(res.warnings.some((w) => w.includes('見つかりませんでした'))).toBe(true);
     });
@@ -281,7 +281,7 @@ describe('regenerate', () => {
     expect(res.items.filter((i) => i.slot === 'side').map((i) => i.date)).toEqual([WEEK[1]]);
   });
 
-  it('ふたばの日の作り直しもふたばのみ', () => {
+  it('わかばの日の作り直しもわかばのみ', () => {
     const d = days({ level: 'futaba' });
     const base = generateWeek(input({ days: d }));
     const res = regenerate(input({ days: d, seed: 11 }), base.items, WEEK[4]!);

@@ -100,7 +100,7 @@ export const ingredientInputSchema = z.object({
   group: z.string().trim().max(20).nullish(),
 });
 
-/** 手順。tip は初心者向けのひとことコツ（ふたばのレシピでは全手順に入れる） */
+/** 手順。tip は初心者向けのひとことコツ（わかばのレシピでは全手順に入れる） */
 export const stepSchema = z.object({
   text: z.string().trim().min(1).max(400),
   tip: z.string().trim().min(1).max(200).optional(),

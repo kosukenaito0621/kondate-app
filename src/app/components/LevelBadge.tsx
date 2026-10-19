@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { LEVEL_META, type CookingLevel } from '../../shared/levels';
 import { cn } from '../lib/cn';
 
-/** 🌱／🌾 のアイコンだけの小さなガラス調チップ。ふたばは芽がぴょこっと揺れる */
+/** 🌱／🌾 のアイコンだけの小さなガラス調チップ。わかばは芽がぴょこっと揺れる */
 export function LevelBadge({
   level,
   size = 'sm',

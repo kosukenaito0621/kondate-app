@@ -114,8 +114,8 @@ export type RecipeDraft = Omit<RecipeInput, 'imageKey'> & { imageKey: null };
  * AI の結果をアプリのレシピ形式に整える。
  * - 材料名の表記ゆれを統一し、区分は辞書を優先（辞書にない材料だけ AI の推定を使う）
  * - 分量は文字列から数量・単位を読み取る
- * - ふたばの基準（手順5つ以内・揚げ物なし・材料7品目以内）を満たさなければみのりにする
- * - ふたばなのにコツがない手順があれば知らせる
+ * - わかばの基準（手順5つ以内・揚げ物なし・材料7品目以内）を満たさなければみのりにする
+ * - わかばなのにコツがない手順があれば知らせる
  */
 export function toRecipeDraft(ai: AiRecipe, sourceUrl: string | null = null) {
   const warnings: string[] = [];

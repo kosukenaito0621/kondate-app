@@ -124,7 +124,7 @@ type Relax = {
   reason: string | null;
 };
 
-/** 候補がないとき、上から順に条件をゆるめる。料理レベル（ふたばの日はふたばのみ）はゆるめない */
+/** 候補がないとき、上から順に条件をゆるめる。料理レベル（わかばの日はわかばのみ）はゆるめない */
 const RELAX_STEPS: Relax[] = [
   { time: true, budget: true, genre: true, season: true, dup: false, reason: null },
   {

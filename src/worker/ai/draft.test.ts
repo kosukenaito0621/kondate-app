@@ -82,7 +82,7 @@ describe('AI の結果を整える', () => {
     ]);
   });
 
-  it('揚げ物や手順が多いレシピはふたばにしない', () => {
+  it('揚げ物や手順が多いレシピはわかばにしない', () => {
     const fried = toRecipeDraft(
       aiRecipeSchema.parse({ ...base, steps: [{ text: '170℃の油で揚げる', tip: 'x' }] }),
     );
@@ -99,7 +99,7 @@ describe('AI の結果を整える', () => {
     expect(long.warnings[0]).toMatch(/🌾/);
   });
 
-  it('ふたばでコツが空の手順があれば知らせる', () => {
+  it('わかばでコツが空の手順があれば知らせる', () => {
     const r = toRecipeDraft(aiRecipeSchema.parse({ ...base, steps: [{ text: '焼く' }] }));
     expect(r.warnings.some((w) => w.includes('コツ'))).toBe(true);
   });

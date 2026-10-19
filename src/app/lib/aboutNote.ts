@@ -10,7 +10,9 @@ export type NoteBlock =
   | { kind: 'weights'; items: { value: string; text: string }[] }
   | { kind: 'note'; title: string; text: string }
   | { kind: 'points'; items: { title: string; text: string }[] }
-  | { kind: 'h'; text: string };
+  | { kind: 'h'; text: string }
+  /** 全体の構成図（about.tsx で描く） */
+  | { kind: 'arch' };
 
 export type NoteSection = { id: string; title: string; blocks: NoteBlock[] };
 
@@ -48,7 +50,7 @@ export const ABOUT_NOTE: NoteSection[] = [
           },
           {
             term: '料理レベル',
-            text: '🌱ふたば（初めての人向け）／🌾みのり。🌱は手順ごとのコツ、ゆっくりモード、タイマー付き',
+            text: '🌱わかば（初めての人向け）／🌾みのり。🌱は手順ごとのコツ、ゆっくりモード、タイマー付き',
           },
           {
             term: '家族共有',
@@ -78,6 +80,7 @@ export const ABOUT_NOTE: NoteSection[] = [
         kind: 'p',
         text: 'サーバーは Cloudflare Workers の1つのプログラムで、画面のファイルの配信と API の両方を担当します。データベース・写真・AI・リアルタイム通信も Cloudflare の中で完結しているので、サーバーを自分で管理する必要がありません。',
       },
+      { kind: 'arch' },
       {
         kind: 'table',
         head: ['役割', '使っているもの', '選んだ理由'],
@@ -294,7 +297,7 @@ export const ABOUT_NOTE: NoteSection[] = [
         kind: 'list',
         items: [
           {
-            term: '🌱 ふたば',
+            term: '🌱 わかば',
             text: '手順5つ以内・材料7品目以内（調味料は除く）・揚げ物なし。すべての手順に「ひとことコツ」を付けています。',
           },
           { term: '🌾 みのり', text: 'それ以外の、いつもの料理。' },

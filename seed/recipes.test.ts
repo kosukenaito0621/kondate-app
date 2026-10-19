@@ -76,7 +76,7 @@ describe('初期レシピ', () => {
 
   describe('料理レベル', () => {
     it.each(CATEGORIES.flatMap((c) => GENRES.map((g) => [c, g] as const)))(
-      '%s × %s でふたばが4割以上',
+      '%s × %s でわかばが4割以上',
       (category, genre) => {
         const list = of(category, genre);
         const futaba = list.filter((r) => r.difficulty === 'futaba').length;
@@ -84,7 +84,7 @@ describe('初期レシピ', () => {
       },
     );
 
-    it('ふたばは基準を満たす（手順5つ以内・全手順にコツ・材料7品目以内・揚げ物なし）', () => {
+    it('わかばは基準を満たす（手順5つ以内・全手順にコツ・材料7品目以内・揚げ物なし）', () => {
       for (const r of SEED_RECIPES.filter((r) => r.difficulty === 'futaba')) {
         expect(r.steps.length, r.name).toBeLessThanOrEqual(FUTABA_RULES.maxSteps);
         expect(
@@ -116,7 +116,7 @@ describe('初期レシピ', () => {
       expect(hits.length).toBeGreaterThanOrEqual(2);
     });
 
-    it.each(combos)('ふたばの主菜 %s / 時間:%s / 予算:%s に1件以上', (genre, time, budget) => {
+    it.each(combos)('わかばの主菜 %s / 時間:%s / 予算:%s に1件以上', (genre, time, budget) => {
       const hits = of('main', genre).filter(
         (r) =>
           r.difficulty === 'futaba' &&

@@ -8,7 +8,7 @@ export const LEVEL_META: Record<
 > = {
   futaba: {
     emoji: '🌱',
-    name: 'ふたば',
+    name: 'わかば',
     description: 'まずは気軽に。手順が少なく、失敗しにくいメニュー中心',
   },
   minori: {
@@ -22,12 +22,12 @@ export const LEVEL_META: Record<
 export const DAY_LEVELS = ['inherit', ...COOKING_LEVELS] as const;
 export type DayLevel = (typeof DAY_LEVELS)[number];
 
-/** ふたばの基準（シード検証・AI推定の目安） */
+/** わかばの基準（シード検証・AI推定の目安） */
 export const FUTABA_RULES = {
   maxSteps: 5,
   /** 調味料以外の材料の品目数 */
   maxIngredients: 7,
-  /** これらのタグを持つレシピはふたばにしない */
+  /** これらのタグを持つレシピはわかばにしない */
   excludedTags: ['揚げ物', '三枚おろし'],
 } as const;
 
