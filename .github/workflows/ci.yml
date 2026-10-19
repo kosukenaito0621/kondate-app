@@ -40,8 +40,9 @@ jobs:
   deploy:
     name: 本番へデプロイ
     needs: check
-    # main への push のときだけ（PR では動かさない）
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # main への push のときだけ（PR では動かさない）。
+    # リポジトリ変数 DEPLOY_ENABLED=true と Cloudflare のシークレットを設定してから有効になる
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
