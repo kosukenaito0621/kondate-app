@@ -79,20 +79,25 @@ describe('generateWeek', () => {
     expect(mains.every((r) => r.genre === 'chu')).toBe(true);
   });
 
-  it('汁物・副菜は主菜と同じジャンルが選ばれやすい', () => {
-    let same = 0;
-    let total = 0;
+  it('汁物・副菜は主菜と同じジャンル（和洋中）にそろえる', () => {
     for (let seed = 0; seed < 30; seed++) {
       const res = generateWeek(input({ seed }));
       for (const date of WEEK) {
         const main = res.items.find((i) => i.date === date && i.slot === 'main');
-        const soup = res.items.find((i) => i.date === date && i.slot === 'soup');
-        if (!main || !soup) continue;
-        total++;
-        if (byId.get(main.recipeId)!.genre === byId.get(soup.recipeId)!.genre) same++;
+        if (!main) continue;
+        const genre = byId.get(main.recipeId)!.genre;
+        for (const it of res.items.filter((i) => i.date === date && i.slot !== 'main')) {
+          expect(byId.get(it.recipeId)!.genre, `seed ${seed} ${date}`).toBe(genre);
+        }
       }
     }
-    expect(same / total).toBeGreaterThan(0.6);
+  });
+
+  it('同じジャンルの汁物がなければ、ほかのジャンルから選んで知らせる', () => {
+    const noChuSoup = recipes.filter((r) => !(r.category === 'soup' && r.genre === 'chu'));
+    const res = generateWeek(input({ recipes: noChuSoup, ratio: { wa: 0, yo: 0, chu: 100 } }));
+    expect(res.items.filter((i) => i.slot === 'soup')).toHaveLength(7);
+    expect(res.warnings.some((w) => w.includes('ジャンルの条件をゆるめました'))).toBe(true);
   });
 
   it('時短の日は20分以内、節約の日は節約のレシピだけ', () => {

@@ -72,11 +72,6 @@ export type PlanResult = {
 const HISTORY_FACTOR: Record<number, number> = { 1: 0.15, 2: 0.35, 3: 0.6 };
 /** 主菜の主材料が前後の日と同じなら選ばれにくくする */
 const SAME_MAIN_INGREDIENT_FACTOR = 0.1;
-/**
- * 汁物・副菜は主菜と同じジャンルを優先する。ジャンルごとのレシピ数に左右されないよう、
- * 「同じジャンルが選ばれる確率」がこの値になるように重みをそろえる
- */
-const SAME_GENRE_SHARE = 0.75;
 /** 旬のレシピは出やすく、旬でない季節は少し出にくくする */
 const IN_SEASON_FACTOR = 2;
 const OFF_SEASON_FACTOR = 0.5;
@@ -183,25 +178,6 @@ function dayLabel(date: string) {
   return `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
 }
 
-/** 汁物・副菜：同じジャンルの重みの合計が全体の SAME_GENRE_SHARE になるようにする */
-function genreBalanced(
-  candidates: readonly PlannerRecipe[],
-  weight: (r: PlannerRecipe) => number,
-  slot: Slot,
-  mainGenre: Genre | undefined,
-) {
-  if (slot === 'main' || !mainGenre) return weight;
-  let same = 0;
-  let other = 0;
-  for (const r of candidates) {
-    if (r.genre === mainGenre) same += weight(r);
-    else other += weight(r);
-  }
-  if (same === 0 || other === 0) return weight;
-  const factor = (SAME_GENRE_SHARE / (1 - SAME_GENRE_SHARE)) * (other / same);
-  return (r: PlannerRecipe) => weight(r) * (r.genre === mainGenre ? factor : 1);
-}
-
 function pick(
   ctx: PickContext,
   day: PlannerDay,
@@ -212,15 +188,16 @@ function pick(
   const pool = ctx.recipes.filter(
     (r) => r.category === slot && (day.level === 'minori' || r.difficulty === 'futaba'),
   );
+  // 主菜は割り当てたジャンル、汁物・副菜は主菜と同じジャンルにそろえる
+  const genre = slot === 'main' ? opts.genre : opts.mainGenre;
   for (const step of RELAX_STEPS) {
-    if (slot !== 'main' && step.reason === RELAX_STEPS[3]!.reason) continue; // 汁物・副菜のジャンルは重みだけ
     const candidates = pool.filter(
       (r) =>
         (step.dup || !ctx.used.has(r.id)) &&
         (!step.season || !isOutOfSeasonOnly(r, season)) &&
         (!step.time || timeLevelFits(day.timeLevel, r.timeMinutes)) &&
         (!step.budget || budgetFits(day.budgetLevel, r.costLevel)) &&
-        (!step.genre || slot !== 'main' || !opts.genre || r.genre === opts.genre),
+        (!step.genre || !genre || r.genre === genre),
     );
     const baseWeight = (r: PlannerRecipe) => {
       let w = HISTORY_FACTOR[ctx.history[r.id] ?? 0] ?? 1;
@@ -237,11 +214,7 @@ function pick(
       else if (r.seasons.length > 0) w *= OFF_SEASON_FACTOR;
       return w;
     };
-    const recipe = weightedPick(
-      candidates,
-      genreBalanced(candidates, baseWeight, slot, opts.mainGenre),
-      ctx.rng,
-    );
+    const recipe = weightedPick(candidates, baseWeight, ctx.rng);
     if (recipe) {
       const warning = step.reason
         ? `${dayLabel(day.date)}の${CATEGORY_LABEL[slot]}は${day.level === 'futaba' ? '🌱の' : ''}候補が少ないため、${step.reason}`
@@ -328,7 +301,7 @@ function fitBudget(input: PlannerInput, items: PlanItem[], ctx: PickContext) {
             !isOutOfSeasonOnly(r, seasonOf(day.date)) &&
             (day.level === 'minori' || r.difficulty === 'futaba') &&
             timeLevelFits(day.timeLevel, r.timeMinutes) &&
-            (item.slot !== 'main' || r.genre === current.genre) &&
+            r.genre === current.genre &&
             cost(r.id) < cost(current.id),
         )
         .sort((a, b) => cost(a.id) - cost(b.id));

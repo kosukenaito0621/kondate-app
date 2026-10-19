@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-10-19-genre-match',
+    date: '2026-10-19',
+    kind: 'improve',
+    title: '汁物・副菜を主菜と同じ和・洋・中にそろえるようにしました',
+    body: [
+      '和食の主菜の日は和の汁物・副菜、中華の日は中華の汁物・副菜を選びます。',
+      '条件に合う同じジャンルの料理がない日だけ、ほかのジャンルから選んでお知らせします。',
+    ],
+  },
+  {
     id: '2026-10-19-share',
     date: '2026-10-19',
     kind: 'feature',
