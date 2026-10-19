@@ -206,8 +206,11 @@ describe('generateWeek', () => {
     });
 
     it('ふたばで候補が足りないときは条件をゆるめて埋め、理由を知らせる', () => {
+      // 初期の110品（各カテゴリ×ジャンルの20番目まで）だけで、候補が足りない状況を作る
+      const few = recipes.filter((r) => Number(r.id.slice(-2)) <= 20);
       const res = generateWeek(
         input({
+          recipes: few,
           days: days({ level: 'futaba', timeLevel: 'quick', budgetLevel: 'save' }),
           ratio: { wa: 0, yo: 100, chu: 0 },
         }),

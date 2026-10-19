@@ -14,7 +14,7 @@ import { recipeInputSchema } from '../src/shared/recipe';
 import { SEED_RECIPES } from './recipes';
 
 const EXPECTED: Record<Category, Record<Genre, number>> = {
-  main: { wa: 50, yo: 20, chu: 50 },
+  main: { wa: 50, yo: 50, chu: 50 },
   soup: { wa: 10, yo: 10, chu: 24 },
   side: { wa: 10, yo: 10, chu: 26 },
 };
@@ -63,8 +63,15 @@ describe('初期レシピ', () => {
     }
   });
 
-  it('主菜は主材料が偏らない（6種類以上）', () => {
+  it('主菜は主材料が偏らない（6種類以上・豚は25%以下）', () => {
     expect(new Set(of('main').map((r) => r.mainIngredient)).size).toBeGreaterThanOrEqual(6);
+    const pork = of('main').filter((r) => r.mainIngredient === 'pork').length;
+    expect(pork / of('main').length).toBeLessThanOrEqual(0.25);
+  });
+
+  it('季節限定のレシピには季節がある', () => {
+    for (const r of SEED_RECIPES.filter((r) => r.seasonOnly))
+      expect(r.seasons.length, r.name).toBeGreaterThan(0);
   });
 
   describe('料理レベル', () => {

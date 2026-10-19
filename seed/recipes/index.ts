@@ -8,6 +8,7 @@ import batch01 from './more/batch01';
 import batch02 from './more/batch02';
 import batch03 from './more/batch03';
 import batch04 from './more/batch04';
+import batch05 from './more/batch05';
 
 const BASE_GROUPS: SeedGroup[] = [
   mainWa,
@@ -25,7 +26,7 @@ const BASE_GROUPS: SeedGroup[] = [
  * 追加分（バッチごと）。各カテゴリ×ジャンルの末尾に順番に足すので、
  * 既存のレシピの ID は変わらない。バッチの順番は入れ替えないこと。
  */
-const EXTRAS: SeedExtra[] = [batch01, batch02, batch03, batch04];
+const EXTRAS: SeedExtra[] = [batch01, batch02, batch03, batch04, batch05];
 
 export const SEED_GROUPS: SeedGroup[] = BASE_GROUPS.map((g) => ({
   ...g,
