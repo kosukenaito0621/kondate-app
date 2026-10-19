@@ -8,7 +8,7 @@
   "observability": { "enabled": true },
   "assets": {
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*"],
   },
   "d1_databases": [
     {
@@ -16,18 +16,18 @@
       "database_name": "kondate-db",
       // フェーズ12で `wrangler d1 create kondate-db` の結果に置き換える（ローカル開発ではこのままで動く）
       "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations"
-    }
+      "migrations_dir": "migrations",
+    },
   ],
   "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "kondate-images" }],
   // Workers AI はローカルでもリモート実行（利用量がカウントされる）
   "ai": { "binding": "AI", "remote": true },
   // グループごとのリアルタイム同期（WebSocket Hibernation）
   "durable_objects": {
-    "bindings": [{ "name": "GROUP_ROOM", "class_name": "GroupRoom" }]
+    "bindings": [{ "name": "GROUP_ROOM", "class_name": "GroupRoom" }],
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GroupRoom"] }],
   "vars": {
-    "AI_DAILY_LIMIT": "20"
-  }
+    "AI_DAILY_LIMIT": "20",
+  },
 }

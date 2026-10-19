@@ -66,5 +66,9 @@
     "esbuild@0.25.12": true,
     "esbuild@0.28.2": true
   },
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "packageManager": "npm@11.19.0"
 }
