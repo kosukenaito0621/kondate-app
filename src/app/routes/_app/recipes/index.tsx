@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { CATEGORIES, CATEGORY_LABEL, GENRES, GENRE_LABEL } from '../../../../shared/constants';
 import { COOKING_LEVELS, LEVEL_META } from '../../../../shared/levels';
 import { FilterChips } from '../../../components/FilterChips';
-import { CameraIcon, PlusIcon, SearchIcon } from '../../../components/icons';
+import { CameraIcon, LinkIcon, PlusIcon, SearchIcon } from '../../../components/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
@@ -14,6 +14,10 @@ import { compact, optOneOf, optString } from '../../../lib/search';
 import { toJstDate } from '../../../../shared/date';
 import { SEASON_LABEL, SEASONS, seasonOf } from '../../../../shared/season';
 import { LevelIcon } from '../../../components/LevelIcon';
+import { MAX_SHARE_BUNDLE } from '../../../../shared/recipe';
+import { BundleShareBar } from '../../../components/recipe/BundleShareBar';
+import { useToast } from '../../../components/toast/Toaster';
+import { cn } from '../../../lib/cn';
 import { recipesQuery } from '../../../lib/recipes';
 
 const validateSearch = (s: Record<string, unknown>) =>
@@ -36,6 +40,23 @@ function RecipeList() {
   const filters = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [text, setText] = useState(filters.q ?? '');
+  // 「選んで送る」：選んだレシピ（id → 料理名、選んだ順）
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Map<string, string>>(new Map());
+  const { toast } = useToast();
+  const togglePick = (id: string, name: string) =>
+    setPicked((m) => {
+      const next = new Map(m);
+      if (next.has(id)) next.delete(id);
+      else if (next.size >= MAX_SHARE_BUNDLE)
+        toast(`一度に送れるのは${MAX_SHARE_BUNDLE}品までです`, 'warn');
+      else next.set(id, name);
+      return next;
+    });
+  const stopSelecting = () => {
+    setSelecting(false);
+    setPicked(new Map());
+  };
   const nowSeason = seasonOf(toJstDate());
   const { data, isPending, isError, refetch } = useQuery(
     recipesQuery({ ...filters, season: filters.season === 'now' ? nowSeason : filters.season }),
@@ -174,19 +195,72 @@ function RecipeList() {
           </p>
         </motion.div>
       ) : (
-        <motion.ul
-          key={JSON.stringify(filters)}
-          className="flex flex-col gap-2.5"
-          variants={staggerContainer(0.035)}
-          initial="initial"
-          animate="animate"
-        >
-          <AnimatePresence initial={false}>
-            {data.map((r) => (
-              <RecipeCard key={r.id} recipe={r} />
-            ))}
-          </AnimatePresence>
-        </motion.ul>
+        <>
+          <div className="mb-2 flex items-center justify-between px-1">
+            <p className="text-xs text-ink-soft">
+              {selecting ? '送りたいレシピをタップして選んでください' : ''}
+            </p>
+            {!selecting && (
+              <button
+                type="button"
+                onClick={() => setSelecting(true)}
+                className="flex min-h-10 items-center gap-1 rounded-full px-3 text-xs font-bold text-accent-strong"
+              >
+                <LinkIcon size={15} />
+                選んでまとめて送る
+              </button>
+            )}
+          </div>
+          <motion.ul
+            key={JSON.stringify(filters)}
+            className="flex flex-col gap-2.5"
+            variants={staggerContainer(0.035)}
+            initial="initial"
+            animate="animate"
+          >
+            <AnimatePresence initial={false}>
+              {data.map((r) => (
+                <RecipeCard
+                  key={r.id}
+                  recipe={r}
+                  overlay={
+                    selecting && (
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={picked.has(r.id)}
+                        aria-label={`${r.name}を選ぶ`}
+                        onClick={() => togglePick(r.id, r.name)}
+                        className={cn(
+                          'absolute inset-0 flex items-center justify-end rounded-[var(--radius-card)] pr-4',
+                          picked.has(r.id) && 'ring-2 ring-accent',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'grid size-7 place-items-center rounded-full border-2 text-sm font-bold',
+                            picked.has(r.id)
+                              ? 'border-accent bg-accent text-accent-ink'
+                              : 'border-ink/25 bg-canvas',
+                          )}
+                        >
+                          {picked.has(r.id) ? '✓' : ''}
+                        </span>
+                      </button>
+                    )
+                  }
+                />
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        </>
+      )}
+      {selecting && (
+        <BundleShareBar
+          selected={[...picked].map(([id, name]) => ({ id, name }))}
+          onCancel={stopSelecting}
+          onDone={stopSelecting}
+        />
       )}
     </>
   );

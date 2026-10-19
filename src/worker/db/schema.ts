@@ -355,3 +355,31 @@ export const recipeShares = sqliteTable(
   },
   (t) => [index('recipe_shares_recipe_idx').on(t.recipeId)],
 );
+
+/** まとめて送るときの共有リンク（複数のレシピを1つのリンクで送る） */
+export const recipeShareBundles = sqliteTable('recipe_share_bundles', {
+  id: text('id').primaryKey(),
+  /** 共有リンク用トークンの SHA-256 */
+  tokenHash: text('token_hash').notNull().unique(),
+  /** 「実家の味」などの題名（任意） */
+  title: text('title'),
+  createdBy: text('created_by')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: integer('expires_at', { mode: 'number' }).notNull(),
+  createdAt: timestamp('created_at'),
+});
+
+export const recipeShareBundleItems = sqliteTable(
+  'recipe_share_bundle_items',
+  {
+    bundleId: text('bundle_id')
+      .notNull()
+      .references(() => recipeShareBundles.id, { onDelete: 'cascade' }),
+    recipeId: text('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    sort: integer('sort').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.bundleId, t.recipeId] })],
+);

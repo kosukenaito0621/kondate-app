@@ -200,3 +200,31 @@ export type SharedRecipe = {
   sharedBy: string | null;
   expiresAt: number;
 };
+
+/** まとめて送れるレシピの数 */
+export const MAX_SHARE_BUNDLE = 30;
+
+export const shareBundleSchema = z.object({
+  recipeIds: z
+    .array(z.string().min(1).max(100))
+    .min(1, 'レシピを選んでください')
+    .max(MAX_SHARE_BUNDLE, `一度に送れるのは${MAX_SHARE_BUNDLE}品までです`)
+    .refine((ids) => new Set(ids).size === ids.length, '同じレシピが重なっています'),
+  title: z.string().trim().max(40).optional(),
+});
+
+/** 受け取った人が保存するレシピ（まとめて送られたときは、選んだものだけ） */
+export const saveSharedSchema = z.object({
+  recipeIds: z.array(z.string().min(1).max(100)).max(MAX_SHARE_BUNDLE).optional(),
+});
+
+/** 共有リンクを開いた人に見せる内容（1品か、まとめてか） */
+export type ShareView =
+  | ({ kind: 'single' } & SharedRecipe)
+  | {
+      kind: 'bundle';
+      title: string | null;
+      sharedBy: string | null;
+      expiresAt: number;
+      recipes: RecipeDetail[];
+    };

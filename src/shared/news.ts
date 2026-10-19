@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-10-20-share-bundle',
+    date: '2026-10-20',
+    kind: 'feature',
+    title: 'レシピをまとめて送れるようになりました',
+    body: [
+      'レシピ一覧の「選んでまとめて送る」から、複数のレシピ（30品まで）を1つのリンクで送れます。「実家の味」のような題名も付けられます。',
+      '受け取った人は、全部まとめて、または選んだレシピだけを「うちのレシピ」に保存できます。',
+    ],
+  },
+  {
     id: '2026-10-19-about',
     date: '2026-10-19',
     kind: 'feature',

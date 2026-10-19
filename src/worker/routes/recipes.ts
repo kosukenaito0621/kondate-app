@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, asc, eq, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { costLevelFor } from '../../shared/constants';
@@ -7,6 +7,7 @@ import { normalizeIngredientName } from '../../shared/ingredients';
 import {
   recipeInputSchema,
   recipeQuerySchema,
+  shareBundleSchema,
   type CreatedShare,
   type RecipeDetail,
   type RecipeInput,
@@ -14,7 +15,14 @@ import {
 } from '../../shared/recipe';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
-import { hiddenRecipes, recipeIngredients, recipes, recipeShares } from '../db/schema';
+import {
+  hiddenRecipes,
+  recipeIngredients,
+  recipes,
+  recipeShareBundleItems,
+  recipeShareBundles,
+  recipeShares,
+} from '../db/schema';
 import { randomToken, sha256Hex } from '../lib/crypto';
 import { isGroupImageKey } from '../lib/images';
 import { hitRateLimit } from '../lib/rate-limit';
@@ -253,6 +261,37 @@ export const recipeRoutes = new Hono<AppEnv>()
       createdBy: c.var.user.id,
       expiresAt,
     });
+    const url = new URL(`/r/${token}`, c.req.url).toString();
+    return c.json({ token, url, expiresAt } satisfies CreatedShare, 201);
+  })
+  /** 複数のレシピをまとめて1つのリンクで送る（30品まで・題名は任意） */
+  .post('/share-bundle', zValidator('json', shareBundleSchema), async (c) => {
+    const db = c.var.db;
+    const { recipeIds, title } = c.req.valid('json');
+    const visible = await db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(and(inArray(recipes.id, recipeIds), visibleTo(c.var.group.id)));
+    if (visible.length !== recipeIds.length) return c.json({ error: 'not_found' }, 404);
+    if (await hitRateLimit(db, `share:${c.var.user.id}`, SHARES_PER_DAY, 86_400_000)) {
+      return c.json({ error: 'rate_limited', message: '今日はこれ以上リンクを作れません' }, 429);
+    }
+    const token = randomToken(18);
+    const expiresAt = Date.now() + SHARE_TTL_MS;
+    const bundleId = crypto.randomUUID();
+    await db.batch([
+      db.insert(recipeShareBundles).values({
+        id: bundleId,
+        tokenHash: await sha256Hex(token),
+        title: title || null,
+        createdBy: c.var.user.id,
+        expiresAt,
+      }),
+      ...chunkRows(
+        recipeIds.map((recipeId, sort) => ({ bundleId, recipeId, sort })),
+        3,
+      ).map((chunk) => db.insert(recipeShareBundleItems).values(chunk)),
+    ]);
     const url = new URL(`/r/${token}`, c.req.url).toString();
     return c.json({ token, url, expiresAt } satisfies CreatedShare, 201);
   })

@@ -11,9 +11,16 @@ import { LevelBadge } from './LevelBadge';
 /** ジャンル色の細いライン（サムネイルの代わりに控えめな色の目印） */
 const stripe = { wa: 'bg-wa', yo: 'bg-yo', chu: 'bg-chu' } as const;
 
-export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
+/** overlay：選択モードなどで、カードの上に重ねる要素 */
+export function RecipeCard({
+  recipe,
+  overlay,
+}: {
+  recipe: RecipeSummary;
+  overlay?: React.ReactNode;
+}) {
   return (
-    <motion.li variants={riseItem} layout="position">
+    <motion.li variants={riseItem} layout="position" className="relative">
       <Link
         to="/recipes/$id"
         params={{ id: recipe.id }}
@@ -60,6 +67,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
           </div>
         </motion.div>
       </Link>
+      {overlay}
     </motion.li>
   );
 }
