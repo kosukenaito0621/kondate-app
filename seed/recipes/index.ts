@@ -1,11 +1,12 @@
-import { expand, type SeedRecipe } from './define';
+import { expand, type SeedExtra, type SeedGroup, type SeedRecipe } from './define';
 import mainChu from './main-chu';
 import mainWa from './main-wa';
 import mainYo from './main-yo';
 import { sideChu, sideWa, sideYo } from './side';
 import { soupChu, soupWa, soupYo } from './soup';
+import batch01 from './more/batch01';
 
-export const SEED_GROUPS = [
+const BASE_GROUPS: SeedGroup[] = [
   mainWa,
   mainYo,
   mainChu,
@@ -17,5 +18,16 @@ export const SEED_GROUPS = [
   sideChu,
 ];
 
-/** 初期レシピ（システム共通）110件 */
+/**
+ * 追加分（バッチごと）。各カテゴリ×ジャンルの末尾に順番に足すので、
+ * 既存のレシピの ID は変わらない。バッチの順番は入れ替えないこと。
+ */
+const EXTRAS: SeedExtra[] = [batch01];
+
+export const SEED_GROUPS: SeedGroup[] = BASE_GROUPS.map((g) => ({
+  ...g,
+  specs: [...g.specs, ...EXTRAS.flatMap((e) => e[`${g.category}-${g.genre}`] ?? [])],
+}));
+
+/** 初期レシピ（システム共通） */
 export const SEED_RECIPES: SeedRecipe[] = SEED_GROUPS.flatMap(expand);

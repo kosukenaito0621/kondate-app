@@ -15,7 +15,7 @@ import { SEED_RECIPES } from './recipes';
 
 const EXPECTED: Record<Category, Record<Genre, number>> = {
   main: { wa: 20, yo: 20, chu: 20 },
-  soup: { wa: 10, yo: 10, chu: 5 },
+  soup: { wa: 10, yo: 10, chu: 24 },
   side: { wa: 10, yo: 10, chu: 5 },
 };
 
@@ -27,8 +27,11 @@ const budgetFits = (day: CostLevel, recipe: CostLevel) =>
   LEVELS.indexOf(recipe) <= LEVELS.indexOf(day);
 
 describe('初期レシピ', () => {
-  it('合計110件', () => {
-    expect(SEED_RECIPES).toHaveLength(110);
+  it('合計件数が指定どおり', () => {
+    const total = Object.values(EXPECTED)
+      .flatMap((g) => Object.values(g))
+      .reduce((a, b) => a + b, 0);
+    expect(SEED_RECIPES).toHaveLength(total);
   });
 
   it.each(CATEGORIES.flatMap((c) => GENRES.map((g) => [c, g] as const)))(

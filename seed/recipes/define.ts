@@ -32,6 +32,9 @@ export type SeedRecipe = RecipeInput & { id: string; costLevel: ReturnType<typeo
 
 export type SeedGroup = { category: Category; genre: Genre; specs: SeedSpec[] };
 
+/** 追加バッチ：「main-wa」などのキーごとに、末尾へ足すレシピ */
+export type SeedExtra = Partial<Record<`${Category}-${Genre}`, SeedSpec[]>>;
+
 export const group = (category: Category, genre: Genre, specs: SeedSpec[]): SeedGroup => ({
   category,
   genre,
