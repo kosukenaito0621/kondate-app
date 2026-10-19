@@ -21,7 +21,7 @@
     "db:seed:local": "npm run db:seed:build && wrangler d1 execute DB --local --file seed/seed.sql",
     "db:seed:remote": "npm run db:seed:build && wrangler d1 execute DB --remote --file seed/seed.sql",
     "seed:preview": "tsx seed/preview-html.ts",
-    "pwa:assets": "pwa-assets-generator"
+    "pwa:assets": "tsx scripts/build-icons.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "0.9.1",
@@ -50,6 +50,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "17.13.0",
     "prettier": "3.9.10",
+    "sharp": "0.35.5",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

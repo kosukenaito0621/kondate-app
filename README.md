@@ -79,15 +79,15 @@ npm run dev                      # http://localhost:5173
 - Google Cloud Console の OAuth クライアントに、リダイレクト URI `http://localhost:5173/api/auth/google/callback` を登録してください。
 - Workers AI はローカルからもリモートで実行します（`npx wrangler login` が必要）。ログインせずに動かすときは `LOCAL_ONLY=1 npm run dev`（AI 取り込み以外は動きます）。
 
-| コマンド                             | 内容                                                 |
-| ------------------------------------ | ---------------------------------------------------- |
-| `npm run dev`                        | 開発サーバー                                         |
-| `npm test`                           | テスト（ユニット + workerd 上の API テスト）         |
-| `npm run typecheck` / `npm run lint` | 型チェック / Lint                                    |
-| `npm run build` / `npm run preview`  | 本番ビルド / ビルドしたものをローカルで確認          |
-| `npm run db:generate`                | `src/worker/db/schema.ts` からマイグレーションを作る |
-| `npm run pwa:assets`                 | `public/icon.svg` から PWA のアイコンを作り直す      |
-| `npm run seed:preview`               | 初期レシピを一覧できる HTML を作る                   |
+| コマンド                             | 内容                                                      |
+| ------------------------------------ | --------------------------------------------------------- |
+| `npm run dev`                        | 開発サーバー                                              |
+| `npm test`                           | テスト（ユニット + workerd 上の API テスト）              |
+| `npm run typecheck` / `npm run lint` | 型チェック / Lint                                         |
+| `npm run build` / `npm run preview`  | 本番ビルド / ビルドしたものをローカルで確認               |
+| `npm run db:generate`                | `src/worker/db/schema.ts` からマイグレーションを作る      |
+| `npm run pwa:assets`                 | `scripts/build-icons.ts` からアプリアイコン一式を作り直す |
+| `npm run seed:preview`               | 初期レシピを一覧できる HTML を作る                        |
 
 ### ディレクトリ
 
