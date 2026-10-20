@@ -1,0 +1,189 @@
+import { zValidator } from '@hono/zod-validator';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import { Hono } from 'hono';
+import type { Section } from '../../shared/constants';
+import { normalizeIngredientName, sectionOf } from '../../shared/ingredients';
+import {
+  addQty,
+  pantryInputSchema,
+  pantryPatchSchema,
+  stockFromShoppingSchema,
+  type PantryItemView,
+} from '../../shared/pantry';
+import type { Db } from '../db/client';
+import { mealPlans, pantryItems, shoppingItems } from '../db/schema';
+import { requireAuth } from '../middleware/auth';
+import { requireGroup } from '../middleware/group';
+import { notifyGroup } from '../realtime/notify';
+import type { AppEnv } from '../types';
+
+export async function loadPantry(db: Db, groupId: string) {
+  return db
+    .select()
+    .from(pantryItems)
+    .where(eq(pantryItems.groupId, groupId))
+    .orderBy(asc(pantryItems.name), asc(pantryItems.expiresOn));
+}
+
+const toView = (r: typeof pantryItems.$inferSelect): PantryItemView => ({
+  id: r.id,
+  name: r.name,
+  section: r.section as Section,
+  quantity: r.quantity,
+  unit: r.unit,
+  expiresOn: r.expiresOn,
+  updatedAt: r.updatedAt,
+});
+
+const chunk = <T>(xs: T[], n: number) =>
+  Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
+
+type Add = { name: string; quantity: number | null; unit: string | null; expiresOn: string | null };
+
+/**
+ * 在庫に足す。同じ食材・同じ期限の行があって単位が足せるなら合わせ、なければ新しい行にする。
+ * 戻り値は D1 の batch に入れる文
+ */
+function addStatements(
+  db: Db,
+  groupId: string,
+  userId: string,
+  current: (typeof pantryItems.$inferSelect)[],
+  adds: Add[],
+) {
+  const now = Date.now();
+  const rows = current.map((r) => ({ ...r }));
+  const touched = new Set<string>();
+  const inserts: (typeof pantryItems.$inferInsert)[] = [];
+  for (const a of adds) {
+    const name = normalizeIngredientName(a.name);
+    const same = rows.find((r) => r.name === name && r.expiresOn === a.expiresOn);
+    const merged = same && addQty(same, a);
+    if (same && merged) {
+      same.quantity = merged.quantity;
+      same.unit = merged.unit;
+      touched.add(same.id);
+      continue;
+    }
+    const row = {
+      id: crypto.randomUUID(),
+      groupId,
+      name,
+      section: sectionOf(name) ?? 'other',
+      quantity: a.quantity,
+      unit: a.quantity === null ? null : a.unit,
+      expiresOn: a.expiresOn,
+      updatedBy: userId,
+      createdAt: now,
+      updatedAt: now,
+    };
+    rows.push(row);
+    inserts.push(row);
+  }
+  return [
+    ...rows
+      .filter((r) => touched.has(r.id) && !inserts.some((i) => i.id === r.id))
+      .map((r) =>
+        db
+          .update(pantryItems)
+          .set({ quantity: r.quantity, unit: r.unit, updatedBy: userId, updatedAt: now })
+          .where(eq(pantryItems.id, r.id)),
+      ),
+    ...inserts.map((r) => db.insert(pantryItems).values(r)),
+  ];
+}
+
+export const pantryRoutes = new Hono<AppEnv>()
+  .use(requireAuth, requireGroup)
+  .get('/', async (c) => c.json((await loadPantry(c.var.db, c.var.group.id)).map(toView)))
+  .post('/', zValidator('json', pantryInputSchema), async (c) => {
+    const db = c.var.db;
+    const groupId = c.var.group.id;
+    const input = c.req.valid('json');
+    const stmts = addStatements(db, groupId, c.var.user.id, await loadPantry(db, groupId), [input]);
+    const [first, ...rest] = stmts;
+    if (first) await db.batch([first, ...rest]);
+    notifyGroup(c, { type: 'pantry.updated', summary: `${input.name}を在庫に入れました` });
+    return c.json((await loadPantry(db, groupId)).map(toView), 201);
+  })
+  .patch('/:id', zValidator('json', pantryPatchSchema), async (c) => {
+    const patch = c.req.valid('json');
+    const name = patch.name === undefined ? undefined : normalizeIngredientName(patch.name);
+    const res = await c.var.db
+      .update(pantryItems)
+      .set({
+        ...patch,
+        ...(name !== undefined && { name, section: sectionOf(name) ?? 'other' }),
+        ...(patch.quantity === null && { unit: null }),
+        updatedBy: c.var.user.id,
+        updatedAt: Date.now(),
+      })
+      .where(and(eq(pantryItems.id, c.req.param('id')), eq(pantryItems.groupId, c.var.group.id)))
+      .returning();
+    if (!res.length) return c.json({ error: 'not_found' }, 404);
+    notifyGroup(c, { type: 'pantry.updated', summary: `${res[0]!.name}の在庫を変更しました` });
+    return c.json(toView(res[0]!));
+  })
+  .delete('/:id', async (c) => {
+    const res = await c.var.db
+      .delete(pantryItems)
+      .where(and(eq(pantryItems.id, c.req.param('id')), eq(pantryItems.groupId, c.var.group.id)))
+      .returning({ name: pantryItems.name });
+    if (!res.length) return c.json({ error: 'not_found' }, 404);
+    notifyGroup(c, { type: 'pantry.updated', summary: `${res[0]!.name}を在庫から外しました` });
+    return c.json({ ok: true });
+  })
+  /** 買い物リストでかごに入れたもの（まだ在庫に入れていないもの）を在庫に入れる */
+  .post('/from-shopping', zValidator('json', stockFromShoppingSchema), async (c) => {
+    const db = c.var.db;
+    const groupId = c.var.group.id;
+    const { weekStart } = c.req.valid('json');
+    const plan = await db
+      .select({ id: mealPlans.id })
+      .from(mealPlans)
+      .where(and(eq(mealPlans.groupId, groupId), eq(mealPlans.weekStart, weekStart)))
+      .get();
+    if (!plan) return c.json({ error: 'no_plan' }, 404);
+    const bought = await db
+      .select()
+      .from(shoppingItems)
+      .where(
+        and(
+          eq(shoppingItems.planId, plan.id),
+          eq(shoppingItems.checked, true),
+          eq(shoppingItems.stocked, false),
+        ),
+      );
+    if (!bought.length) return c.json({ added: 0 });
+    const stmts = addStatements(
+      db,
+      groupId,
+      c.var.user.id,
+      await loadPantry(db, groupId),
+      bought.map((b) => ({
+        name: b.name,
+        quantity: b.quantity,
+        unit: b.unit,
+        expiresOn: null,
+      })),
+    );
+    const [head, ...tail] = [
+      ...chunk(
+        bought.map((b) => b.id),
+        90,
+      ).map((ids) =>
+        db
+          .update(shoppingItems)
+          .set({ stocked: true, updatedAt: Date.now() })
+          .where(inArray(shoppingItems.id, ids)),
+      ),
+      ...stmts,
+    ];
+    await db.batch([head!, ...tail]);
+    notifyGroup(c, {
+      type: 'pantry.updated',
+      summary: `買ったもの${bought.length}品を在庫に入れました`,
+    });
+    notifyGroup(c, { type: 'shopping.updated', weekStart, summary: '在庫に入れました' });
+    return c.json({ added: bought.length });
+  });

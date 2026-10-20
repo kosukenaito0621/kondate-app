@@ -22,6 +22,7 @@ export type RealtimeEvent =
       summary: string;
       by: { id: string; name: string | null };
     }
+  | { type: 'pantry.updated'; summary: string; by: { id: string; name: string | null } }
   | { type: 'logs.updated'; by: { id: string; name: string | null } }
   | { type: 'settings.updated'; by: { id: string; name: string | null } }
   | { type: 'recipes.updated'; by: { id: string; name: string | null } }

@@ -127,6 +127,13 @@
       "when": 1792440783876,
       "tag": "0017_seed_hashes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792455302552,
+      "tag": "0018_pantry",
+      "breakpoints": true
     }
   ]
 }

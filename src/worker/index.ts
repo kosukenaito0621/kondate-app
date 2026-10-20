@@ -8,6 +8,7 @@ import { authRoutes } from './routes/auth';
 import { groupRoutes, inviteRoutes } from './routes/groups';
 import { imageRoutes } from './routes/images';
 import { logRoutes } from './routes/logs';
+import { pantryRoutes } from './routes/pantry';
 import { meRoutes } from './routes/me';
 import { memoRoutes, purgeOldMemos } from './routes/memos';
 import { planRoutes, todayItems } from './routes/plans';
@@ -43,6 +44,8 @@ const api = new Hono<AppEnv>()
   .route('/shopping', shoppingRoutes)
   .route('/logs', logRoutes)
   .route('/memos', memoRoutes)
+
+  .route('/pantry', pantryRoutes)
   .route('/images', imageRoutes)
   .route('/ai', aiRoutes)
   .get('/today', requireAuth, requireGroup, async (c) => {

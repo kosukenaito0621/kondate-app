@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { EDIT_MEMO_CHOICES, SWAP_MEMO_CHOICES } from '../../shared/memo';
 import type { Season } from '../../shared/season';
+import type { StockUse } from '../../shared/pantry';
 import {
   index,
   integer,
@@ -290,6 +291,8 @@ export const shoppingItems = sqliteTable(
     checkedBy: text('checked_by').references(() => users.id, { onDelete: 'set null' }),
     checkedAt: integer('checked_at', { mode: 'number' }),
     isManual: integer('is_manual', { mode: 'boolean' }).notNull().default(false),
+    /** 買ったあと「在庫に入れる」で在庫に移したか */
+    stocked: integer('stocked', { mode: 'boolean' }).notNull().default(false),
     sort: integer('sort').notNull().default(0),
     updatedAt: timestamp('updated_at'),
   },
@@ -334,6 +337,8 @@ export const cookLogs = sqliteTable(
     date: text('date').notNull(), // JST日付
     /** 作った料理の写真（R2 のキー） */
     imageKey: text('image_key'),
+    /** 作ったときに在庫から使った量（取り消したら戻す） */
+    pantryUsed: text('pantry_used', { mode: 'json' }).$type<StockUse[]>(),
     createdAt: timestamp('created_at'),
   },
   (t) => [
@@ -409,3 +414,26 @@ export const seedHashes = sqliteTable('seed_hashes', {
   recipeId: text('recipe_id').primaryKey(),
   hash: text('hash').notNull(),
 });
+
+/** うちの在庫（冷蔵庫・棚にある食材）。同じ食材でも期限ごとに別の行 */
+export const pantryItems = sqliteTable(
+  'pantry_items',
+  {
+    id: text('id').primaryKey(),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    /** 正規化した食材名 */
+    name: text('name').notNull(),
+    section: text('section').notNull(),
+    /** 数量（分からなければ null ＝「あり」） */
+    quantity: real('quantity'),
+    unit: text('unit'),
+    /** 期限（YYYY-MM-DD） */
+    expiresOn: text('expires_on'),
+    updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at'),
+    updatedAt: timestamp('updated_at'),
+  },
+  (t) => [index('pantry_items_group_idx').on(t.groupId, t.name)],
+);

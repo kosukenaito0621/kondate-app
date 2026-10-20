@@ -58,7 +58,16 @@ export type PlannerInput = {
   servings: number;
   /** recipeId → 何週前に使ったか（1〜3） */
   history: Readonly<Record<string, number>>;
+  /** うちの在庫（あれば、在庫を使う料理を出やすくする） */
+  stock?: PlannerStock;
   seed: number;
+};
+
+export type PlannerStock = {
+  /** 在庫にある食材（正規化した名前）と、いちばん近い期限 */
+  items: readonly { name: string; expiresOn: string | null }[];
+  /** recipeId → 使う食材の名前（調味料などを除く） */
+  ingredients: Readonly<Record<string, readonly string[]>>;
 };
 
 export type PlanResult = {
@@ -77,6 +86,39 @@ const SAME_MAIN_INGREDIENT_FACTOR = 0.1;
 /** 旬のレシピは出やすく、旬でない季節は少し出にくくする */
 const IN_SEASON_FACTOR = 2;
 const OFF_SEASON_FACTOR = 0.5;
+/** 在庫の食材を使う料理は出やすく。期限が近い（3日以内）ものはさらに */
+const STOCK_BONUS = 0.6;
+const STOCK_URGENT_BONUS = 1.5;
+const STOCK_URGENT_DAYS = 3;
+const STOCK_FACTOR_MAX = 4;
+
+/**
+ * 在庫による重み。食材ごとに足し、同じ週ですでに使った食材は効きを弱める（1品で使い切る想定）。
+ * 期限を過ぎた日には効かせない。
+ */
+export function stockFactor(
+  stock: PlannerStock | undefined,
+  stockUses: ReadonlyMap<string, number>,
+  recipeId: string,
+  date: string,
+): number {
+  const names = stock?.ingredients[recipeId];
+  if (!stock || !names?.length) return 1;
+  let bonus = 0;
+  for (const name of names) {
+    const item = stock.items.find((i) => i.name === name);
+    if (!item) continue;
+    if (item.expiresOn && item.expiresOn < date) continue;
+    let b = STOCK_BONUS;
+    if (item.expiresOn && daysBetween(date, item.expiresOn) <= STOCK_URGENT_DAYS)
+      b += STOCK_URGENT_BONUS;
+    bonus += b / (1 + (stockUses.get(name) ?? 0));
+  }
+  return Math.min(1 + bonus, STOCK_FACTOR_MAX);
+}
+
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
 
 /** 副菜を付けるか（自動なら、時短か節約の日は付けない） */
 export function includeSide(day: PlannerDay): boolean {
@@ -174,7 +216,18 @@ type PickContext = {
   history: Readonly<Record<string, number>>;
   used: Set<string>;
   rng: () => number;
+  stock?: PlannerStock;
+  /** 在庫の食材を、この週で何品に使ったか */
+  stockUses: Map<string, number>;
 };
+
+/** 選んだレシピを使用済みにし、使う在庫を数える */
+function markUsed(ctx: PickContext, recipe: PlannerRecipe) {
+  ctx.used.add(recipe.id);
+  for (const name of ctx.stock?.ingredients[recipe.id] ?? [])
+    if (ctx.stock?.items.some((i) => i.name === name))
+      ctx.stockUses.set(name, (ctx.stockUses.get(name) ?? 0) + 1);
+}
 
 function dayLabel(date: string) {
   return `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
@@ -214,6 +267,7 @@ function pick(
       if (day.level === 'minori' && r.difficulty === 'minori') w *= MINORI_PREFERENCE_WEIGHT;
       if (isInSeason(r, season)) w *= IN_SEASON_FACTOR;
       else if (r.seasons.length > 0) w *= OFF_SEASON_FACTOR;
+      w *= stockFactor(ctx.stock, ctx.stockUses, r.id, day.date);
       return w;
     };
     const recipe = weightedPick(candidates, baseWeight, ctx.rng);
@@ -249,7 +303,7 @@ function planDay(
     if (res.warning) warnings.push(res.warning);
     main = res.recipe;
     if (main) {
-      ctx.used.add(main.id);
+      markUsed(ctx, main);
       items.push({ date: day.date, slot: 'main', recipeId: main.id });
     }
   }
@@ -260,7 +314,7 @@ function planDay(
     const res = pick(ctx, day, slot, { mainGenre: main?.genre ?? genre, neighborIngredients: [] });
     if (res.warning) warnings.push(res.warning);
     if (res.recipe) {
-      ctx.used.add(res.recipe.id);
+      markUsed(ctx, res.recipe);
       items.push({ date: day.date, slot, recipeId: res.recipe.id });
     }
   }
@@ -328,7 +382,14 @@ export function generateWeek(input: PlannerInput): PlanResult {
   const cookDays = input.days.filter((d) => !d.off);
   const cookGenres = allocateGenres(input.ratio, cookDays.length, rng);
   const genres = input.days.map((d) => (d.off ? undefined : cookGenres[cookDays.indexOf(d)]));
-  const ctx: PickContext = { recipes: input.recipes, history: input.history, used: new Set(), rng };
+  const ctx: PickContext = {
+    recipes: input.recipes,
+    history: input.history,
+    used: new Set(),
+    rng,
+    stock: input.stock,
+    stockUses: new Map(),
+  };
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
 
   const items: PlanItem[] = [];
@@ -371,7 +432,18 @@ export function regenerate(
   const kept = current.filter((it) => !replacing(it));
   // 作り直す品と同じものが再び選ばれないよう、元のレシピも「使用済み」に含める
   const used = new Set(current.map((it) => it.recipeId));
-  const ctx: PickContext = { recipes: input.recipes, history: input.history, used, rng };
+  const ctx: PickContext = {
+    recipes: input.recipes,
+    history: input.history,
+    used,
+    rng,
+    stock: input.stock,
+    stockUses: new Map(),
+  };
+  for (const it of kept) {
+    const r = byId.get(it.recipeId);
+    if (r) markUsed(ctx, r);
+  }
 
   const idx = input.days.indexOf(day);
   const mainOf = (d: PlannerDay | undefined) => {

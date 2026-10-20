@@ -52,8 +52,14 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
           queryClient.invalidateQueries({ queryKey: ['plan', e.weekStart] });
           queryClient.invalidateQueries({ queryKey: ['today'] });
           break;
+        case 'pantry.updated':
+          queryClient.invalidateQueries({ queryKey: ['pantry'] });
+          queryClient.invalidateQueries({ queryKey: ['shopping'] });
+          break;
         case 'logs.updated':
           queryClient.invalidateQueries({ queryKey: ['logs'] });
+          queryClient.invalidateQueries({ queryKey: ['pantry'] });
+          queryClient.invalidateQueries({ queryKey: ['shopping'] });
           queryClient.invalidateQueries({ queryKey: ['plan'] });
           break;
         case 'settings.updated':

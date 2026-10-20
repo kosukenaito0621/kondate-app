@@ -4,6 +4,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { weekStartOf } from '../../shared/date';
 import { normalizeIngredientName, sectionOf } from '../../shared/ingredients';
+import { compareStock, qtyLabel, stockLabel } from '../../shared/pantry';
 import { parseAmount } from '../../shared/recipe';
 import {
   buildShoppingList,
@@ -27,6 +28,7 @@ import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
+import { loadPantry } from './pantry';
 import { loadSettings } from './settings';
 
 type Ctx = Context<AppEnv>;
@@ -165,6 +167,24 @@ async function buildView(c: Ctx, weekStart: string): Promise<ShoppingListView> {
       .leftJoin(users, eq(users.id, shoppingItems.checkedBy))
       .where(eq(shoppingItems.planId, plan.id));
   }
+  const pantry = await loadPantry(db, groupId);
+  const stockOf = (item: {
+    name: string;
+    quantity: number | null;
+    unit: string | null;
+    amountText: string | null;
+  }) => {
+    const have = pantry.filter((p) => p.name === lineKey(item));
+    if (!have.length) return null;
+    // 「1個 + 100g」のように合算できない分量は、在庫を添えるだけにする
+    const mixed = item.quantity === null && !!item.amountText?.includes('+');
+    const r = mixed ? { status: 'none' as const, remaining: item } : compareStock(item, have);
+    return {
+      status: r.status,
+      have: stockLabel(have),
+      remaining: r.status === 'partial' ? qtyLabel(r.remaining) : null,
+    };
+  };
   const generated = stored.filter((s) => !s.item.isManual).map((s) => s.item);
   return {
     weekStart,
@@ -190,6 +210,8 @@ async function buildView(c: Ctx, weekStart: string): Promise<ShoppingListView> {
             ? { id: user.id, name: user.displayName, avatarUrl: user.avatarUrl }
             : null,
         isManual: item.isManual,
+        stocked: item.stocked,
+        stock: item.checked ? null : stockOf(item),
       })),
   };
 }

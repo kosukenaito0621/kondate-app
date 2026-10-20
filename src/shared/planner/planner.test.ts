@@ -9,6 +9,7 @@ import {
   generateWeek,
   includeSide,
   regenerate,
+  stockFactor,
   type PlannerDay,
   type PlannerInput,
 } from './index';
@@ -361,5 +362,50 @@ describe('外食・テイクアウトの日', () => {
     const off = { ...base, days: base.days.map((d, i) => (i === 2 ? { ...d, off: true } : d)) };
     const res = regenerate(off, week.items, WEEK[2]!);
     expect(res.items.some((it) => it.date === WEEK[2])).toBe(false);
+  });
+});
+describe('在庫を使う料理を出やすくする', () => {
+  const stock = {
+    items: [
+      { name: '鶏もも肉', expiresOn: '2026-10-21' },
+      { name: '玉ねぎ', expiresOn: null },
+    ],
+    ingredients: { a: ['鶏もも肉', '玉ねぎ'], b: ['玉ねぎ'], c: ['豚肉'] },
+  };
+
+  it('在庫の食材を使うほど重く、期限が近いとさらに重い', () => {
+    const none = new Map<string, number>();
+    expect(stockFactor(stock, none, 'c', '2026-10-20')).toBe(1);
+    expect(stockFactor(stock, none, 'b', '2026-10-20')).toBeCloseTo(1.6);
+    expect(stockFactor(stock, none, 'a', '2026-10-20')).toBeCloseTo(1 + 0.6 + 1.5 + 0.6);
+    expect(stockFactor(undefined, none, 'a', '2026-10-20')).toBe(1);
+  });
+
+  it('期限を過ぎた日には効かせず、同じ週で使った食材は効きを弱める', () => {
+    expect(stockFactor(stock, new Map(), 'a', '2026-10-23')).toBeCloseTo(1.6);
+    expect(stockFactor(stock, new Map([['玉ねぎ', 1]]), 'b', '2026-10-20')).toBeCloseTo(1.3);
+  });
+
+  it('在庫の食材を使うレシピが選ばれやすくなる', () => {
+    const mains = recipes.filter((r) => r.category === 'main');
+    const target = mains[0]!;
+    const count = (withStock: boolean) => {
+      let n = 0;
+      for (let seed = 1; seed <= 40; seed++) {
+        const res = generateWeek({
+          ...input(),
+          seed,
+          stock: withStock
+            ? {
+                items: [{ name: '在庫の食材', expiresOn: null }],
+                ingredients: { [target.id]: ['在庫の食材'] },
+              }
+            : undefined,
+        });
+        if (res.items.some((i) => i.recipeId === target.id)) n++;
+      }
+      return n;
+    };
+    expect(count(true)).toBeGreaterThan(count(false));
   });
 });

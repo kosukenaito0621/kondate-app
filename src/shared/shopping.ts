@@ -32,10 +32,16 @@ export const isHomeStock = (section: Section, name: string) =>
   section === 'seasoning' || HOME_STAPLES.includes(name);
 
 /** 同じ種類の単位をそろえて足すための換算（基準単位あたりの量） */
-const MASS: Record<string, number> = { g: 1, kg: 1000 };
-const VOLUME: Record<string, number> = { ml: 1, L: 1000, カップ: 200, 大さじ: 15, 小さじ: 5 };
+export const MASS: Record<string, number> = { g: 1, kg: 1000 };
+export const VOLUME: Record<string, number> = {
+  ml: 1,
+  L: 1000,
+  カップ: 200,
+  大さじ: 15,
+  小さじ: 5,
+};
 
-function family(unit: string | null): 'mass' | 'volume' | null {
+export function family(unit: string | null): 'mass' | 'volume' | null {
   if (!unit) return null;
   if (unit in MASS) return 'mass';
   if (unit in VOLUME) return 'volume';
@@ -43,7 +49,7 @@ function family(unit: string | null): 'mass' | 'volume' | null {
 }
 
 /** 表示しやすい単位に戻す */
-function present(fam: 'mass' | 'volume', base: number, units: Set<string>) {
+export function present(fam: 'mass' | 'volume', base: number, units: Set<string>) {
   if (fam === 'mass')
     return base >= 1000 && base % 100 === 0 ? { q: base / 1000, u: 'kg' } : { q: base, u: 'g' };
   // 大さじ・小さじだけなら大さじで、それ以外は ml で
@@ -174,6 +180,13 @@ export type ShoppingItemView = {
   checked: boolean;
   checkedBy: { id: string; name: string | null; avatarUrl: string | null } | null;
   isManual: boolean;
+  /** 買ったあと在庫に入れたか */
+  stocked: boolean;
+  /**
+   * 在庫とくらべた結果（まだかごに入れていない項目だけ）。在庫になければ null
+   * - covered：在庫でまかなえる / partial：remaining だけ買えばよい / none：単位がちがってくらべられない
+   */
+  stock: { status: 'covered' | 'partial' | 'none'; have: string; remaining: string | null } | null;
 };
 
 export type ShoppingListView = {

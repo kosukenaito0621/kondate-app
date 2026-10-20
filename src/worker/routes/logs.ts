@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { and, desc, eq, gte, isNull, like, or, sql } from 'drizzle-orm';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import {
   createLogSchema,
@@ -10,15 +10,19 @@ import {
   type RecipeCookStats,
 } from '../../shared/cooklog';
 import { addDays, toJstDate } from '../../shared/date';
+import { sectionOf } from '../../shared/ingredients';
+import { addQty, consumeStock, qtyLabel, type StockUse } from '../../shared/pantry';
 import type { Db } from '../db/client';
-import { cookLogs, recipes, users } from '../db/schema';
+import { cookLogs, pantryItems, recipeIngredients, recipes, users } from '../db/schema';
 import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
+import { loadPantry } from './pantry';
 import { toSummary } from './recipes';
+import { loadSettings } from './settings';
 
 async function loadMonth(db: Db, groupId: string, month: string): Promise<CookLogMonth> {
   const rows = await db
@@ -100,6 +104,83 @@ export async function recipeCookStats(
   };
 }
 
+/** 作った料理の材料（人数に合わせて換算）を在庫から差し引き、使った量を記録に残す */
+async function consumeForLog(c: Context<AppEnv>, logId: string, recipeId: string) {
+  const db = c.var.db;
+  const groupId = c.var.group.id;
+  const stock = await loadPantry(db, groupId);
+  if (!stock.length) return [];
+  const recipe = await db
+    .select({ servings: recipes.servings })
+    .from(recipes)
+    .where(eq(recipes.id, recipeId))
+    .get();
+  const ings = await db
+    .select()
+    .from(recipeIngredients)
+    .where(eq(recipeIngredients.recipeId, recipeId));
+  const { servings } = await loadSettings(db, groupId);
+  const scale = servings / (recipe?.servings || 2);
+  const { updates, used } = consumeStock(
+    stock,
+    ings.map((i) => ({
+      name: i.name,
+      quantity: i.quantity === null ? null : i.quantity * scale,
+      unit: i.unit,
+    })),
+  );
+  if (!used.length) return [];
+  const now = Date.now();
+  await db.batch([
+    db.update(cookLogs).set({ pantryUsed: used }).where(eq(cookLogs.id, logId)),
+    ...updates.map((u) =>
+      u.remove
+        ? db.delete(pantryItems).where(eq(pantryItems.id, u.id))
+        : db
+            .update(pantryItems)
+            .set({ quantity: u.quantity, unit: u.unit, updatedBy: c.var.user.id, updatedAt: now })
+            .where(eq(pantryItems.id, u.id)),
+    ),
+  ]);
+  return used;
+}
+
+/** 記録を取り消したとき、差し引いた在庫を戻す（使い切って消えた行は作り直す） */
+async function restoreStock(c: Context<AppEnv>, used: StockUse[]) {
+  const db = c.var.db;
+  const groupId = c.var.group.id;
+  const stock = await loadPantry(db, groupId);
+  const now = Date.now();
+  const stmts = used.map((u) => {
+    const row = stock.find((r) => r.id === u.id);
+    const merged = row && addQty(row, u);
+    if (row && merged) {
+      row.quantity = merged.quantity;
+      row.unit = merged.unit;
+      return db
+        .update(pantryItems)
+        .set({ quantity: merged.quantity, unit: merged.unit, updatedAt: now })
+        .where(eq(pantryItems.id, row.id));
+    }
+    const fresh = {
+      id: row ? crypto.randomUUID() : u.id,
+      groupId,
+      name: u.name,
+      section: sectionOf(u.name) ?? 'other',
+      quantity: u.quantity,
+      unit: u.unit,
+      expiresOn: u.expiresOn,
+      updatedBy: c.var.user.id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    stock.push(fresh);
+    return db.insert(pantryItems).values(fresh);
+  });
+  const [head, ...tail] = stmts;
+  if (head) await db.batch([head, ...tail]);
+}
+
 const monthQuery = z.object({ month: monthParam.optional() });
 
 export const logRoutes = new Hono<AppEnv>()
@@ -134,10 +215,14 @@ export const logRoutes = new Hono<AppEnv>()
     if (!visible) return c.json({ error: 'recipe_not_found' }, 404);
     const day = date ?? toJstDate();
     if (day > toJstDate()) return c.json({ error: 'future_date' }, 400);
-    await db
+    const inserted = await db
       .insert(cookLogs)
       .values({ id: crypto.randomUUID(), groupId, userId: c.var.user.id, recipeId, date: day })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ id: cookLogs.id });
+    // はじめて記録したときだけ、使った材料を在庫から差し引く
+    const used = inserted[0] ? await consumeForLog(c, inserted[0].id, recipeId) : [];
+    if (used.length) notifyGroup(c, { type: 'pantry.updated', summary: '在庫を使いました' });
     const row = await db
       .select({ id: cookLogs.id })
       .from(cookLogs)
@@ -146,7 +231,10 @@ export const logRoutes = new Hono<AppEnv>()
       )
       .get();
     notifyGroup(c, { type: 'logs.updated' });
-    return c.json({ id: row!.id, date: day }, 201);
+    return c.json(
+      { id: row!.id, date: day, pantryUsed: used.map((u) => `${u.name} ${qtyLabel(u)}`) },
+      201,
+    );
   })
   /** 写真を付ける・差し替える・外す（null） */
   .patch(
@@ -174,8 +262,13 @@ export const logRoutes = new Hono<AppEnv>()
     const res = await c.var.db
       .delete(cookLogs)
       .where(and(eq(cookLogs.id, c.req.param('id')), eq(cookLogs.groupId, c.var.group.id)))
-      .returning({ id: cookLogs.id, imageKey: cookLogs.imageKey });
+      .returning({ id: cookLogs.id, imageKey: cookLogs.imageKey, used: cookLogs.pantryUsed });
     if (!res.length) return c.json({ error: 'not_found' }, 404);
+    // 在庫から差し引いた分を戻す
+    if (res[0]!.used?.length) {
+      await restoreStock(c, res[0]!.used);
+      notifyGroup(c, { type: 'pantry.updated', summary: '在庫を戻しました' });
+    }
     await deleteImage(c.var.db, c.env.IMAGES, res[0]!.imageKey);
     notifyGroup(c, { type: 'logs.updated' });
     return c.json({ ok: true });
