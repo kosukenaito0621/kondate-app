@@ -213,8 +213,9 @@ export function RecipeForm({
             options={COOKING_LEVELS.map((l) => ({
               value: l,
               label: (
-                <span className={`inline-flex`}>
+                <span className="inline-flex items-center gap-1.5">
                   <LevelIcon level={l} size={22} />
+                  {LEVEL_META[l].name}
                 </span>
               ),
               ariaLabel: LEVEL_META[l].name,

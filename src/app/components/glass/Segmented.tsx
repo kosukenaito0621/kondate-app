@@ -74,7 +74,7 @@ export function Segmented<T extends string>({
                 transition={spring.soft}
               />
             )}
-            <span className="relative flex flex-col leading-tight">
+            <span className="relative flex flex-col items-center leading-tight">
               {o.label}
               {o.hint && <span className="text-[10px] font-normal opacity-70">{o.hint}</span>}
             </span>
