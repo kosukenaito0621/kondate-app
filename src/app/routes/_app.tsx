@@ -38,7 +38,7 @@ function AppLayout() {
             style={{
               paddingTop: 'max(1.25rem, calc(var(--safe-top) + 0.75rem))',
               // お試し中は右下の「やってみよう」の分もあける
-              paddingBottom: `calc(var(--tabbar-height) + var(--safe-bottom) + ${guest ? '5rem' : '2rem'})`,
+              paddingBottom: `calc(var(--tabbar-height) + var(--safe-bottom) + ${guest ? '9rem' : '2rem'})`,
             }}
           >
             <GuestBanner />

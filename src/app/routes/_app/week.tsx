@@ -26,6 +26,7 @@ import { BudgetBar } from '../../components/week/BudgetBar';
 import { DayCard } from '../../components/week/DayCard';
 import { DaySheet, MealSheet, type MealTarget } from '../../components/week/MealSheets';
 import { useMemoConfirm } from '../../components/week/MemoConfirm';
+import { useIsGuest } from '../../lib/auth';
 import { useRestoreMemos } from '../../lib/memo';
 import { spring } from '../../lib/motion';
 import { planQuery, usePlanMutation, type PlanAction } from '../../lib/plans';
@@ -95,8 +96,10 @@ function WeekPage() {
   const editableMemo = weekStart >= weekStartOf(today);
   const isEmpty = plan && plan.days.every((d) => d.items.length === 0);
 
+  const guest = useIsGuest();
   useEffect(() => {
-    if (!plan || isEmpty) return;
+    // お試しは「やってみよう」が案内するので出さない
+    if (!plan || isEmpty || guest) return;
     try {
       if (localStorage.getItem(HINT_KEY)) return;
       localStorage.setItem(HINT_KEY, '1');
@@ -104,7 +107,7 @@ function WeekPage() {
       return;
     }
     toast('料理名をタップでレシピ、長押しで変更できます');
-  }, [plan, isEmpty, toast]);
+  }, [plan, isEmpty, toast, guest]);
 
   const flash = (...dates: string[]) => {
     const now = Date.now();

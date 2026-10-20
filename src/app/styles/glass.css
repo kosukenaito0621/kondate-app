@@ -261,16 +261,75 @@
 
 /* お試しの「やってみよう」：押す場所を光る枠で囲む（まわりは暗くせず、ほかの場所もそのまま使える） */
 .spot-hole {
-  box-shadow: 0 0 0 3px var(--accent-strong);
-  animation: spot-pulse 1.6s ease-in-out infinite;
+  box-shadow:
+    0 0 0 4px var(--accent-strong),
+    0 0 22px 6px color-mix(in srgb, var(--accent-strong) 45%, transparent);
+  animation: spot-pulse 1.4s ease-in-out infinite;
 }
 @keyframes spot-pulse {
   50% {
-    box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-strong) 35%, transparent);
+    box-shadow:
+      0 0 0 6px var(--accent-strong),
+      0 0 30px 12px color-mix(in srgb, var(--accent-strong) 30%, transparent);
   }
 }
+/* 押す場所の真ん中に広がる波紋 */
+.spot-ripple {
+  width: 0;
+  height: 0;
+}
+.spot-ripple::before,
+.spot-ripple::after {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 3px solid var(--accent-strong);
+  animation: spot-ripple 1.6s ease-out infinite;
+}
+.spot-ripple::after {
+  animation-delay: 0.8s;
+}
+@keyframes spot-ripple {
+  from {
+    transform: scale(0.35);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+/* 吹き出し。しっぽで押す場所を指す */
+.spot-bubble {
+  background: var(--glass-fallback);
+  border: 2px solid var(--accent-strong);
+  box-shadow: 0 14px 34px -14px rgb(var(--shadow-rgb) / 0.55);
+}
+.spot-bubble::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--tail-x) - 9px);
+  bottom: -10px;
+  width: 16px;
+  height: 16px;
+  background: var(--glass-fallback);
+  border-right: 2px solid var(--accent-strong);
+  border-bottom: 2px solid var(--accent-strong);
+  transform: rotate(45deg);
+}
+.spot-bubble[data-below]::after {
+  top: -10px;
+  bottom: auto;
+  transform: rotate(225deg);
+}
 @media (prefers-reduced-motion: reduce) {
-  .spot-hole {
+  .spot-hole,
+  .spot-ripple::before,
+  .spot-ripple::after {
     animation: none;
   }
 }

@@ -22,6 +22,7 @@ import {
 } from '../../components/icons';
 import { LevelBadge } from '../../components/LevelBadge';
 import { MemoField } from '../../components/week/MemoField';
+import { markMission } from '../../lib/tour';
 import { HomeSkeleton } from '../../components/skeleton/Skeletons';
 import { greeting } from '../../lib/greeting';
 import { fadeIn, riseItem, spring, staggerContainer } from '../../lib/motion';
@@ -264,7 +265,12 @@ function EmptyToday({ weekStart }: { weekStart: string }) {
         onClick={() =>
           mutation.mutate(
             { type: 'generate' },
-            { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['today'] }) },
+            {
+              onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['today'] });
+                markMission('generate');
+              },
+            },
           )
         }
       >

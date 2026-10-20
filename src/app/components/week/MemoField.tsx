@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MEMO_MAX, type DayMemo } from '../../../shared/memo';
 import { cn } from '../../lib/cn';
 import { useSaveMemo } from '../../lib/memo';
+import { isActiveMission, TOUR_PREFILL } from '../../lib/tour';
 import { spring } from '../../lib/motion';
 import { Avatar } from '../Avatar';
 import { CheckDraw, MemoIcon, PlusIcon } from '../icons';
@@ -118,7 +119,6 @@ export function MemoField({
               value={draft}
               rows={1}
               maxLength={MEMO_MAX}
-              data-tour="memo"
               aria-label={`${dayLabel}のメモ`}
               placeholder="例：スープにレタスも入れたい"
               onChange={(e) => onChange(e.target.value)}
@@ -164,9 +164,13 @@ export function MemoField({
       {!expanded && (
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setOpen(true);
+            // お試しの「メモを追加してみよう」では、見本のメモを入れて自動で保存する
+            if (isActiveMission('memo')) onChange(TOUR_PREFILL.memo);
+          }}
           className="mt-0.5 flex min-h-9 items-center gap-1 rounded-full px-2 text-xs text-ink-soft hover:bg-pill"
-          data-tour="memo"
+          data-tour="memo-add"
           aria-label={`${dayLabel}のメモを追加`}
         >
           <PlusIcon size={13} />

@@ -30,7 +30,7 @@ async function guest(ip: string): Promise<TestUser> {
 }
 
 describe('お試しモード', () => {
-  it('ログインせずに始められ、献立・買い物リスト・在庫・メモが入っている', async () => {
+  it('ログインせずに始められ、在庫・メモが入っている（献立は一から作ってもらう）', async () => {
     const u = await guest('10.0.0.1');
     const me = await json<Me>(await api(u, '/api/me'));
     // お試しは使い方ガイドを出さない（「やってみよう」で案内する）
@@ -44,11 +44,10 @@ describe('お試しモード', () => {
     expect(me.groups[0]!.name).toBe('おためし');
 
     const plan = await json<PlanView>(await api(u, `/api/plans/${WEEK}`));
-    expect(plan.exists).toBe(true);
-    expect(plan.days.some((d) => d.items.length > 0)).toBe(true);
+    expect(plan.days.every((d) => d.items.length === 0)).toBe(true);
     expect(plan.days.find((d) => d.date === toJstDate())!.memo?.body).toContain('お試し');
     const list = await json<ShoppingListView>(await api(u, `/api/shopping/${WEEK}`));
-    expect(list.items.length).toBeGreaterThan(5);
+    expect(list.items).toHaveLength(0);
     expect(await json<PantryItemView[]>(await api(u, '/api/pantry'))).toHaveLength(4);
   });
 
@@ -78,7 +77,9 @@ describe('お試しモード', () => {
 
   it('家族役（はなこさん）がメモ・献立・買い物リスト・在庫を変える', async () => {
     const u = await guest('10.0.0.4');
-    const before = await json<PlanView>(await api(u, `/api/plans/${WEEK}`));
+    const before = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/generate`, { method: 'POST', json: {} }),
+    );
 
     const r0 = await json<{ next: number }>(await api(u, '/api/demo/family/0', { method: 'POST' }));
     expect(r0.next).toBe(1);

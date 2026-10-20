@@ -15,6 +15,7 @@ import { RecipeListSkeleton } from '../../components/skeleton/Skeletons';
 import { cn } from '../../lib/cn';
 import { riseItem, spring, staggerContainer } from '../../lib/motion';
 import { pantryQuery, usePantryActions } from '../../lib/pantry';
+import { isActiveMission, TOUR_PREFILL } from '../../lib/tour';
 
 export const Route = createFileRoute('/_app/pantry')({
   component: PantryPage,
@@ -205,10 +206,16 @@ function PantryForm({ item, onDone }: { item: PantryItemView | null; onDone: () 
   const { add, update, remove } = usePantryActions();
   const listId = useId();
   const today = toJstDate();
-  const [name, setName] = useState(item?.name ?? '');
-  const [qty, setQty] = useState(item?.quantity != null ? String(item.quantity) : '');
-  const [unit, setUnit] = useState<string>(item?.unit ?? '個');
-  const [expires, setExpires] = useState(item?.expiresOn ?? '');
+  // お試しの「在庫を入れてみよう」では、見本の食材を入れた状態で開く
+  const [sample] = useState(() =>
+    !item && isActiveMission('pantry') ? TOUR_PREFILL.pantry() : null,
+  );
+  const [name, setName] = useState(item?.name ?? sample?.name ?? '');
+  const [qty, setQty] = useState(
+    item?.quantity != null ? String(item.quantity) : (sample?.qty ?? ''),
+  );
+  const [unit, setUnit] = useState<string>(item?.unit ?? sample?.unit ?? '個');
+  const [expires, setExpires] = useState(item?.expiresOn ?? sample?.expires ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const quick = [
@@ -330,7 +337,7 @@ function PantryForm({ item, onDone }: { item: PantryItemView | null; onDone: () 
         </p>
       )}
 
-      <GlassButton type="submit" variant="primary" loading={busy}>
+      <GlassButton type="submit" variant="primary" loading={busy} data-tour="pantry-save">
         {item ? '保存する' : '在庫に入れる'}
       </GlassButton>
       {item && (

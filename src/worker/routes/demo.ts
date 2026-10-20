@@ -148,11 +148,8 @@ export const demoRoutes = new Hono<AppEnv>()
     await db.update(groups).set({ servings: 2 }).where(eq(groups.id, groupId));
     const token = await guestSession(db, userId, expiresAt);
 
-    // 今週の献立・買い物リスト・在庫・メモを入れておく
+    // 在庫とメモを入れておく。献立は「やってみよう」の最初のミッションで一から作ってもらう
     const today = toJstDate();
-    const ws = weekStartOf(today);
-    await callAs(c, token, 'POST', `/plans/${ws}/generate`, {});
-    await callAs(c, token, 'GET', `/shopping/${ws}`);
     const stock = [
       { name: '玉ねぎ', quantity: 2, unit: '個', expiresOn: null },
       { name: 'にんじん', quantity: 1, unit: '本', expiresOn: null },

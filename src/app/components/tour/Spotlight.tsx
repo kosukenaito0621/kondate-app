@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { spring } from '../../lib/motion';
 import { showSpot, useTour } from '../../lib/tour';
@@ -59,7 +59,9 @@ export function Spotlight() {
     raf = requestAnimationFrame(tick);
     // 光らせた場所に触れたら、案内は役目を終えたので消す（ドラッグなどの邪魔をしない）
     const onDown = (e: PointerEvent) => {
-      if (!el || !(e.target instanceof Node) || !el.contains(e.target)) return;
+      if (!(e.target instanceof Element)) return;
+      // 位置を測る前でも、光らせる場所そのものに触れたかで判断する
+      if (!e.target.closest(`[data-tour="${spot.spot}"]`)) return;
       showSpot(spot.then ? { ...spot, ...spot.then, then: undefined } : null);
     };
     document.addEventListener('pointerdown', onDown, true);
@@ -70,16 +72,22 @@ export function Spotlight() {
   }, [spot]);
 
   const below = rect ? rect.top + rect.height / 2 < window.innerHeight / 2 : true;
+  // 吹き出しは画面の幅に収め、しっぽを押す場所の真上（真下）に向ける
+  const vw = typeof window === 'undefined' ? 400 : window.innerWidth;
+  const bubbleW = Math.min(vw - 32, 384);
+  const centerX = rect ? rect.left + rect.width / 2 : vw / 2;
+  const bubbleLeft = Math.min(Math.max(centerX - bubbleW / 2, 16), vw - 16 - bubbleW);
+  const tailX = Math.min(Math.max(centerX - bubbleLeft, 22), bubbleW - 22);
 
   return (
-    <AnimatePresence>
+    // 消すときは動きを待たずにすぐ消す（光らせた場所に触れたら、すぐ操作できるように）
+    <>
       {spot && rect && (
         <motion.div
           key={spot.id}
           className="pointer-events-none fixed inset-0 z-[55]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
         >
           {/* 押す場所を囲む光る枠 */}
           <div
@@ -91,20 +99,35 @@ export function Spotlight() {
               height: rect.height + PAD * 2,
             }}
           />
+          {/* 押す場所の真ん中に広がる波紋（「ここ」） */}
+          <span
+            aria-hidden
+            className="spot-ripple absolute"
+            style={{ top: rect.top + rect.height / 2, left: centerX }}
+          />
           <motion.div
             role="status"
-            initial={{ opacity: 0, y: below ? -6 : 6 }}
+            initial={{ opacity: 0, y: below ? -8 : 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={spring.soft}
-            className="glass glass--strong pointer-events-auto absolute left-4 right-4 mx-auto flex max-w-[24rem] items-start gap-3 rounded-2xl px-4 py-3 text-sm"
-            style={
-              below
-                ? { top: rect.top + rect.height + PAD + 12 }
-                : { bottom: window.innerHeight - rect.top + PAD + 12 }
-            }
+            className="spot-bubble pointer-events-auto absolute flex items-start gap-3 rounded-2xl px-4 py-3 text-sm"
+            data-below={below ? '' : undefined}
+            style={{
+              left: bubbleLeft,
+              width: bubbleW,
+              ['--tail-x' as string]: `${tailX}px`,
+              ...(below
+                ? { top: rect.top + rect.height + PAD + 14 }
+                : { bottom: window.innerHeight - rect.top + PAD + 14 }),
+            }}
           >
             <p className="min-w-0 flex-1">
-              <span className="block text-[11px] font-bold text-accent-strong">{spot.title}</span>
+              <span className="mb-0.5 flex items-center gap-1.5 text-[11px] font-bold text-accent-strong">
+                <span className="rounded-full bg-accent px-2 py-0.5 text-accent-ink">
+                  ここを{spot.gesture}
+                </span>
+                {spot.title}
+              </span>
               {spot.hint}
             </p>
             <button
@@ -117,6 +140,6 @@ export function Spotlight() {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
