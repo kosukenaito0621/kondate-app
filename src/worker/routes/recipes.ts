@@ -26,7 +26,7 @@ import {
 import { randomToken, sha256Hex } from '../lib/crypto';
 import { isGroupImageKey } from '../lib/images';
 import { hitRateLimit } from '../lib/rate-limit';
-import { requireAuth } from '../middleware/auth';
+import { forbidGuest, requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
@@ -265,7 +265,7 @@ export const recipeRoutes = new Hono<AppEnv>()
     return c.json({ id }, 201);
   })
   /** 共有リンクを作る（家族・友だちに送り、相手のグループのレシピとして保存してもらう） */
-  .post('/:id/share', async (c) => {
+  .post('/:id/share', forbidGuest, async (c) => {
     const db = c.var.db;
     const src = await findVisible(db, c.var.group.id, c.req.param('id'));
     if (!src) return c.json({ error: 'not_found' }, 404);
@@ -285,7 +285,7 @@ export const recipeRoutes = new Hono<AppEnv>()
     return c.json({ token, url, expiresAt } satisfies CreatedShare, 201);
   })
   /** 複数のレシピをまとめて1つのリンクで送る（30品まで・題名は任意） */
-  .post('/share-bundle', zValidator('json', shareBundleSchema), async (c) => {
+  .post('/share-bundle', forbidGuest, zValidator('json', shareBundleSchema), async (c) => {
     const db = c.var.db;
     const { recipeIds, title } = c.req.valid('json');
     const visible = await db

@@ -14,6 +14,20 @@ export function setSessionCookie(c: Context, token: string, expiresAt: number) {
   });
 }
 
+/** お試しユーザーには使わせない機能（AI・写真・招待・共有リンク など） */
+export const forbidGuest = createMiddleware<AppEnv>(async (c, next) => {
+  if (c.var.user.guestExpiresAt !== null) {
+    return c.json(
+      {
+        error: 'guest_forbidden',
+        message: 'お試しでは使えません。Google でログインすると使えます',
+      },
+      403,
+    );
+  }
+  await next();
+});
+
 /** ログイン必須。c.var.user にユーザーを入れる */
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   const token = getCookie(c, SESSION_COOKIE);

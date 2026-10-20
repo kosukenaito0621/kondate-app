@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { TabBar } from '../components/glass/TabBar';
+import { GuestBanner } from '../components/GuestBanner';
 import { LiveProvider } from '../components/live/LiveProvider';
 import { TimerDock } from '../components/timer/TimerDock';
 import { TimerProvider } from '../components/timer/TimerProvider';
@@ -36,6 +37,7 @@ function AppLayout() {
               paddingBottom: 'calc(var(--tabbar-height) + var(--safe-bottom) + 2rem)',
             }}
           >
+            <GuestBanner />
             <Outlet />
           </motion.main>
           <TimerDock />

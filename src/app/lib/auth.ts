@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { Me } from '../../shared/schemas';
 import { api } from '../api';
 
@@ -13,6 +13,11 @@ export const meQuery = queryOptions({
   },
   staleTime: 5 * 60_000,
 });
+
+/** お試し中（ログインせずに試している）か */
+export function useIsGuest() {
+  return useQuery(meQuery).data?.guestUntil != null;
+}
 
 /** オフライン用に端末へ保存した API の応答と写真（サービスワーカーのキャッシュ名は vite.config.ts と合わせる） */
 const PRIVATE_CACHES = ['kd-api', 'kd-images'];

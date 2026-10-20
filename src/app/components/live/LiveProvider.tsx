@@ -27,6 +27,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
   const [connected, setConnected] = useState(false);
   const [highlights, setHighlights] = useState<Record<string, number>>({});
   const handlerRef = useRef<(e: RealtimeEvent) => void>(() => {});
+  const memoToastAt = useRef<Record<string, number>>({});
 
   // 受け取ったお知らせの処理（最新の me / toast を使うため ref に入れる）
   useEffect(() => {
@@ -51,10 +52,16 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
           // 入力中の欄は MemoField 側で上書きしないようにしている
           queryClient.invalidateQueries({ queryKey: ['plan', e.weekStart] });
           queryClient.invalidateQueries({ queryKey: ['today'] });
+          // 入力が止まるたびに保存されるので、同じ日のメモの知らせは30秒に1回まで
+          if (!mine && Date.now() - (memoToastAt.current[e.date] ?? 0) > 30_000) {
+            memoToastAt.current[e.date] = Date.now();
+            toast(`${who}が${e.summary}`);
+          }
           break;
         case 'pantry.updated':
           queryClient.invalidateQueries({ queryKey: ['pantry'] });
           queryClient.invalidateQueries({ queryKey: ['shopping'] });
+          if (!mine) toast(`${who}が${e.summary}`);
           break;
         case 'logs.updated':
           queryClient.invalidateQueries({ queryKey: ['logs'] });

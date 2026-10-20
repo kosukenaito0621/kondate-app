@@ -43,6 +43,8 @@ export type Me = {
   guideSeen: boolean;
   /** 最後に見たお知らせの id */
   newsSeen: string | null;
+  /** お試しユーザーなら、消える時刻（それ以外は null） */
+  guestUntil: number | null;
   /** 日ごとメモの確認で「次回から確認しない」にした選択 */
   memoChoices: MemoChoices;
   id: string;

@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `guest_expires_at` integer;

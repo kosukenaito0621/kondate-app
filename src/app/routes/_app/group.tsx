@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsGuest } from '../../lib/auth';
 import { createFileRoute } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
@@ -63,6 +64,7 @@ function useGroupMutation<T>(
 function GroupBody({ group }: { group: GroupDetail }) {
   const id = group.id;
   const owner = group.role === 'owner';
+  const guest = useIsGuest();
   const [name, setName] = useState(group.name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -251,7 +253,12 @@ function GroupBody({ group }: { group: GroupDetail }) {
         </ul>
       </GlassCard>
 
-      {owner && <InviteCard groupId={id} />}
+      {owner && !guest && <InviteCard groupId={id} />}
+      {guest && (
+        <GlassCard padding="md" className="text-sm text-ink-soft">
+          お試しでは家族の招待はお休みです。家族の動きは、上の「家族役を呼ぶ」で体験できます。
+        </GlassCard>
+      )}
 
       <motion.div variants={riseItem} className="flex flex-col gap-2">
         {actionError && (

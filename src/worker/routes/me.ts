@@ -37,6 +37,7 @@ export async function loadMe(db: Db, userId: string): Promise<Me> {
     guideSeen: guideSeenAt != null,
     newsSeen: newsSeenId ?? null,
     memoChoices: { swap: memoSwap ?? null, edit: memoEdit ?? null },
+    guestUntil: user.guestExpiresAt ?? null,
     currentGroupId,
     groups: await listGroupsOf(db, user.id),
   };

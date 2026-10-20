@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useIsGuest } from '../../../lib/auth';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { CATEGORY_LABEL, GENRE_LABEL } from '../../../../shared/constants';
@@ -42,6 +43,31 @@ async function readError(res: Response, fallback: string) {
 }
 
 function ImportPage() {
+  const guest = useIsGuest();
+  if (guest) {
+    return (
+      <>
+        <PageHeader title="写真・URLから追加" />
+        <GlassCard padding="lg" className="text-center">
+          <p className="font-bold">お試しでは AI 取り込みはお休みです</p>
+          <p className="mt-2 text-sm text-ink-soft">
+            Google でログインすると、レシピ本の写真やレシピサイトの URL
+            から、材料と手順を自動で読み取れます。
+          </p>
+          <Link
+            to="/recipes/new"
+            className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-accent-strong"
+          >
+            手入力でレシピを追加する
+          </Link>
+        </GlassCard>
+      </>
+    );
+  }
+  return <ImportForm />;
+}
+
+function ImportForm() {
   const [mode, setMode] = useState<'photo' | 'url'>('photo');
   const [result, setResult] = useState<Draft | null>(null);
   const [stage, setStage] = useState(0);

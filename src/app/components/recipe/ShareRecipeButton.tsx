@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { useIsGuest } from '../../lib/auth';
 import type { CreatedShare } from '../../../shared/recipe';
 import { api } from '../../api';
 import { shareOrCopy } from '../../lib/shareLink';
@@ -19,6 +20,7 @@ export function ShareRecipeButton({
 }) {
   const { toast } = useToast();
 
+  const guest = useIsGuest();
   const share = useMutation({
     mutationFn: async () => {
       const res = await api.recipes[':id'].share.$post({ param: { id: recipeId } });
@@ -35,6 +37,9 @@ export function ShareRecipeButton({
       }),
     onError: (e) => toast(e.message, 'error'),
   });
+
+  // お試しでは共有リンクを作れない
+  if (guest) return null;
 
   return (
     <GlassButton

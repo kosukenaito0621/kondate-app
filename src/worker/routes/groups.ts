@@ -26,7 +26,7 @@ import {
   membership,
 } from '../lib/groups';
 import { hitRateLimit } from '../lib/rate-limit';
-import { requireAuth } from '../middleware/auth';
+import { forbidGuest, requireAuth } from '../middleware/auth';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 
@@ -92,7 +92,7 @@ const INVITE_LOOKUP_LIMIT = 20; // 1時間あたり
 export const groupRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   .get('/', async (c) => c.json(await listGroupsOf(c.var.db, c.var.user.id)))
-  .post('/', zValidator('json', createGroupSchema), async (c) => {
+  .post('/', forbidGuest, zValidator('json', createGroupSchema), async (c) => {
     const { name, color } = c.req.valid('json');
     const level = await c.var.db
       .select({ level: userSettings.cookingLevel })
@@ -239,7 +239,7 @@ export const groupRoutes = new Hono<AppEnv>()
       .orderBy(groupInvites.createdAt);
     return c.json(rows satisfies InviteSummary[]);
   })
-  .post('/:id/invites', async (c) => {
+  .post('/:id/invites', forbidGuest, async (c) => {
     const g = await guard(c, true);
     if ('error' in g) return g.error;
     const token = randomToken(24);
@@ -289,7 +289,7 @@ export const groupRoutes = new Hono<AppEnv>()
 
 /** 招待を受ける側（コード／リンクのトークン） */
 export const inviteRoutes = new Hono<AppEnv>()
-  .use(requireAuth)
+  .use(requireAuth, forbidGuest)
   .use(async (c, next) => {
     if (await hitRateLimit(c.var.db, `invite:${c.var.user.id}`, INVITE_LOOKUP_LIMIT, 3_600_000)) {
       return c.json({ error: 'rate_limited', message: 'しばらく時間をおいてお試しください' }, 429);

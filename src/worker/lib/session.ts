@@ -32,13 +32,15 @@ export async function validateSession(db: Db, token: string, now = Date.now()) {
     .get();
   if (!row) return null;
 
-  if (row.session.expiresAt <= now) {
+  const guestUntil = row.user.guestExpiresAt;
+  if (row.session.expiresAt <= now || (guestUntil !== null && guestUntil <= now)) {
     await db.delete(sessions).where(eq(sessions.id, id));
     return null;
   }
 
   let expiresAt = row.session.expiresAt;
-  const renewed = expiresAt - now < RENEW_THRESHOLD_MS;
+  // お試しユーザーは期限より先に延ばさない
+  const renewed = guestUntil === null && expiresAt - now < RENEW_THRESHOLD_MS;
   if (renewed) {
     expiresAt = now + SESSION_TTL_MS;
     await db.update(sessions).set({ expiresAt }).where(eq(sessions.id, id));

@@ -9,6 +9,7 @@ import { groupRoutes, inviteRoutes } from './routes/groups';
 import { imageRoutes } from './routes/images';
 import { logRoutes } from './routes/logs';
 import { pantryRoutes } from './routes/pantry';
+import { demoRoutes, purgeGuests, setSelfFetch } from './routes/demo';
 import { meRoutes } from './routes/me';
 import { memoRoutes, purgeOldMemos } from './routes/memos';
 import { planRoutes, todayItems } from './routes/plans';
@@ -34,6 +35,7 @@ const api = new Hono<AppEnv>()
   })
   .get('/health', (c) => c.json({ ok: true, today: toJstDate() }))
   .route('/auth', authRoutes)
+  .route('/demo', demoRoutes)
   .route('/me', meRoutes)
   .route('/recipes', recipeRoutes)
   .route('/recipe-shares', recipeShareRoutes)
@@ -59,6 +61,9 @@ const api = new Hono<AppEnv>()
     });
   });
 
+// お試しモードで、自分の API をそのユーザーとして内側から呼ぶため
+setSelfFetch((req, env, ctx) => Promise.resolve(api.fetch(req, env, ctx)));
+
 api.notFound((c) => c.json({ error: 'not_found' }, 404));
 api.onError((err, c) => {
   console.error(err);
@@ -69,8 +74,14 @@ export type AppType = typeof api;
 
 export default {
   fetch: api.fetch,
-  /** 毎日の定期処理（wrangler.jsonc の triggers.crons）：古い日ごとメモを消す */
+  /** 毎日の定期処理（wrangler.jsonc の triggers.crons）：古い日ごとメモと、期限の過ぎたお試しを消す */
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(purgeOldMemos(getDb(env.DB)).then((n) => console.log(`purged ${n} old memos`)));
+    const db = getDb(env.DB);
+    ctx.waitUntil(
+      Promise.all([
+        purgeOldMemos(db).then((n) => console.log(`purged ${n} old memos`)),
+        purgeGuests(db).then((n) => console.log(`purged ${n} guest users`)),
+      ]),
+    );
   },
 } satisfies ExportedHandler<Env>;

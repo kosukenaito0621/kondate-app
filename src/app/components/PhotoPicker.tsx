@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useIsGuest } from '../lib/auth';
 import { useRef, useState } from 'react';
 import { cn } from '../lib/cn';
 import { uploadImage } from '../lib/images';
@@ -21,6 +22,7 @@ export function PhotoPicker({
   className?: string;
   compact?: boolean;
 }) {
+  const guest = useIsGuest();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
@@ -38,6 +40,8 @@ export function PhotoPicker({
       setBusy(false);
     }
   };
+
+  if (guest) return <p className="text-xs text-ink-soft">写真はお試しではお休みです</p>;
 
   return (
     <>

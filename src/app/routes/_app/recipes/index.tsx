@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useIsGuest } from '../../../lib/auth';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -46,6 +47,7 @@ function RecipeList() {
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Map<string, string>>(new Map());
   const { toast } = useToast();
+  const guest = useIsGuest();
   const togglePick = (id: string, name: string) =>
     setPicked((m) => {
       const next = new Map(m);
@@ -226,7 +228,7 @@ function RecipeList() {
             <p className="text-xs text-ink-soft">
               {selecting ? '送りたいレシピをタップして選んでください' : ''}
             </p>
-            {!selecting && (
+            {!selecting && !guest && (
               <button
                 type="button"
                 onClick={() => setSelecting(true)}

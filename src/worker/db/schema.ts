@@ -26,6 +26,8 @@ export const users = sqliteTable('users', {
   email: text('email').notNull(),
   displayName: text('display_name'),
   avatarUrl: text('avatar_url'),
+  /** お試しユーザー（ログインせずに試す）の期限。NULL なら通常のユーザー */
+  guestExpiresAt: integer('guest_expires_at', { mode: 'number' }),
   /** 最後に使ったグループ */
   currentGroupId: text('current_group_id').references((): AnySQLiteColumn => groups.id, {
     onDelete: 'set null',

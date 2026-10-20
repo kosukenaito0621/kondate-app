@@ -34,6 +34,7 @@ export function GroupDot({ color, size = 10 }: { color: string; size?: number })
 export function GroupSwitcher() {
   const { data: me } = useQuery(meQuery);
   const [open, setOpen] = useState(false);
+  const guest = me?.guestUntil != null;
   const [mode, setMode] = useState<'list' | 'create' | 'join'>('list');
   const queryClient = useQueryClient();
 
@@ -115,10 +116,12 @@ export function GroupSwitcher() {
                 {switcher.error.message}
               </p>
             )}
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <GlassButton onClick={() => setMode('create')}>グループを作る</GlassButton>
-              <GlassButton onClick={() => setMode('join')}>コードで参加</GlassButton>
-            </div>
+            {!guest && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <GlassButton onClick={() => setMode('create')}>グループを作る</GlassButton>
+                <GlassButton onClick={() => setMode('join')}>コードで参加</GlassButton>
+              </div>
+            )}
           </div>
         )}
         {mode === 'create' && <CreateGroupForm onDone={close} />}

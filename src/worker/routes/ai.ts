@@ -7,7 +7,7 @@ import { extractRecipeText } from '../lib/html-to-text';
 import { groupOfImageKey } from '../lib/images';
 import { hitRateLimit } from '../lib/rate-limit';
 import { safeFetchHtml, UnsafeUrlError } from '../lib/safe-fetch';
-import { requireAuth } from '../middleware/auth';
+import { forbidGuest, requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
@@ -32,7 +32,7 @@ function fail(c: Ctx, e: unknown) {
 }
 
 export const aiRoutes = new Hono<AppEnv>()
-  .use(requireAuth, requireGroup)
+  .use(requireAuth, forbidGuest, requireGroup)
   /** レシピ本の写真から下書きを作る（保存はしない。確認画面で直してから保存する） */
   .post(
     '/import-image',

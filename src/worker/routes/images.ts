@@ -5,7 +5,7 @@ import { cookLogs, recipes } from '../db/schema';
 import { membership } from '../lib/groups';
 import { groupImagePrefix, groupOfImageKey, MAX_IMAGE_BYTES, sniffImage } from '../lib/images';
 import { hitRateLimit } from '../lib/rate-limit';
-import { requireAuth } from '../middleware/auth';
+import { forbidGuest, requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import type { AppEnv } from '../types';
 
@@ -14,7 +14,7 @@ const UPLOADS_PER_DAY = 60;
 export const imageRoutes = new Hono<AppEnv>()
   .use(requireAuth)
   /** 画像のアップロード（multipart の file）。グループの領域に保存してキーを返す */
-  .post('/', requireGroup, async (c) => {
+  .post('/', forbidGuest, requireGroup, async (c) => {
     if (await hitRateLimit(c.var.db, `upload:${c.var.user.id}`, UPLOADS_PER_DAY, 86_400_000)) {
       return c.json(
         { error: 'rate_limited', message: '今日はこれ以上アップロードできません' },

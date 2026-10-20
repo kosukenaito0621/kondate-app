@@ -1,4 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { api } from '../api';
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { GlassCard } from '../components/glass/GlassCard';
 import { GoogleLogo } from '../components/icons';
@@ -61,6 +63,7 @@ function Login() {
             <GoogleLogo />
             Google でログイン
           </motion.a>
+          <TryButton />
         </GlassCard>
 
         <motion.p variants={riseItem} className="text-center text-xs text-ink-soft">
@@ -68,5 +71,47 @@ function Login() {
         </motion.p>
       </motion.div>
     </main>
+  );
+}
+
+/** ログインせずに試す（24時間だけ使える「おためしの食卓」を作る） */
+function TryButton() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const start = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.demo.start.$post();
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? 'お試しを始められませんでした');
+      }
+      // 献立などを入れた状態で始まるので、読み直してホームへ
+      window.location.href = '/';
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'お試しを始められませんでした');
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-3 flex flex-col items-center gap-1">
+      <button
+        type="button"
+        onClick={start}
+        disabled={busy}
+        className="min-h-12 w-full rounded-full px-6 text-sm font-bold text-accent-strong hover:bg-pill disabled:opacity-60"
+      >
+        {busy ? 'おためしの食卓を用意しています…' : 'ログインせずに試す'}
+      </button>
+      <p className="text-[11px] text-ink-soft">
+        24時間だけ使えます。AI取り込み・写真・招待はお休み
+      </p>
+      {error && (
+        <p role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
