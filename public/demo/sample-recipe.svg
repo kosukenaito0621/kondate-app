@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" font-family="'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif">
+  <rect width="600" height="420" fill="#efe6d6"/>
+  <rect x="24" y="18" width="552" height="384" rx="6" fill="#fffaf0" stroke="#e2d4bb"/>
+  <line x1="300" y1="30" x2="300" y2="390" stroke="#eadfca" stroke-width="2"/>
+  <text x="48" y="64" font-size="13" fill="#b07a3c" letter-spacing="2">主菜・洋風</text>
+  <text x="48" y="96" font-size="24" fill="#3b2a24" font-weight="700">鶏むね肉の</text>
+  <text x="48" y="128" font-size="24" fill="#3b2a24" font-weight="700">はちみつレモンソテー</text>
+  <text x="48" y="160" font-size="12" fill="#7a645a">2人分　調理時間 20分</text>
+  <text x="48" y="196" font-size="14" fill="#b07a3c" font-weight="700">材料</text>
+  <g font-size="13" fill="#3b2a24">
+    <text x="48" y="222">鶏むね肉 ……………… 1枚(300g)</text>
+    <text x="48" y="246">塩・こしょう ………… 少々</text>
+    <text x="48" y="270">片栗粉 ……………… 大さじ1</text>
+    <text x="48" y="294">オリーブオイル ……… 大さじ1</text>
+    <text x="48" y="318">はちみつ …………… 大さじ1と1/2</text>
+    <text x="48" y="342">しょうゆ …………… 大さじ1</text>
+    <text x="48" y="366">レモン汁 …………… 大さじ1</text>
+  </g>
+  <text x="324" y="64" font-size="14" fill="#b07a3c" font-weight="700">作り方</text>
+  <g font-size="12.5" fill="#3b2a24">
+    <text x="324" y="94">1 鶏肉はそぎ切りにし、塩・こしょう</text>
+    <text x="340" y="114">をふって片栗粉をまぶす。</text>
+    <text x="324" y="148">2 フライパンにオイルを熱し、鶏肉を</text>
+    <text x="340" y="168">両面3分ずつ焼く。</text>
+    <text x="324" y="202">3 はちみつ・しょうゆ・レモン汁を</text>
+    <text x="340" y="222">混ぜて加え、からめながら煮詰める。</text>
+  </g>
+  <circle cx="450" cy="318" r="56" fill="#f6e3b8"/>
+  <circle cx="450" cy="318" r="42" fill="#f3d088"/>
+  <ellipse cx="438" cy="312" rx="18" ry="10" fill="#d99a4e"/>
+  <ellipse cx="462" cy="326" rx="16" ry="9" fill="#c98a42"/>
+  <circle cx="478" cy="300" r="9" fill="#f7ef9a" stroke="#e5d55e"/>
+</svg>

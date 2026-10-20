@@ -3,6 +3,7 @@ import type { PantryInput, PantryItemView } from '../../shared/pantry';
 import { api } from '../api';
 import { useToast } from '../components/toast/Toaster';
 import { ok } from './recipes';
+import { markMission } from './tour';
 
 export const pantryQuery = queryOptions({
   queryKey: ['pantry'],
@@ -28,6 +29,7 @@ export function usePantryActions() {
     onSuccess: (rows) => {
       qc.setQueryData(['pantry'], rows);
       refresh();
+      markMission('pantry');
     },
     onError: fail,
   });

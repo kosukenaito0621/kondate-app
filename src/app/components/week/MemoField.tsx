@@ -118,6 +118,7 @@ export function MemoField({
               value={draft}
               rows={1}
               maxLength={MEMO_MAX}
+              data-tour="memo"
               aria-label={`${dayLabel}のメモ`}
               placeholder="例：スープにレタスも入れたい"
               onChange={(e) => onChange(e.target.value)}
@@ -165,6 +166,7 @@ export function MemoField({
           type="button"
           onClick={() => setOpen(true)}
           className="mt-0.5 flex min-h-9 items-center gap-1 rounded-full px-2 text-xs text-ink-soft hover:bg-pill"
+          data-tour="memo"
           aria-label={`${dayLabel}のメモを追加`}
         >
           <PlusIcon size={13} />

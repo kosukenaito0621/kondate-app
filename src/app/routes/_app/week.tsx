@@ -30,6 +30,7 @@ import { useRestoreMemos } from '../../lib/memo';
 import { spring } from '../../lib/motion';
 import { planQuery, usePlanMutation, type PlanAction } from '../../lib/plans';
 import { compact, optString } from '../../lib/search';
+import { markMission } from '../../lib/tour';
 import { useSlideSwap } from '../../lib/useSlideSwap';
 
 export const Route = createFileRoute('/_app/week')({
@@ -114,7 +115,15 @@ function WeekPage() {
     navigate({ search: { w: addDays(weekStart, delta * 7) }, replace: true });
 
   const generate = () =>
-    mutation.mutate({ type: 'generate' }, { onSuccess: () => setShuffle((n) => n + 1) });
+    mutation.mutate(
+      { type: 'generate' },
+      {
+        onSuccess: () => {
+          setShuffle((n) => n + 1);
+          markMission('generate');
+        },
+      },
+    );
 
   const memoNote = (date: string) => {
     const m = plan?.days.find((d) => d.date === date)?.memo;
@@ -137,6 +146,7 @@ function WeekPage() {
     } catch {
       return; // エラーの表示は usePlanMutation が行う
     }
+    markMission('change');
     if (choice === 'clear' && notes.length) {
       toast(`${dayName(action.date)}のメモを消しました`, 'info', {
         duration: 6000,
@@ -164,6 +174,7 @@ function WeekPage() {
         onSuccess: () => {
           setPendingSwap(null);
           flash(from, to);
+          markMission('swap');
           const cleared = choice === 'clear' ? notes : [];
           toast(
             `${dayName(from)}と${dayName(to)}の献立を入れ替えました${cleared.length ? '（メモは消しました）' : ''}`,
@@ -254,6 +265,7 @@ function WeekPage() {
             size="lg"
             icon={<CutleryIcon size={20} />}
             loading={mutation.isPending}
+            data-tour="week-generate"
             onClick={generate}
           >
             1週間の献立をつくる
@@ -294,6 +306,7 @@ function WeekPage() {
               block
               icon={<CutleryIcon size={18} />}
               loading={mutation.isPending && mutation.variables?.type === 'generate'}
+              data-tour="week-generate"
               onClick={generate}
             >
               1週間まるごと作り直す

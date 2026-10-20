@@ -55,6 +55,7 @@ function PantryPage() {
         action={
           <button
             type="button"
+            data-tour="pantry-add"
             onClick={() => setEditing({ mode: 'new' })}
             className="btn-primary sheen flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-bold"
           >

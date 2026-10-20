@@ -34,6 +34,7 @@ export function MealRow({ item, onLongPress }: { item: PlanItemView; onLongPress
         params={{ id: r.id }}
         draggable={false}
         {...handlers}
+        data-tour="meal-row"
         className="no-callout relative isolate flex min-h-12 w-full select-none items-center gap-2.5 overflow-hidden rounded-2xl px-2 py-1.5 text-left hover:bg-pill"
       >
         <span
@@ -216,6 +217,7 @@ export function DayCard({
             type="button"
             onPointerDown={onGrip}
             className="grid w-7 shrink-0 cursor-grab touch-none place-items-center rounded-xl text-ink-faint active:cursor-grabbing"
+            data-tour="day-grip"
             aria-label={`${weekday}曜の献立をほかの曜日へ移す`}
           >
             <GripIcon size={18} />

@@ -2,10 +2,12 @@ import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/rea
 import { motion } from 'motion/react';
 import { TabBar } from '../components/glass/TabBar';
 import { GuestBanner } from '../components/GuestBanner';
+import { Spotlight } from '../components/tour/Spotlight';
+import { TourBar } from '../components/tour/TourBar';
 import { LiveProvider } from '../components/live/LiveProvider';
 import { TimerDock } from '../components/timer/TimerDock';
 import { TimerProvider } from '../components/timer/TimerProvider';
-import { meQuery } from '../lib/auth';
+import { meQuery, useIsGuest } from '../lib/auth';
 import { GuideProvider } from '../components/guide/Guide';
 import { pageVariants } from '../lib/motion';
 
@@ -22,6 +24,7 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const guest = useIsGuest();
   return (
     <LiveProvider>
       <GuideProvider>
@@ -34,13 +37,16 @@ function AppLayout() {
             className="px-4"
             style={{
               paddingTop: 'max(1.25rem, calc(var(--safe-top) + 0.75rem))',
-              paddingBottom: 'calc(var(--tabbar-height) + var(--safe-bottom) + 2rem)',
+              // お試し中は右下の「やってみよう」の分もあける
+              paddingBottom: `calc(var(--tabbar-height) + var(--safe-bottom) + ${guest ? '5rem' : '2rem'})`,
             }}
           >
             <GuestBanner />
             <Outlet />
           </motion.main>
           <TimerDock />
+          <TourBar />
+          <Spotlight />
           <TabBar />
         </TimerProvider>
       </GuideProvider>

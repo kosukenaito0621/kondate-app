@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useToast } from '../components/toast/Toaster';
 import { settingsQuery } from './plans';
 import { ok } from './recipes';
+import { markMission } from './tour';
 
 export const shoppingQuery = (weekStart: string) =>
   queryOptions({
@@ -41,6 +42,9 @@ export function useShoppingActions(weekStart: string) {
     onError: (e, _v, ctx) => {
       if (ctx?.prev) set(ctx.prev);
       toast(e.message, 'error');
+    },
+    onSuccess: (_d, v) => {
+      if (v.checked) markMission('check');
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });

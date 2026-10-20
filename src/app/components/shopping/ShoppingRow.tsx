@@ -77,6 +77,7 @@ export function ShoppingRow({
       >
         <button
           type="button"
+          data-tour="shop-check"
           onClick={() => onToggle(!item.checked)}
           aria-pressed={item.checked}
           aria-label={item.checked ? `${item.name}のチェックを外す` : `${item.name}をかごに入れた`}

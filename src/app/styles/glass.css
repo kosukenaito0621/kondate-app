@@ -258,3 +258,23 @@
 .slide-clone[data-lifted] {
   box-shadow: 0 22px 44px -18px rgb(var(--shadow-rgb) / 0.55);
 }
+
+/* お試しの「やってみよう」：押す場所のまわりを暗くして光らせる */
+.spot-hole {
+  box-shadow:
+    0 0 0 3px var(--accent-strong),
+    0 0 0 9999px rgb(30 20 25 / 0.42);
+  animation: spot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes spot-pulse {
+  50% {
+    box-shadow:
+      0 0 0 7px color-mix(in srgb, var(--accent-strong) 45%, transparent),
+      0 0 0 9999px rgb(30 20 25 / 0.42);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spot-hole {
+    animation: none;
+  }
+}

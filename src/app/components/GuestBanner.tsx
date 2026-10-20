@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { meQuery } from '../lib/auth';
+import { markMission } from '../lib/tour';
 import { GlassButton } from './glass/GlassButton';
 import { SparkleIcon } from './icons';
 import { useToast } from './toast/Toaster';
@@ -41,6 +42,7 @@ export function GuestBanner() {
         const res = await api.demo.family[':step'].$post({ param: { step: String(step) } });
         if (!res.ok) throw new Error();
       }
+      markMission('family');
     } catch {
       toast('はなこさんが来られませんでした。もう一度お試しください', 'error');
     } finally {
@@ -53,12 +55,13 @@ export function GuestBanner() {
       <div className="min-w-0 flex-1 text-sm">
         <p className="font-bold">お試し中</p>
         <p className="text-xs text-ink-soft">
-          {remaining(me.guestUntil, now)}消えます。AI取り込み・写真・招待はお休みです
+          {remaining(me.guestUntil, now)}消えます。写真・招待はお休みです
         </p>
       </div>
       <GlassButton
         size="sm"
         variant="primary"
+        data-tour="family"
         icon={<SparkleIcon size={16} />}
         loading={calling}
         onClick={callFamily}

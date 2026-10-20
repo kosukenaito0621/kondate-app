@@ -7,6 +7,7 @@ import type { Me } from '../../shared/schemas';
 import { api } from '../api';
 import { meQuery } from './auth';
 import { ok } from './recipes';
+import { markMission } from './tour';
 
 type TodayData = { date: string; day: { memo: DayMemo | null } };
 
@@ -32,7 +33,10 @@ export function useSaveMemo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ date, body }: { date: string; body: string }) => putMemo(date, body),
-    onSuccess: ({ date, memo }) => setMemoInCache(qc, date, memo),
+    onSuccess: ({ date, memo }) => {
+      setMemoInCache(qc, date, memo);
+      if (memo) markMission('memo');
+    },
   });
 }
 

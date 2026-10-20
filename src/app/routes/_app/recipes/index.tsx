@@ -87,6 +87,7 @@ function RecipeList() {
           <div className="flex gap-2">
             <Link
               to="/recipes/import"
+              data-tour="recipe-import"
               className="glass sheen flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold"
             >
               <CameraIcon size={18} />

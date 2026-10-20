@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useIsGuest } from '../../../lib/auth';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { CATEGORY_LABEL, GENRE_LABEL } from '../../../../shared/constants';
@@ -16,6 +16,8 @@ import { RecipeForm, toFormValue } from '../../../components/recipe/RecipeForm';
 import { AiProgressSkeleton } from '../../../components/skeleton/Skeletons';
 import { resizeImage } from '../../../lib/images';
 import { LevelIcon } from '../../../components/LevelIcon';
+import { DEMO_DRAFT, DEMO_IMAGE } from '../../../lib/demoRecipe';
+import { markMission, showSpot, useTour } from '../../../lib/tour';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 
 export const Route = createFileRoute('/_app/recipes/import')({
@@ -43,31 +45,11 @@ async function readError(res: Response, fallback: string) {
 }
 
 function ImportPage() {
-  const guest = useIsGuest();
-  if (guest) {
-    return (
-      <>
-        <PageHeader title="写真・URLから追加" />
-        <GlassCard padding="lg" className="text-center">
-          <p className="font-bold">お試しでは AI 取り込みはお休みです</p>
-          <p className="mt-2 text-sm text-ink-soft">
-            Google でログインすると、レシピ本の写真やレシピサイトの URL
-            から、材料と手順を自動で読み取れます。
-          </p>
-          <Link
-            to="/recipes/new"
-            className="mt-4 inline-flex min-h-11 items-center text-sm font-bold text-accent-strong"
-          >
-            手入力でレシピを追加する
-          </Link>
-        </GlassCard>
-      </>
-    );
-  }
-  return <ImportForm />;
+  // お試しでは AI を使わず、見本の写真で取り込みを体験する
+  return <ImportForm demo={useIsGuest()} />;
 }
 
-function ImportForm() {
+function ImportForm({ demo }: { demo: boolean }) {
   const [mode, setMode] = useState<'photo' | 'url'>('photo');
   const [result, setResult] = useState<Draft | null>(null);
   const [stage, setStage] = useState(0);
@@ -80,8 +62,15 @@ function ImportForm() {
 
   // 待っている間、段階表示を少しずつ進める（最後の段階で止まる）
   const importing = useMutation({
-    mutationFn: async (input: { kind: 'photo'; file: File } | { kind: 'url'; url: string }) => {
+    mutationFn: async (
+      input: { kind: 'photo'; file: File } | { kind: 'url'; url: string } | { kind: 'sample' },
+    ) => {
       setStage(0);
+      if (input.kind === 'sample') {
+        setPreview(DEMO_IMAGE);
+        await new Promise((r) => window.setTimeout(r, 6500));
+        return DEMO_DRAFT;
+      }
       if (input.kind === 'photo') {
         const blob = await resizeImage(input.file);
         const form = new FormData();
@@ -102,14 +91,24 @@ function ImportForm() {
       if (!res.ok) throw await readError(res as unknown as Response, '読み取れませんでした');
       return (await res.json()) as Draft;
     },
-    onSuccess: (d) => setResult(d),
+    onSuccess: (d) => {
+      setResult(d);
+      markMission('import');
+    },
   });
+
+  // 「やってみよう」から来たら、見本の写真のボタンを光らせる
+  const { spot } = useTour();
+  useEffect(() => {
+    if (!demo || spot?.id !== 'import' || spot.spot === 'import-sample') return;
+    showSpot({ ...spot, spot: 'import-sample', hint: '「この写真で試す」を押してみましょう' });
+  }, [demo, spot]);
 
   useEffect(() => {
     if (!importing.isPending) return;
-    const t = window.setInterval(() => setStage((s) => Math.min(s + 1, 3)), 3500);
+    const t = window.setInterval(() => setStage((s) => Math.min(s + 1, 3)), demo ? 1600 : 3500);
     return () => window.clearInterval(t);
-  }, [importing.isPending]);
+  }, [importing.isPending, demo]);
 
   const save = useMutation({
     mutationFn: async (input: RecipeInput) => {
@@ -137,7 +136,10 @@ function ImportForm() {
     const d = result.draft;
     return (
       <>
-        <PageHeader eyebrow="AIで読み取りました" title="内容を確認して保存" />
+        <PageHeader
+          eyebrow={demo ? '見本を読み取りました（お試し）' : 'AIで読み取りました'}
+          title="内容を確認して保存"
+        />
         <motion.div
           className="mb-4 flex flex-col gap-3"
           variants={staggerContainer(0.06)}
@@ -200,17 +202,19 @@ function ImportForm() {
   return (
     <>
       <PageHeader eyebrow="レシピを追加" title="写真・URLから取り込む" />
-      <div className="mb-4">
-        <Segmented
-          label="取り込み方法"
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'photo', label: 'レシピ本の写真' },
-            { value: 'url', label: 'レシピサイトのURL' },
-          ]}
-        />
-      </div>
+      {!demo && (
+        <div className="mb-4">
+          <Segmented
+            label="取り込み方法"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'photo', label: 'レシピ本の写真' },
+              { value: 'url', label: 'レシピサイトのURL' },
+            ]}
+          />
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {importing.isPending ? (
@@ -220,7 +224,7 @@ function ImportForm() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {preview && mode === 'photo' && (
+            {preview && (mode === 'photo' || demo) && (
               <img
                 src={preview}
                 alt=""
@@ -231,6 +235,35 @@ function ImportForm() {
               stages={mode === 'photo' ? PHOTO_STAGES : URL_STAGES}
               current={stage}
             />
+          </motion.div>
+        ) : demo ? (
+          <motion.div
+            key="demo"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={spring.soft}
+          >
+            <GlassCard padding="lg" className="flex flex-col gap-3">
+              <p className="text-sm text-ink-soft">
+                本番では、料理本のページを撮るだけで、AIが材料・分量・作り方を読み取ります。
+                お試しでは、この見本の写真で体験できます。
+              </p>
+              <img
+                src={DEMO_IMAGE}
+                alt="見本のレシピの写真（鶏むね肉のはちみつレモンソテー）"
+                className="w-full rounded-2xl"
+              />
+              <GlassButton
+                variant="primary"
+                size="lg"
+                data-tour="import-sample"
+                icon={<SparkleIcon size={20} />}
+                onClick={() => importing.mutate({ kind: 'sample' })}
+              >
+                この写真で試す
+              </GlassButton>
+            </GlassCard>
           </motion.div>
         ) : mode === 'photo' ? (
           <motion.div
