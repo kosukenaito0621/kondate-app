@@ -3,6 +3,7 @@ import { toJstDate } from '../src/shared/date';
 import type { CreatedInvite } from '../src/shared/groups';
 import type { PantryItemView } from '../src/shared/pantry';
 import type { PlanView } from '../src/shared/plan';
+import { purchaseFor, toPackUnit } from '../src/shared/purchase';
 import type { RecipeSummary } from '../src/shared/recipe';
 import type { ShoppingListView } from '../src/shared/shopping';
 import { api, login, type TestUser } from './helpers';
@@ -117,11 +118,14 @@ describe('買い物リストと在庫', () => {
     );
     expect(res.added).toBe(3);
     const rows = await pantry(u);
-    for (const i of picked)
-      expect(rows.find((r) => r.name === i.name)).toMatchObject({
-        quantity: i.quantity,
-        unit: i.unit,
-      });
+    for (const i of picked) {
+      // 白菜など売る単位が決まっている食材は、実際に買う量（1/2個・1袋…）で入る
+      const need = toPackUnit(i.name, i);
+      const p = need ? purchaseFor(i.name, need) : null;
+      expect(rows.find((r) => r.name === i.name)).toMatchObject(
+        p ? { quantity: p.buy, unit: p.unit } : { quantity: i.quantity, unit: i.unit },
+      );
+    }
     const view = await json<ShoppingListView>(await api(u, `/api/shopping/${WEEK}`));
     expect(
       view.items

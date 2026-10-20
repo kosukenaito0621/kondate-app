@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { Section } from '../../shared/constants';
 import type { PlannerStock } from '../../shared/planner';
+import { purchaseFor, toPackUnit } from '../../shared/purchase';
 import { isHomeStock } from '../../shared/shopping';
 import { normalizeIngredientName, sectionOf } from '../../shared/ingredients';
 import {
@@ -40,6 +41,16 @@ const toView = (r: typeof pantryItems.$inferSelect): PantryItemView => ({
 const chunk = <T>(xs: T[], n: number) =>
   Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
+/**
+ * 買ったものを在庫に入れるときの量。白菜のように売っている単位が決まっている食材は、
+ * 必要な量ではなく実際に買う量（例：0.3個分が必要 → 1/2個）で入れる
+ */
+function boughtAmount(b: { name: string; quantity: number | null; unit: string | null }) {
+  const need = toPackUnit(b.name, b);
+  const p = need ? purchaseFor(b.name, need) : null;
+  return p ? { quantity: p.buy, unit: p.unit } : { quantity: b.quantity, unit: b.unit };
+}
+
 type Add = { name: string; quantity: number | null; unit: string | null; expiresOn: string | null };
 
 /**
@@ -60,7 +71,7 @@ function addStatements(
   for (const a of adds) {
     const name = normalizeIngredientName(a.name);
     const same = rows.find((r) => r.name === name && r.expiresOn === a.expiresOn);
-    const merged = same && addQty(same, a);
+    const merged = same && addQty(same, a, name);
     if (same && merged) {
       same.quantity = merged.quantity;
       same.unit = merged.unit;
@@ -95,11 +106,51 @@ function addStatements(
   ];
 }
 
+export type RecipeIngredientAmount = {
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  amountText: string | null;
+};
+
+/** 見えるレシピごとの食材（名前は正規化済み。調味料など家にある前提のものは除く） */
+export async function loadRecipeIngredientNames(db: Db, groupId: string) {
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      name: recipeIngredients.name,
+      section: recipeIngredients.section,
+      quantity: recipeIngredients.quantity,
+      unit: recipeIngredients.unit,
+      amountText: recipeIngredients.amountText,
+    })
+    .from(recipeIngredients)
+    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
+    .where(or(isNull(recipes.groupId), eq(recipes.groupId, groupId)));
+  const out: Record<string, RecipeIngredientAmount[]> = {};
+  for (const r of rows) {
+    const name = normalizeIngredientName(r.name);
+    if (isHomeStock(r.section, name)) continue;
+    (out[r.recipeId] ??= []).push({
+      name,
+      quantity: r.quantity,
+      unit: r.unit,
+      amountText: r.amountText,
+    });
+  }
+  return out;
+}
+
 /**
  * 在庫と、レシピごとに「在庫にある食材」の名前（調味料など家にある前提のものは除く）。
  * 献立作成の重み付けと「在庫で探す」に使う。在庫が空なら読み込まない
  */
-export async function loadStockIndex(db: Db, groupId: string): Promise<PlannerStock | undefined> {
+export async function loadStockIndex(
+  db: Db,
+  groupId: string,
+  /** 読み込み済みのレシピごとの食材名（なければここで読む） */
+  preloaded?: Record<string, RecipeIngredientAmount[]>,
+): Promise<PlannerStock | undefined> {
   const stock = await loadPantry(db, groupId);
   if (!stock.length) return undefined;
   const earliest = new Map<string, string | null>();
@@ -108,20 +159,11 @@ export async function loadStockIndex(db: Db, groupId: string): Promise<PlannerSt
     if (prev === undefined || (s.expiresOn && (!prev || s.expiresOn < prev)))
       earliest.set(s.name, s.expiresOn);
   }
-  const rows = await db
-    .select({
-      recipeId: recipeIngredients.recipeId,
-      name: recipeIngredients.name,
-      section: recipeIngredients.section,
-    })
-    .from(recipeIngredients)
-    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
-    .where(or(isNull(recipes.groupId), eq(recipes.groupId, groupId)));
+  const all = preloaded ?? (await loadRecipeIngredientNames(db, groupId));
   const ingredients: Record<string, string[]> = {};
-  for (const r of rows) {
-    const name = normalizeIngredientName(r.name);
-    if (isHomeStock(r.section, name) || !earliest.has(name)) continue;
-    (ingredients[r.recipeId] ??= []).push(name);
+  for (const [id, ings] of Object.entries(all)) {
+    const have = [...new Set(ings.map((i) => i.name))].filter((n) => earliest.has(n));
+    if (have.length) ingredients[id] = have;
   }
   return {
     items: [...earliest].map(([name, expiresOn]) => ({ name, expiresOn })),
@@ -196,12 +238,7 @@ export const pantryRoutes = new Hono<AppEnv>()
       groupId,
       c.var.user.id,
       await loadPantry(db, groupId),
-      bought.map((b) => ({
-        name: b.name,
-        quantity: b.quantity,
-        unit: b.unit,
-        expiresOn: null,
-      })),
+      bought.map((b) => ({ ...boughtAmount(b), name: b.name, expiresOn: null })),
     );
     const [head, ...tail] = [
       ...chunk(

@@ -153,7 +153,7 @@ async function restoreStock(c: Context<AppEnv>, used: StockUse[]) {
   const now = Date.now();
   const stmts = used.map((u) => {
     const row = stock.find((r) => r.id === u.id);
-    const merged = row && addQty(row, u);
+    const merged = row && addQty(row, u, u.name);
     if (row && merged) {
       row.quantity = merged.quantity;
       row.unit = merged.unit;

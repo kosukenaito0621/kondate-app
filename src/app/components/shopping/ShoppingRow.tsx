@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useTransform, type PanInfo } from 'motion/react';
 import type { ShoppingItemView } from '../../../shared/shopping';
 import { lineAmount } from '../../../shared/shopping';
+import { WEEKDAY_LABELS, weekdayIndex } from '../../../shared/date';
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { Avatar } from '../Avatar';
@@ -112,6 +113,7 @@ export function ShoppingRow({
             </span>
           </div>
           {item.stock && <StockNote stock={item.stock} />}
+          {item.usage && !item.checked && <UsageNote usage={item.usage} />}
           {item.sources.length > 0 && (
             <p className="truncate text-[11px] text-ink-soft">{item.sources.join('・')}</p>
           )}
@@ -151,6 +153,18 @@ function StockNote({ stock }: { stock: NonNullable<ShoppingItemView['stock']> })
         : stock.status === 'partial'
           ? `あと${stock.remaining}（在庫 ${stock.have}）`
           : `在庫：${stock.have}`}
+    </p>
+  );
+}
+
+/** 使い切りの目安（例：月・木で使い切り／目安 1/2個（約1/4個あまる）） */
+function UsageNote({ usage }: { usage: NonNullable<ShoppingItemView['usage']> }) {
+  const days = usage.days.map((d) => WEEKDAY_LABELS[weekdayIndex(d)]).join('・');
+  return (
+    <p className="truncate text-[11px] text-ink-soft">
+      {days && <span className="font-bold text-accent-strong">{days}で使い切り</span>}
+      {days && usage.buy && ' ／ '}
+      {usage.buy && `目安 ${usage.buy}（約${usage.leftover}あまる）`}
     </p>
   );
 }

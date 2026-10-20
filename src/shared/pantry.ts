@@ -3,6 +3,7 @@ import { UNITS, type Section } from './constants';
 import { isIsoDate } from './date';
 import { normalizeIngredientName } from './ingredients';
 import { formatAmount } from './recipe';
+import { PACKS, toPackUnit } from './purchase';
 import { family, MASS, present, VOLUME } from './shopping';
 
 /**
@@ -37,9 +38,17 @@ export const stockFromShoppingSchema = z.object({ weekStart: z.string().refine(i
 
 type Base = { key: string; base: number; units: Set<string> };
 
-/** 比べたり足したりできる形（g・ml にそろえる。個・本などは同じ単位どうしだけ） */
-function toBase(q: Qty): Base | null {
+/**
+ * 比べたり足したりできる形（g・ml にそろえる。個・本などは同じ単位どうしだけ）。
+ * 買う単位を登録した食材（キャベツなど）は、名前が分かれば「枚」「g」も「個」にそろえる
+ */
+function toBase(q: Qty, name?: string): Base | null {
   if (q.quantity === null) return null;
+  const pack = name ? PACKS[name] : undefined;
+  if (pack) {
+    const v = toPackUnit(name!, q);
+    if (v !== null) return { key: `pack:${pack.unit}`, base: v, units: new Set([pack.unit]) };
+  }
   const fam = family(q.unit);
   if (fam === 'mass')
     return { key: 'mass', base: q.quantity * MASS[q.unit!]!, units: new Set([q.unit!]) };
@@ -55,6 +64,7 @@ function fromBase(b: Base): Qty {
     const p = present(b.key, b.base, b.units);
     return { quantity: round(p.q), unit: p.u };
   }
+  if (b.key.startsWith('pack:')) return { quantity: round(b.base), unit: b.key.slice(5) };
   return { quantity: round(b.base), unit: b.key || null };
 }
 
@@ -70,13 +80,14 @@ export const qtyLabel = (q: Qty) =>
 export function compareStock(
   need: Qty,
   have: Qty[],
+  name?: string,
 ): { status: 'covered' | 'partial' | 'none'; remaining: Qty } {
   if (have.length === 0) return { status: 'none', remaining: need };
   if (have.some((h) => h.quantity === null)) return { status: 'covered', remaining: need };
-  const n = toBase(need);
+  const n = toBase(need, name);
   if (!n) return { status: 'covered', remaining: need };
   const sum = have
-    .map(toBase)
+    .map((h) => toBase(h, name))
     .filter((h): h is Base => !!h && h.key === n.key)
     .reduce((s, h) => s + h.base, 0);
   if (sum === 0) return { status: 'none', remaining: need };
@@ -85,11 +96,11 @@ export function compareStock(
 }
 
 /** 在庫の合計（表示用。単位がちがうものは併記） */
-export function stockLabel(have: Qty[]): string {
+export function stockLabel(have: Qty[], name?: string): string {
   if (have.some((h) => h.quantity === null)) return 'あり';
   const byKey = new Map<string, Base>();
   for (const h of have) {
-    const b = toBase(h);
+    const b = toBase(h, name);
     if (!b) continue;
     const prev = byKey.get(b.key);
     if (prev) {
@@ -101,10 +112,10 @@ export function stockLabel(have: Qty[]): string {
 }
 
 /** 同じ単位の仲間なら足す（買ったものを在庫に入れるとき） */
-export function addQty(a: Qty, b: Qty): Qty | null {
+export function addQty(a: Qty, b: Qty, name?: string): Qty | null {
   if (a.quantity === null || b.quantity === null) return { quantity: null, unit: null };
-  const x = toBase(a);
-  const y = toBase(b);
+  const x = toBase(a, name);
+  const y = toBase(b, name);
   if (!x || !y || x.key !== y.key) return null;
   return fromBase({ key: x.key, base: x.base + y.base, units: new Set([...x.units, ...y.units]) });
 }
@@ -139,15 +150,16 @@ export function consumeStock(
   const left = new Map(rows.map((r) => [r.id, { ...r }]));
   const used: StockUse[] = [];
   for (const need of needs) {
-    const n = toBase(need);
+    const key = normalizeIngredientName(need.name);
+    const n = toBase(need, key);
     if (!n) continue;
     let rest = n.base;
     const candidates = [...left.values()]
-      .filter((r) => r.name === normalizeIngredientName(need.name) && r.quantity !== null)
+      .filter((r) => r.name === key && r.quantity !== null)
       .sort((a, b) => (a.expiresOn ?? '9999').localeCompare(b.expiresOn ?? '9999'));
     for (const r of candidates) {
       if (rest <= 0) break;
-      const b = toBase(r);
+      const b = toBase(r, key);
       if (!b || b.key !== n.key || b.base <= 0) continue;
       const take = Math.min(rest, b.base);
       rest -= take;

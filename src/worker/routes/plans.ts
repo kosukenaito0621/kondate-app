@@ -3,6 +3,7 @@ import { and, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono, type Context } from 'hono';
 import { CATEGORY_LABEL } from '../../shared/constants';
+import { isPacked, toPackUnit } from '../../shared/purchase';
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../shared/memo';
 
 import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
@@ -25,6 +26,7 @@ import {
   type PlanItem,
   type PlannerDay,
   type PlannerInput,
+  type PerishableUse,
   type PlannerRecipe,
   type Slot,
 } from '../../shared/planner';
@@ -35,7 +37,7 @@ import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
-import { loadStockIndex } from './pantry';
+import { loadRecipeIngredientNames, loadStockIndex } from './pantry';
 import { toSummary } from './recipes';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
@@ -90,12 +92,25 @@ async function plannerInput(
   weekStart: string,
   dayModes: DayModes = {},
 ): Promise<PlannerInput> {
-  const [settings, recipeList, history, stock] = await Promise.all([
+  const [settings, recipeList, history, names] = await Promise.all([
     loadSettings(db, groupId),
     plannerRecipes(db, groupId),
     recentHistory(db, groupId, weekStart),
-    loadStockIndex(db, groupId),
+    loadRecipeIngredientNames(db, groupId),
   ]);
+  const stock = await loadStockIndex(db, groupId, names);
+  // 買う単位が決まっている（あまりやすい）食材だけ
+  const perishables: Record<string, PerishableUse[]> = {};
+  for (const [id, ings] of Object.entries(names)) {
+    const uses = new Map<string, number | null>();
+    for (const i of ings) {
+      if (!isPacked(i.name)) continue;
+      const v = toPackUnit(i.name, i);
+      const prev = uses.get(i.name);
+      uses.set(i.name, v === null || prev === null ? null : (prev ?? 0) + v);
+    }
+    if (uses.size) perishables[id] = [...uses].map(([name, amount]) => ({ name, amount }));
+  }
   const days: PlannerDay[] = weekDates(weekStart).map((date) => {
     const s = settings.days[weekdayIndex(date)]!;
     return {
@@ -115,6 +130,7 @@ async function plannerInput(
     servings: settings.servings,
     history,
     stock,
+    perishables,
     seed: crypto.getRandomValues(new Uint32Array(1))[0]!,
   };
 }

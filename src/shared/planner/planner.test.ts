@@ -9,11 +9,14 @@ import {
   generateWeek,
   includeSide,
   regenerate,
+  reuseFactor,
   stockFactor,
+  type PerishableUse,
   type PlannerDay,
   type PlannerInput,
 } from './index';
 import { createRng } from './random';
+import { isPacked, toPackUnit } from '../purchase';
 
 const recipes = SEED_RECIPES;
 const byId = new Map(recipes.map((r) => [r.id, r]));
@@ -407,5 +410,44 @@ describe('在庫を使う料理を出やすくする', () => {
       return n;
     };
     expect(count(true)).toBeGreaterThan(count(false));
+  });
+});
+
+describe('買った食材を使い切る', () => {
+  it('あまった分で足りる料理は重く、新しく買って大きくあまる料理は軽い', () => {
+    const left = new Map([['白菜', 0.25]]);
+    expect(reuseFactor([{ name: '白菜', amount: 0.125 }], left, 1)).toBe(2.5);
+    // 1/4個から売るので 0.05個だけ使うと大半があまる
+    expect(reuseFactor([{ name: 'キャベツ', amount: 0.05 }], new Map(), 1)).toBeCloseTo(
+      1 - 0.5 * (0.45 / 0.5),
+    );
+    expect(reuseFactor([{ name: '白菜', amount: 0.25 }], new Map(), 1)).toBe(1);
+    expect(reuseFactor([{ name: 'ニラ', amount: null }], new Map([['ニラ', 0]]), 1)).toBe(1.5);
+    expect(reuseFactor(undefined, left, 1)).toBe(1);
+  });
+
+  it('使い切りを考えると、1週間で買う傷みやすい食材の種類とあまりが減る', () => {
+    const perishables: Record<string, PerishableUse[]> = {};
+    for (const r of recipes) {
+      const uses = r.ingredients
+        .filter((i) => isPacked(i.name))
+        .map((i) => ({
+          name: i.name,
+          amount: toPackUnit(i.name, { ...i, amountText: i.amountText ?? null }),
+        }));
+      if (uses.length) perishables[r.id] = uses;
+    }
+    const kinds = (withReuse: boolean) => {
+      let n = 0;
+      for (let seed = 1; seed <= 30; seed++) {
+        const res = generateWeek(input({ seed, perishables: withReuse ? perishables : undefined }));
+        const names = new Set(
+          res.items.flatMap((it) => (perishables[it.recipeId] ?? []).map((u) => u.name)),
+        );
+        n += names.size;
+      }
+      return n;
+    };
+    expect(kinds(true)).toBeLessThan(kinds(false));
   });
 });

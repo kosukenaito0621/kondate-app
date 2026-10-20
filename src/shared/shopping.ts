@@ -1,9 +1,12 @@
 import { SECTIONS, type Section } from './constants';
 import { normalizeIngredientName } from './ingredients';
+import { isPacked, purchaseFor, roundLeftover, toPackUnit } from './purchase';
 import { formatAmount } from './recipe';
 
 export type ShoppingSource = {
   recipeName: string;
+  /** 献立の日付（使い切りの表示用） */
+  date?: string;
   recipeServings: number;
   ingredients: {
     name: string;
@@ -23,6 +26,10 @@ export type ShoppingLine = {
   amountText: string | null;
   /** どの料理に使うか */
   sources: string[];
+  /** 使う日（日付の昇順） */
+  days: string[];
+  /** 買う単位を登録した食材で、必要な量をその単位にそろえたもの（換算できなければ null） */
+  packNeed: number | null;
 };
 
 /** 調味料と同じく「家にある前提」で買い物リストに出さないもの（買うに指定すれば出す） */
@@ -85,6 +92,8 @@ export function buildShoppingList(
     byUnit: Map<string, { base: number; units: Set<string> }>; // key: family か単位
     texts: Set<string>;
     sources: Set<string>;
+    days: Set<string>;
+    packNeed: number | null;
   };
   const acc = new Map<string, Acc>();
 
@@ -101,8 +110,15 @@ export function buildShoppingList(
           byUnit: new Map(),
           texts: new Set(),
           sources: new Set(),
+          days: new Set(),
+          packNeed: isPacked(name) ? 0 : null,
         } as Acc);
       a.sources.add(src.recipeName);
+      if (src.date) a.days.add(src.date);
+      if (a.packNeed !== null) {
+        const v = toPackUnit(name, ing);
+        a.packNeed = v === null ? null : a.packNeed + v * scale;
+      }
 
       if (ing.quantity === null) {
         if (ing.amountText) a.texts.add(ing.amountText);
@@ -147,7 +163,14 @@ export function buildShoppingList(
         ].join(' + '),
       };
     }
-    lines.push({ name: a.name, section: a.section, ...line, sources: [...a.sources] });
+    lines.push({
+      name: a.name,
+      section: a.section,
+      ...line,
+      sources: [...a.sources],
+      days: [...a.days].sort(),
+      packNeed: a.packNeed,
+    });
   }
 
   return lines.sort(
@@ -187,7 +210,30 @@ export type ShoppingItemView = {
    * - covered：在庫でまかなえる / partial：remaining だけ買えばよい / none：単位がちがってくらべられない
    */
   stock: { status: 'covered' | 'partial' | 'none'; have: string; remaining: string | null } | null;
+  /**
+   * 使い切りの目安（傷みやすい食材だけ）。
+   * days：使う日（2日以上のとき）、buy：買う量の目安、leftover：あまる量の目安
+   */
+  usage: { days: string[]; buy: string | null; leftover: string | null } | null;
 };
+
+/** 使い切りの目安を作る（買い物リストの表示用） */
+export function usageOf(line: Pick<ShoppingLine, 'name' | 'days' | 'packNeed'>) {
+  if (!isPacked(line.name)) return null;
+  const days = line.days.length >= 2 ? line.days : [];
+  const p = line.packNeed ? purchaseFor(line.name, line.packNeed) : null;
+  const left = p ? roundLeftover(line.name, p.leftover) : 0;
+  const fmt = (q: number) =>
+    p!.unit === 'ml' && q >= 1000
+      ? `${Math.round(q / 100) / 10}L`
+      : formatAmount({ quantity: Math.round(q * 1000) / 1000, unit: p!.unit, amountText: null });
+  if (!days.length && !left) return null;
+  return {
+    days,
+    buy: p && left > 0 ? fmt(p.buy) : null,
+    leftover: left > 0 ? fmt(left) : null,
+  };
+}
 
 export type ShoppingListView = {
   weekStart: string;

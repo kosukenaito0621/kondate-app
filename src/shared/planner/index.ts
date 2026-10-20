@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import { WEEKDAY_LABELS, weekdayIndex } from '../date';
 import { MINORI_PREFERENCE_WEIGHT, type CookingLevel } from '../levels';
+import { purchaseFor } from '../purchase';
 import { isInSeason, isOutOfSeasonOnly, seasonOf, type Season } from '../season';
 import { createRng, shuffle, weightedPick } from './random';
 
@@ -60,6 +61,12 @@ export type PlannerInput = {
   history: Readonly<Record<string, number>>;
   /** うちの在庫（あれば、在庫を使う料理を出やすくする） */
   stock?: PlannerStock;
+  /**
+   * recipeId → 使う「買う単位が決まっている食材」（白菜・なす など）と、
+   * そのレシピの人数分の量（数える単位で。換算できなければ null）。
+   * 買ってあまった分を使う料理を出やすくし、新しく買って大きくあまる料理は少し出にくくする
+   */
+  perishables?: Readonly<Record<string, readonly PerishableUse[]>>;
   seed: number;
 };
 
@@ -91,6 +98,65 @@ const STOCK_BONUS = 0.6;
 const STOCK_URGENT_BONUS = 1.5;
 const STOCK_URGENT_DAYS = 3;
 const STOCK_FACTOR_MAX = 4;
+export type PerishableUse = { name: string; amount: number | null };
+
+/** あまった分で足りる食材1つにつき ×2.5（使い切り） */
+const LEFTOVER_USE_FACTOR = 2.5;
+/** 新しく買って大きくあまる食材は、あまる割合に応じて最大 ×0.5 */
+const NEW_WASTE_PENALTY = 0.5;
+/** 量が分からないが、この週ですでに買う食材なら ×1.5 */
+const SHARED_FACTOR = 1.5;
+const REUSE_MIN = 0.25;
+const REUSE_MAX = 6;
+
+/**
+ * 使い切りの重み。leftover は「この週で買ってあまっている量」（食材 → 数える単位の量）。
+ * scale は人数の換算（献立の人数 / レシピの人数）
+ */
+export function reuseFactor(
+  uses: readonly PerishableUse[] | undefined,
+  leftover: ReadonlyMap<string, number>,
+  scale: number,
+): number {
+  if (!uses?.length) return 1;
+  let f = 1;
+  for (const u of uses) {
+    const left = leftover.get(u.name);
+    if (u.amount === null) {
+      if (left !== undefined) f *= SHARED_FACTOR;
+      continue;
+    }
+    const need = u.amount * scale;
+    if (left !== undefined && left >= need * 0.8) {
+      f *= LEFTOVER_USE_FACTOR;
+      continue;
+    }
+    const p = purchaseFor(u.name, need - (left ?? 0));
+    if (p && p.buy > 0) f *= 1 - NEW_WASTE_PENALTY * (p.leftover / p.buy);
+  }
+  return Math.min(Math.max(f, REUSE_MIN), REUSE_MAX);
+}
+
+/** 選んだレシピの分だけ、あまりを減らす（足りなければ買い足した分のあまりにする） */
+function consumeLeftover(
+  uses: readonly PerishableUse[] | undefined,
+  leftover: Map<string, number>,
+  scale: number,
+) {
+  for (const u of uses ?? []) {
+    const left = leftover.get(u.name) ?? 0;
+    if (u.amount === null) {
+      if (!leftover.has(u.name)) leftover.set(u.name, 0);
+      continue;
+    }
+    const need = u.amount * scale;
+    if (left >= need) leftover.set(u.name, left - need);
+    else {
+      const p = purchaseFor(u.name, need - left);
+      leftover.set(u.name, p ? p.leftover : 0);
+    }
+  }
+}
 
 /**
  * 在庫による重み。食材ごとに足し、同じ週ですでに使った食材は効きを弱める（1品で使い切る想定）。
@@ -219,11 +285,19 @@ type PickContext = {
   stock?: PlannerStock;
   /** 在庫の食材を、この週で何品に使ったか */
   stockUses: Map<string, number>;
+  perishables?: PlannerInput['perishables'];
+  /** この週で買ってあまっている量（食材 → 数える単位の量） */
+  leftover: Map<string, number>;
+  /** 献立の人数 */
+  servings: number;
 };
+
+const scaleOf = (ctx: PickContext, r: PlannerRecipe) => ctx.servings / (r.servings || 2);
 
 /** 選んだレシピを使用済みにし、使う在庫を数える */
 function markUsed(ctx: PickContext, recipe: PlannerRecipe) {
   ctx.used.add(recipe.id);
+  consumeLeftover(ctx.perishables?.[recipe.id], ctx.leftover, scaleOf(ctx, recipe));
   for (const name of ctx.stock?.ingredients[recipe.id] ?? [])
     if (ctx.stock?.items.some((i) => i.name === name))
       ctx.stockUses.set(name, (ctx.stockUses.get(name) ?? 0) + 1);
@@ -268,6 +342,7 @@ function pick(
       if (isInSeason(r, season)) w *= IN_SEASON_FACTOR;
       else if (r.seasons.length > 0) w *= OFF_SEASON_FACTOR;
       w *= stockFactor(ctx.stock, ctx.stockUses, r.id, day.date);
+      w *= reuseFactor(ctx.perishables?.[r.id], ctx.leftover, scaleOf(ctx, r));
       return w;
     };
     const recipe = weightedPick(candidates, baseWeight, ctx.rng);
@@ -389,6 +464,9 @@ export function generateWeek(input: PlannerInput): PlanResult {
     rng,
     stock: input.stock,
     stockUses: new Map(),
+    perishables: input.perishables,
+    leftover: new Map(),
+    servings: input.servings,
   };
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
 
@@ -439,6 +517,9 @@ export function regenerate(
     rng,
     stock: input.stock,
     stockUses: new Map(),
+    perishables: input.perishables,
+    leftover: new Map(),
+    servings: input.servings,
   };
   for (const it of kept) {
     const r = byId.get(it.recipeId);

@@ -13,6 +13,7 @@ import {
   type ShoppingLine,
   type ShoppingListView,
   type ShoppingSource,
+  usageOf,
 } from '../../shared/shopping';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
@@ -44,7 +45,12 @@ async function findPlan(db: Db, groupId: string, weekStart: string) {
 /** 献立のレシピと材料を集める */
 async function planSources(db: Db, planId: string): Promise<ShoppingSource[]> {
   const items = await db
-    .select({ recipeId: recipes.id, name: recipes.name, servings: recipes.servings })
+    .select({
+      recipeId: recipes.id,
+      name: recipes.name,
+      servings: recipes.servings,
+      date: mealPlanItems.date,
+    })
     .from(mealPlanItems)
     .innerJoin(recipes, eq(recipes.id, mealPlanItems.recipeId))
     .where(eq(mealPlanItems.planId, planId));
@@ -55,6 +61,7 @@ async function planSources(db: Db, planId: string): Promise<ShoppingSource[]> {
     .where(inArray(recipeIngredients.recipeId, [...new Set(items.map((i) => i.recipeId))]));
   return items.map((it) => ({
     recipeName: it.name,
+    date: it.date,
     recipeServings: it.servings,
     ingredients: ings
       .filter((g) => g.recipeId === it.recipeId)
@@ -178,13 +185,16 @@ async function buildView(c: Ctx, weekStart: string): Promise<ShoppingListView> {
     if (!have.length) return null;
     // 「1個 + 100g」のように合算できない分量は、在庫を添えるだけにする
     const mixed = item.quantity === null && !!item.amountText?.includes('+');
-    const r = mixed ? { status: 'none' as const, remaining: item } : compareStock(item, have);
+    const r = mixed
+      ? { status: 'none' as const, remaining: item }
+      : compareStock(item, have, lineKey(item));
     return {
       status: r.status,
-      have: stockLabel(have),
+      have: stockLabel(have, lineKey(item)),
       remaining: r.status === 'partial' ? qtyLabel(r.remaining) : null,
     };
   };
+  const usageByName = new Map(lines.map((l) => [lineKey(l), usageOf(l)]));
   const generated = stored.filter((s) => !s.item.isManual).map((s) => s.item);
   return {
     weekStart,
@@ -212,6 +222,7 @@ async function buildView(c: Ctx, weekStart: string): Promise<ShoppingListView> {
         isManual: item.isManual,
         stocked: item.stocked,
         stock: item.checked ? null : stockOf(item),
+        usage: item.isManual ? null : (usageByName.get(lineKey(item)) ?? null),
       })),
   };
 }
