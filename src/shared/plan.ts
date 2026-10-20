@@ -92,6 +92,8 @@ export type PlanItemView = {
   updatedAt: number;
   /** その日にこの料理を「作った」と記録していれば、その記録の id */
   cookedLogId: string | null;
+  /** 食卓のだれかのお気に入りか */
+  favorite: boolean;
 };
 
 export type PlanDayView = {

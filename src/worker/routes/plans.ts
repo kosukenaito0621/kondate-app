@@ -39,6 +39,7 @@ import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { loadRecipeIngredientNames, loadStockIndex } from './pantry';
 import { toSummary } from './recipes';
+import { groupFavoriteIds } from '../lib/favorites';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
@@ -92,11 +93,12 @@ async function plannerInput(
   weekStart: string,
   dayModes: DayModes = {},
 ): Promise<PlannerInput> {
-  const [settings, recipeList, history, names] = await Promise.all([
+  const [settings, recipeList, history, names, favorites] = await Promise.all([
     loadSettings(db, groupId),
     plannerRecipes(db, groupId),
     recentHistory(db, groupId, weekStart),
     loadRecipeIngredientNames(db, groupId),
+    groupFavoriteIds(db, groupId),
   ]);
   const stock = await loadStockIndex(db, groupId, names);
   // 買う単位が決まっている（あまりやすい）食材だけ
@@ -131,6 +133,7 @@ async function plannerInput(
     history,
     stock,
     perishables,
+    favorites,
     seed: crypto.getRandomValues(new Uint32Array(1))[0]!,
   };
 }
@@ -185,6 +188,7 @@ export async function buildPlanView(
     .where(and(eq(cookLogs.groupId, groupId), inArray(cookLogs.date, dates)));
   const cooked = new Map(logs.map((l) => [`${l.date}|${l.recipeId}`, l.id]));
   const memos = await loadMemos(db, groupId, dates);
+  const favorites = await groupFavoriteIds(db, groupId);
   const slotOrder = { main: 0, soup: 1, side: 2 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
@@ -224,6 +228,7 @@ export async function buildPlanView(
             updatedBy: r.item.updatedBy,
             updatedAt: r.item.updatedAt,
             cookedLogId: cooked.get(`${date}|${r.item.recipeId}`) ?? null,
+            favorite: favorites.has(r.item.recipeId),
           })),
         memo: memos.get(date) ?? null,
       };

@@ -141,6 +141,13 @@
       "when": 1792461538467,
       "tag": "0019_guest_users",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1792502872728,
+      "tag": "0020_recipe_favorites",
+      "breakpoints": true
     }
   ]
 }

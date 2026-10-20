@@ -141,6 +141,8 @@ export const recipeQuerySchema = z.object({
   season: z.enum(SEASONS).optional(),
   /** 在庫にある食材を使うレシピだけ（使う数の多い順） */
   stock: z.enum(['1']).optional(),
+  /** 自分のお気に入りだけ */
+  favorite: z.enum(['1']).optional(),
 });
 
 // ===== APIの返却型 =====
@@ -163,9 +165,15 @@ export type RecipeSummary = {
   seasonOnly: boolean;
   /** 「在庫で探す」のとき：使う在庫の食材と、期限が近い（3日以内）ものを使うか */
   stock?: { have: string[]; soon: boolean };
+  /** 自分のお気に入りか（一覧・詳細で返す） */
+  favorite?: boolean;
 };
 
+export type FavoriteUser = { id: string; name: string | null; avatarUrl: string | null };
+
 export type RecipeDetail = RecipeSummary & {
+  /** お気に入りにしている、食卓のメンバー（詳細の取得だけで返す） */
+  favoritedBy?: FavoriteUser[];
   steps: Step[];
   sourceUrl: string | null;
   ingredients: (IngredientInput & { id: string })[];

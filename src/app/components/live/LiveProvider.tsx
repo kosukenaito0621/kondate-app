@@ -75,6 +75,8 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
           break;
         case 'recipes.updated':
           queryClient.invalidateQueries({ queryKey: ['recipes'] });
+          // お気に入りのハートは週間献立にも出る
+          queryClient.invalidateQueries({ queryKey: ['plan'] });
           break;
         case 'group.updated':
           queryClient.invalidateQueries({ queryKey: ['me'] });

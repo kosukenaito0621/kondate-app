@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { FavoriteButton } from './recipe/FavoriteButton';
 import { motion } from 'motion/react';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import type { RecipeSummary } from '../../shared/recipe';
@@ -29,7 +30,7 @@ export function RecipeCard({
         <motion.div
           whileTap={{ scale: 0.975 }}
           transition={spring.snappy}
-          className="glass sheen flex items-stretch gap-3 rounded-[var(--radius-card)] py-3.5 pl-3 pr-4"
+          className="glass sheen flex items-stretch gap-3 rounded-[var(--radius-card)] py-3.5 pl-3 pr-16"
         >
           <span
             className={`w-1 shrink-0 rounded-full ${stripe[recipe.genre]}`}
@@ -78,6 +79,16 @@ export function RecipeCard({
           </div>
         </motion.div>
       </Link>
+      {/* お気に入り（選んで送るときは隠す） */}
+      {!overlay && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <FavoriteButton
+            recipeId={recipe.id}
+            recipeName={recipe.name}
+            favorite={!!recipe.favorite}
+          />
+        </div>
+      )}
       {overlay}
     </motion.li>
   );

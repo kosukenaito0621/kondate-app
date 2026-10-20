@@ -104,6 +104,16 @@ export const PlusIcon = (p: IconProps) => (
   </Icon>
 );
 
+/**
+ * ハート（お気に入り）。形の上下左右の中心を 24×24 の真ん中（12,12）にそろえてあるので、
+ * 丸いボタンの中央に置いてもずれない。filled で塗りつぶし
+ */
+export const HeartIcon = ({ filled, ...p }: IconProps & { filled?: boolean }) => (
+  <Icon {...p} fill={filled ? 'currentColor' : 'none'} style={{ display: 'block', ...p.style }}>
+    <path d="M12 19.9C12 19.9 3.5 14.95 3.5 8.95 3.5 6.2 5.6 4.1 8.2 4.1c1.6 0 3 .8 3.8 2.1.8-1.3 2.2-2.1 3.8-2.1 2.6 0 4.7 2.1 4.7 4.85 0 6-8.5 10.95-8.5 10.95z" />
+  </Icon>
+);
+
 /** 箱（うちの在庫） */
 export const BoxIcon = (p: IconProps) => (
   <Icon {...p}>

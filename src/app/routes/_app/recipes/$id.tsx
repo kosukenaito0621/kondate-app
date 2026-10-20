@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { meQuery } from '../../../lib/auth';
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
@@ -8,7 +9,12 @@ import {
   GENRE_LABEL,
   SECTION_LABEL,
 } from '../../../../shared/constants';
-import { formatAmount, groupIngredients, type RecipeDetail } from '../../../../shared/recipe';
+import {
+  formatAmount,
+  groupIngredients,
+  type FavoriteUser,
+  type RecipeDetail,
+} from '../../../../shared/recipe';
 import { api } from '../../../api';
 import { CookedButton } from '../../../components/CookedButton';
 import { Photo, PhotoPicker } from '../../../components/PhotoPicker';
@@ -16,9 +22,10 @@ import { GenreBadge } from '../../../components/GenreBadge';
 import { ConfirmDialog } from '../../../components/glass/ConfirmDialog';
 import { GlassButton } from '../../../components/glass/GlassButton';
 import { GlassCard } from '../../../components/glass/GlassCard';
-import { ChevronLeftIcon, ClockIcon, YenIcon } from '../../../components/icons';
+import { ChevronLeftIcon, ClockIcon, HeartIcon, YenIcon } from '../../../components/icons';
 import { LevelBadge } from '../../../components/LevelBadge';
 import { ShareRecipeButton } from '../../../components/recipe/ShareRecipeButton';
+import { FavoriteButton } from '../../../components/recipe/FavoriteButton';
 import { SlowMode } from '../../../components/recipe/SlowMode';
 import { StepList } from '../../../components/recipe/StepList';
 import { RecipeDetailSkeleton } from '../../../components/skeleton/Skeletons';
@@ -111,6 +118,7 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
     },
   });
 
+  const { data: me } = useQuery(meQuery);
   const blocks = groupIngredients(recipe.ingredients);
   const error = copy.error ?? hide.error ?? remove.error;
 
@@ -128,13 +136,22 @@ function RecipeBody({ recipe }: { recipe: RecipeDetail }) {
             </span>
           )}
         </div>
-        <motion.h1
-          layoutId={`recipe-title-${recipe.id}`}
-          transition={spring.soft}
-          className="mt-2 text-[26px] font-bold leading-tight"
-        >
-          {recipe.name}
-        </motion.h1>
+        <div className="mt-2 flex items-start gap-3">
+          <motion.h1
+            layoutId={`recipe-title-${recipe.id}`}
+            transition={spring.soft}
+            className="min-w-0 flex-1 text-[26px] font-bold leading-tight"
+          >
+            {recipe.name}
+          </motion.h1>
+          <FavoriteButton
+            recipeId={recipe.id}
+            recipeName={recipe.name}
+            favorite={!!recipe.favorite}
+            size={44}
+          />
+        </div>
+        <FavoriteNote me={me?.id ?? ''} users={recipe.favoritedBy ?? []} />
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <span className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5">
             <ClockIcon size={16} />
@@ -389,5 +406,17 @@ function CookCard({ recipeId, recipeName }: { recipeId: string; recipeName: stri
         </ul>
       )}
     </GlassCard>
+  );
+}
+
+/** だれがお気に入りにしているか（例：あなたと、はなこさんがお気に入り） */
+function FavoriteNote({ me, users }: { me: string; users: FavoriteUser[] }) {
+  if (!users.length) return null;
+  const names = users.map((u) => (u.id === me ? 'あなた' : `${u.name ?? 'メンバー'}さん`));
+  return (
+    <p className="mt-1.5 flex items-center gap-1 text-xs font-bold text-fav">
+      <HeartIcon size={13} filled />
+      {names.join('と、')}がお気に入り
+    </p>
   );
 }

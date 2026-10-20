@@ -25,6 +25,9 @@
   --sun-chip: #f9cdd2;
   /* 日ごとメモ（付箋） */
   --memo: rgb(255 243 196 / 0.78);
+  /* お気に入りのハート */
+  --fav: #c3304f;
+  --fav-soft: #fde4e9;
   --memo-ink: #6b5418;
 
   --glass-1: rgb(255 255 255 / 0.74);
@@ -150,6 +153,8 @@
   --sun-soft: rgb(240 90 110 / 0.34);
   --sun-chip: rgb(255 150 160 / 0.35);
   --memo: rgb(255 214 110 / 0.2);
+  --fav: #ff9db0;
+  --fav-soft: rgb(255 120 150 / 0.22);
   --memo-ink: #ffe7a8;
 
   --glass-1: rgb(255 255 255 / 0.11);

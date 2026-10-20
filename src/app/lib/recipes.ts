@@ -14,6 +14,8 @@ export type RecipeFilters = {
   season?: Season;
   /** 在庫で探す */
   stock?: '1';
+  /** 自分のお気に入りだけ */
+  favorite?: '1';
 };
 
 type JsonResponse = { ok: boolean; status: number; json(): Promise<unknown> };

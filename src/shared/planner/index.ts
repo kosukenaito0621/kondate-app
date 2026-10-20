@@ -59,6 +59,8 @@ export type PlannerInput = {
   servings: number;
   /** recipeId → 何週前に使ったか（1〜3） */
   history: Readonly<Record<string, number>>;
+  /** 食卓のだれかのお気に入り（少し出やすくする） */
+  favorites?: ReadonlySet<string>;
   /** うちの在庫（あれば、在庫を使う料理を出やすくする） */
   stock?: PlannerStock;
   /**
@@ -93,6 +95,8 @@ const SAME_MAIN_INGREDIENT_FACTOR = 0.1;
 /** 旬のレシピは出やすく、旬でない季節は少し出にくくする */
 const IN_SEASON_FACTOR = 2;
 const OFF_SEASON_FACTOR = 0.5;
+/** 食卓のだれかのお気に入りは少しだけ出やすく */
+export const FAVORITE_FACTOR = 1.3;
 /** 在庫の食材を使う料理は出やすく。期限が近い（3日以内）ものはさらに */
 const STOCK_BONUS = 0.6;
 const STOCK_URGENT_BONUS = 1.5;
@@ -286,6 +290,7 @@ type PickContext = {
   /** 在庫の食材を、この週で何品に使ったか */
   stockUses: Map<string, number>;
   perishables?: PlannerInput['perishables'];
+  favorites?: ReadonlySet<string>;
   /** この週で買ってあまっている量（食材 → 数える単位の量） */
   leftover: Map<string, number>;
   /** 献立の人数 */
@@ -341,6 +346,7 @@ function pick(
       if (day.level === 'minori' && r.difficulty === 'minori') w *= MINORI_PREFERENCE_WEIGHT;
       if (isInSeason(r, season)) w *= IN_SEASON_FACTOR;
       else if (r.seasons.length > 0) w *= OFF_SEASON_FACTOR;
+      if (ctx.favorites?.has(r.id)) w *= FAVORITE_FACTOR;
       w *= stockFactor(ctx.stock, ctx.stockUses, r.id, day.date);
       w *= reuseFactor(ctx.perishables?.[r.id], ctx.leftover, scaleOf(ctx, r));
       return w;
@@ -567,6 +573,7 @@ export function generateWeek(input: PlannerInput): PlanResult {
     stock: input.stock,
     stockUses: new Map(),
     perishables: input.perishables,
+    favorites: input.favorites,
     leftover: new Map(),
     servings: input.servings,
   };
@@ -621,6 +628,7 @@ export function regenerate(
     stock: input.stock,
     stockUses: new Map(),
     perishables: input.perishables,
+    favorites: input.favorites,
     leftover: new Map(),
     servings: input.servings,
   };

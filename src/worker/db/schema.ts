@@ -439,3 +439,21 @@ export const pantryItems = sqliteTable(
   },
   (t) => [index('pantry_items_group_idx').on(t.groupId, t.name)],
 );
+
+/** レシピのお気に入り（人ごと。献立では、食卓のだれかのお気に入りが少し出やすくなる） */
+export const recipeFavorites = sqliteTable(
+  'recipe_favorites',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    recipeId: text('recipe_id')
+      .notNull()
+      .references(() => recipes.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.recipeId] }),
+    index('recipe_favorites_recipe_idx').on(t.recipeId),
+  ],
+);

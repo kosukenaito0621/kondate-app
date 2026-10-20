@@ -12,6 +12,7 @@ import {
   reuseFactor,
   stockFactor,
   weekLeftover,
+  FAVORITE_FACTOR,
   type PerishableUse,
   type PlannerDay,
   type PlannerInput,
@@ -490,5 +491,27 @@ describe('使い切りの仕上げ', () => {
         expect(byId.get(it.recipeId)!.genre).toBe(byId.get(main.recipeId)!.genre);
       }
     }
+  });
+});
+
+describe('お気に入り', () => {
+  it('お気に入りは少しだけ（1.3倍）出やすい', () => {
+    expect(FAVORITE_FACTOR).toBe(1.3);
+    const target = recipes.find((r) => r.category === 'main')!;
+    const count = (withFav: boolean) => {
+      let n = 0;
+      for (let seed = 1; seed <= 300; seed++) {
+        const res = generateWeek(
+          input({ seed, favorites: withFav ? new Set([target.id]) : undefined }),
+        );
+        if (res.items.some((i) => i.recipeId === target.id)) n++;
+      }
+      return n;
+    };
+    const off = count(false);
+    const on = count(true);
+    expect(on).toBeGreaterThan(off);
+    // 「少しだけ」：倍以上にはならない
+    expect(on).toBeLessThan(off * 2);
   });
 });

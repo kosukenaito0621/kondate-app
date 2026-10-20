@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator';
 import { and, asc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import { costLevelFor } from '../../shared/constants';
 import { normalizeIngredientName } from '../../shared/ingredients';
@@ -22,6 +22,7 @@ import {
   recipeShareBundleItems,
   recipeShareBundles,
   recipeShares,
+  recipeFavorites,
 } from '../db/schema';
 import { randomToken, sha256Hex } from '../lib/crypto';
 import { isGroupImageKey } from '../lib/images';
@@ -32,6 +33,7 @@ import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
 import { loadStockIndex } from './pantry';
+import { favoritedBy, myFavoriteIds } from '../lib/favorites';
 import { addDays, toJstDate } from '../../shared/date';
 
 type RecipeRow = typeof recipes.$inferSelect;
@@ -57,6 +59,27 @@ export const toSummary = (r: RecipeRow): RecipeSummary => ({
   seasons: r.seasons,
   seasonOnly: r.seasonOnly,
 });
+
+async function setFavorite(c: Context<AppEnv>, on: boolean) {
+  const db = c.var.db;
+  const row = await findVisible(db, c.var.group.id, c.req.param('id')!);
+  if (!row) return c.json({ error: 'not_found' }, 404);
+  const where = and(
+    eq(recipeFavorites.userId, c.var.user.id),
+    eq(recipeFavorites.recipeId, row.id),
+  );
+  if (on) {
+    await db
+      .insert(recipeFavorites)
+      .values({ userId: c.var.user.id, recipeId: row.id })
+      .onConflictDoNothing();
+  } else {
+    await db.delete(recipeFavorites).where(where);
+  }
+  // 週間献立のハートが変わるので、家族の画面にも知らせる
+  notifyGroup(c, { type: 'recipes.updated' });
+  return c.json({ favorite: on, favoritedBy: await favoritedBy(db, c.var.group.id, row.id) });
+}
 
 /** そのグループから見えるレシピ（システム共通＋自グループ） */
 const visibleTo = (groupId: string) => or(isNull(recipes.groupId), eq(recipes.groupId, groupId))!;
@@ -135,7 +158,7 @@ const ownedBy = (groupId: string, id: string) =>
 export const recipeRoutes = new Hono<AppEnv>()
   .use(requireAuth, requireGroup)
   .get('/', zValidator('query', recipeQuerySchema), async (c) => {
-    const { q, category, genre, difficulty, mine, season, stock } = c.req.valid('query');
+    const { q, category, genre, difficulty, mine, season, stock, favorite } = c.req.valid('query');
     const groupId = c.var.group.id;
     const conds: SQL[] = [
       mine ? eq(recipes.groupId, groupId) : visibleTo(groupId),
@@ -143,6 +166,11 @@ export const recipeRoutes = new Hono<AppEnv>()
     ];
     if (category) conds.push(eq(recipes.category, category));
     if (genre) conds.push(eq(recipes.genre, genre));
+    if (favorite) {
+      conds.push(
+        sql`${recipes.id} in (select ${recipeFavorites.recipeId} from ${recipeFavorites} where ${recipeFavorites.userId} = ${c.var.user.id})`,
+      );
+    }
     if (difficulty) conds.push(eq(recipes.difficulty, difficulty));
     if (season) {
       conds.push(sql`exists (select 1 from json_each(${recipes.seasons}) where value = ${season})`);
@@ -164,7 +192,9 @@ export const recipeRoutes = new Hono<AppEnv>()
         asc(recipes.name),
       )
       .limit(500);
-    if (!stock) return c.json(rows.map(toSummary));
+    const mineFav = await myFavoriteIds(c.var.db, c.var.user.id);
+    const summary = (r: RecipeRow) => ({ ...toSummary(r), favorite: mineFav.has(r.id) });
+    if (!stock) return c.json(rows.map(summary));
     // 在庫で探す：在庫の食材を使うものだけ。期限の近い食材を使うもの → 使う数の多いもの の順
     const index = await loadStockIndex(c.var.db, groupId);
     if (!index) return c.json([]);
@@ -175,7 +205,7 @@ export const recipeRoutes = new Hono<AppEnv>()
     const matched = rows
       .map((r) => {
         const have = [...new Set(index.ingredients[r.id] ?? [])];
-        return { ...toSummary(r), stock: { have, soon: have.some((n) => soonNames.has(n)) } };
+        return { ...summary(r), stock: { have, soon: have.some((n) => soonNames.has(n)) } };
       })
       .filter((r) => r.stock.have.length > 0);
     matched.sort(
@@ -187,8 +217,16 @@ export const recipeRoutes = new Hono<AppEnv>()
   .get('/:id', async (c) => {
     const row = await findVisible(c.var.db, c.var.group.id, c.req.param('id'));
     if (!row) return c.json({ error: 'not_found' }, 404);
-    return c.json(await loadDetail(c.var.db, row));
+    const by = await favoritedBy(c.var.db, c.var.group.id, row.id);
+    return c.json({
+      ...(await loadDetail(c.var.db, row)),
+      favorite: by.some((u) => u.id === c.var.user.id),
+      favoritedBy: by,
+    });
   })
+  /** お気に入りに入れる・外す（自分の分だけ） */
+  .put('/:id/favorite', async (c) => setFavorite(c, true))
+  .delete('/:id/favorite', async (c) => setFavorite(c, false))
   .post('/', zValidator('json', recipeInputSchema), async (c) => {
     const input = c.req.valid('json');
     if (!isGroupImageKey(c.var.group.id, input.imageKey)) {

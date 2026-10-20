@@ -13,7 +13,7 @@ import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { LONG_PRESS_MS, useLongPress } from '../../lib/useLongPress';
 import { GenreBadge } from '../GenreBadge';
-import { CheckDraw, ClockIcon, GripIcon, MemoIcon } from '../icons';
+import { CheckDraw, ClockIcon, GripIcon, HeartIcon, MemoIcon } from '../icons';
 import { LevelBadge } from '../LevelBadge';
 import { DayModeIcon } from './DayModeIcon';
 import { MemoField } from './MemoField';
@@ -60,6 +60,9 @@ export function MealRow({ item, onLongPress }: { item: PlanItemView; onLongPress
         >
           {r.name}
         </span>
+        {item.favorite && (
+          <HeartIcon size={13} filled className="shrink-0 text-fav" aria-label="お気に入り" />
+        )}
         {item.cookedLogId && (
           <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-success px-1.5 py-0.5 text-[10px] font-bold text-success-ink">
             <CheckDraw checked size={11} />
