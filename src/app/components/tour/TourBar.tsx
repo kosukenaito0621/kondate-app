@@ -7,6 +7,7 @@ import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { MISSIONS, setTourUser, showSpot, useTour, type Mission } from '../../lib/tour';
 import { Sheet } from '../glass/Sheet';
+import { TourComplete } from './TourComplete';
 import { CheckDraw, ChevronRightIcon, SparkleIcon } from '../icons';
 
 /**
@@ -18,15 +19,31 @@ export function TourBar() {
   const guest = me?.guestUntil != null;
   const { done } = useTour();
   const [open, setOpen] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     setTourUser(guest && me ? me.id : null);
   }, [guest, me]);
 
-  if (!guest) return null;
   const count = MISSIONS.filter((m) => done.has(m.id)).length;
   const all = count === MISSIONS.length;
+
+  // ぜんぶ終えたら、一度だけ画面の真ん中でお祝いする
+  useEffect(() => {
+    if (!guest || !all || !me) return;
+    const key = `kd-tour-done:${me.id}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch {
+      // 保存できなくても表示はする
+    }
+    const t = window.setTimeout(() => setCelebrate(true), 600);
+    return () => window.clearTimeout(t);
+  }, [guest, all, me]);
+
+  if (!guest) return null;
 
   const go = (m: Mission) => {
     setOpen(false);
@@ -37,23 +54,29 @@ export function TourBar() {
     <>
       <motion.button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => (all ? setCelebrate(true) : setOpen(true))}
         whileTap={{ scale: 0.95 }}
         transition={spring.snappy}
-        className="glass glass--strong fixed right-4 z-40 flex min-h-11 items-center gap-2 rounded-full py-1.5 pl-3 pr-2 text-sm font-bold"
+        className={cn(
+          'fixed right-4 z-40 flex min-h-11 items-center gap-2 rounded-full py-1.5 pl-3 pr-2 text-sm font-bold',
+          all ? 'btn-primary sheen pr-3' : 'glass glass--strong',
+        )}
         style={{
           bottom: 'calc(var(--tabbar-height) + var(--safe-bottom) + 0.75rem)',
           right: 'max(1rem, var(--safe-right, 0px))',
         }}
         aria-label={`やってみよう ${count}/${MISSIONS.length}`}
       >
-        <SparkleIcon size={16} className="text-accent-strong" />
-        {all ? 'ぜんぶできました' : 'やってみよう'}
-        <span className="num rounded-full bg-accent px-2 py-0.5 text-xs text-accent-ink">
-          {count}/{MISSIONS.length}
-        </span>
+        <SparkleIcon size={16} className={all ? undefined : 'text-accent-strong'} />
+        {all ? 'ぜんぶできました！' : 'やってみよう'}
+        {!all && (
+          <span className="num rounded-full bg-accent px-2 py-0.5 text-xs text-accent-ink">
+            {count}/{MISSIONS.length}
+          </span>
+        )}
       </motion.button>
 
+      <TourComplete open={celebrate} onClose={() => setCelebrate(false)} />
       <Sheet open={open} title="やってみよう" onClose={() => setOpen(false)}>
         <div className="flex max-h-[65dvh] flex-col gap-3 overflow-y-auto pb-1">
           {all ? (

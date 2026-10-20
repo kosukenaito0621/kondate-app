@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { api } from '../api';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { GlassCard } from '../components/glass/GlassCard';
 import { GoogleLogo } from '../components/icons';
@@ -21,7 +21,12 @@ const ERRORS: Record<string, string> = {
 
 export const Route = createFileRoute('/login')({
   validateSearch: (s: Record<string, unknown>) =>
-    compact({ error: optString(s.error, 50), next: optString(s.next, 500) }),
+    compact({
+      error: optString(s.error, 50),
+      next: optString(s.next, 500),
+      /** try=1：開いたらすぐお試しを始める（友達に送るリンク用） */
+      try: s.try === '1' || s.try === 1 ? ('1' as const) : undefined,
+    }),
   beforeLoad: async ({ context, search }) => {
     const me = await context.queryClient.ensureQueryData(meQuery);
     if (me) throw redirect({ href: safeNext(search.next) });
@@ -30,7 +35,7 @@ export const Route = createFileRoute('/login')({
 });
 
 function Login() {
-  const { error, next } = Route.useSearch();
+  const { error, next, try: autoTry } = Route.useSearch();
   const loginHref = `/api/auth/google${next ? `?next=${encodeURIComponent(safeNext(next))}` : ''}`;
   return (
     <main className="flex min-h-dvh flex-col justify-center px-5 py-10">
@@ -63,7 +68,7 @@ function Login() {
             <GoogleLogo />
             Google でログイン
           </motion.a>
-          <TryButton />
+          <TryButton auto={!!autoTry} />
         </GlassCard>
 
         <motion.p variants={riseItem} className="text-center text-xs text-ink-soft">
@@ -75,10 +80,12 @@ function Login() {
 }
 
 /** ログインせずに試す（24時間だけ使える「おためしの食卓」を作る） */
-function TryButton() {
-  const [busy, setBusy] = useState(false);
+function TryButton({ auto }: { auto: boolean }) {
+  const [busy, setBusy] = useState(auto);
   const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
   const start = async () => {
+    started.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -94,6 +101,11 @@ function TryButton() {
       setBusy(false);
     }
   };
+  // お試し用のリンクから来たら、押さなくても始める
+  useEffect(() => {
+    if (auto && !started.current) void start();
+  }, [auto]);
+
   return (
     <div className="mt-3 flex flex-col items-center gap-1">
       <button

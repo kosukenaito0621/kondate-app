@@ -67,7 +67,8 @@ async function createGuest(db: Db, name: string, expiresAt: number, groupId?: st
       displayName: name,
       guestExpiresAt: expiresAt,
     }),
-    db.insert(userSettings).values({ userId: id, cookingLevel: 'futaba' }),
+    // お試しは使い方ガイドを出さず、「やってみよう」で案内する
+    db.insert(userSettings).values({ userId: id, cookingLevel: 'futaba', guideSeenAt: Date.now() }),
   ]);
   if (groupId) {
     await db.batch([

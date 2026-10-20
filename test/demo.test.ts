@@ -33,7 +33,13 @@ describe('お試しモード', () => {
   it('ログインせずに始められ、献立・買い物リスト・在庫・メモが入っている', async () => {
     const u = await guest('10.0.0.1');
     const me = await json<Me>(await api(u, '/api/me'));
-    expect(me).toMatchObject({ displayName: 'おためし', email: '', cookingLevel: 'futaba' });
+    // お試しは使い方ガイドを出さない（「やってみよう」で案内する）
+    expect(me).toMatchObject({
+      displayName: 'おためし',
+      email: '',
+      cookingLevel: 'futaba',
+      guideSeen: true,
+    });
     expect(me.guestUntil! - Date.now()).toBeGreaterThan(23 * 3_600_000);
     expect(me.groups[0]!.name).toBe('おためし');
 

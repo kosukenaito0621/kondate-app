@@ -12,6 +12,7 @@ import { useGuide } from '../../components/guide/Guide';
 import { MemoChoiceSettings } from '../../components/MemoChoiceSettings';
 import { PageHeader } from '../../components/PageHeader';
 import { ThemePicker } from '../../components/ThemePicker';
+import { TrialLink } from '../../components/TrialLink';
 import { logout, meQuery } from '../../lib/auth';
 import { groupDisplayName } from '../../../shared/groups';
 import { unreadNewsCount } from '../../../shared/news';
@@ -179,6 +180,12 @@ function Settings() {
             ログアウト
           </GlassButton>
         </GlassCard>
+
+        {!me.guestUntil && (
+          <motion.div variants={riseItem}>
+            <TrialLink />
+          </motion.div>
+        )}
       </motion.div>
     </>
   );

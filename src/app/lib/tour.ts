@@ -11,6 +11,8 @@ export type MissionId =
 export type Mission = {
   id: MissionId;
   title: string;
+  /** お祝いの一覧に出す短い名前 */
+  short: string;
   desc: string;
   /** 「やってみる」で移る画面 */
   to: '/' | '/week' | '/shopping' | '/pantry' | '/recipes';
@@ -25,6 +27,7 @@ export type Mission = {
 export const MISSIONS: readonly Mission[] = [
   {
     id: 'generate',
+    short: '献立づくり',
     title: '献立を作ってみよう',
     desc: 'ボタン1つで、1週間分の主菜・汁物・副菜ができます',
     to: '/week',
@@ -33,6 +36,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'change',
+    short: '料理の変更',
     title: '料理を変えてみよう',
     desc: '気に入らない1品だけ、別のレシピに変えられます',
     to: '/week',
@@ -41,6 +45,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'swap',
+    short: '曜日の入れ替え',
     title: '曜日を入れ替えてみよう',
     desc: '「水曜と金曜を交換」もドラッグひとつ',
     to: '/week',
@@ -49,6 +54,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'memo',
+    short: '日ごとメモ',
     title: 'メモを書いてみよう',
     desc: '「スープにレタスも」など、その日の一言を家族と共有',
     to: '/week',
@@ -57,6 +63,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'check',
+    short: '買い物リスト',
     title: '買い物リストでチェック',
     desc: '献立の材料が、売り場の順にまとまっています',
     to: '/shopping',
@@ -65,6 +72,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'pantry',
+    short: 'うちの在庫',
     title: '在庫を入れてみよう',
     desc: '冷蔵庫にあるものは、買い物リストから差し引かれます',
     to: '/pantry',
@@ -73,6 +81,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'import',
+    short: 'レシピの取り込み',
     title: 'レシピを取り込んでみよう',
     desc: 'レシピ本の写真から、材料と手順を自動で読み取ります',
     to: '/recipes',
@@ -82,6 +91,7 @@ export const MISSIONS: readonly Mission[] = [
   },
   {
     id: 'family',
+    short: '家族との共有',
     title: '家族と一緒に使ってみよう',
     desc: '家族が変えたことが、すぐに届きます',
     to: '/',
