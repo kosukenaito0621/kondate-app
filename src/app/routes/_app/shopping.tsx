@@ -7,13 +7,20 @@ import { addDays, isIsoDate, toJstDate, weekStartOf } from '../../../shared/date
 import type { ShoppingItemView } from '../../../shared/shopping';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, RefreshIcon } from '../../components/icons';
+import {
+  BoxIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  RefreshIcon,
+} from '../../components/icons';
 import { useFallbackRefetch } from '../../components/live/LiveProvider';
 import { PageHeader } from '../../components/PageHeader';
 import { ShoppingRow } from '../../components/shopping/ShoppingRow';
 import { ShoppingSkeleton } from '../../components/skeleton/Skeletons';
 import { spring } from '../../lib/motion';
 import { compact, optString } from '../../lib/search';
+import { usePantryActions } from '../../lib/pantry';
 import { shoppingQuery, useShoppingActions } from '../../lib/shopping';
 
 export const Route = createFileRoute('/_app/shopping')({
@@ -35,6 +42,7 @@ function ShoppingPage() {
   const refetchInterval = useFallbackRefetch();
   const { data, isPending } = useQuery({ ...shoppingQuery(weekStart), refetchInterval });
   const actions = useShoppingActions(weekStart);
+  const pantry = usePantryActions();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
 
@@ -44,9 +52,13 @@ function ShoppingPage() {
   const items = data?.items ?? [];
   const todo = items.filter((i) => !i.checked);
   const done = items.filter((i) => i.checked);
+  // 在庫で足りるものは、買うものから分けて下にまとめる
+  const covered = todo.filter((i) => i.stock?.status === 'covered');
+  const toBuy = todo.filter((i) => i.stock?.status !== 'covered');
+  const unstocked = done.filter((i) => !i.stocked);
   const bySection = SECTIONS.map((s) => ({
     section: s,
-    items: todo.filter((i) => i.section === s),
+    items: toBuy.filter((i) => i.section === s),
   })).filter((g) => g.items.length);
 
   const row = (item: ShoppingItemView) => (
@@ -121,16 +133,29 @@ function ShoppingPage() {
         </GlassCard>
       ) : (
         <div className="flex flex-col gap-3">
+          <Link
+            to="/pantry"
+            className="flex min-h-10 items-center gap-1.5 self-end rounded-full px-3 text-xs font-bold text-accent-strong"
+          >
+            <BoxIcon size={16} />
+            うちの在庫
+            <ChevronRightIcon size={14} />
+          </Link>
           {/* 残りの数 */}
           <div className="glass rounded-[var(--radius-card)] px-4 py-3">
             <div className="flex items-baseline justify-between text-sm">
               <span className="font-bold">
-                {todo.length === 0 ? (
+                {toBuy.length === 0 ? (
                   'ぜんぶ買えました'
                 ) : (
                   <>
-                    あと<span className="num mx-1 text-lg">{todo.length}</span>品
+                    あと<span className="num mx-1 text-lg">{toBuy.length}</span>品
                   </>
+                )}
+                {covered.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-ink-soft">
+                    （在庫で足りる {covered.length}品）
+                  </span>
                 )}
               </span>
               <span className="num text-xs text-ink-soft">
@@ -225,11 +250,38 @@ function ShoppingPage() {
               </section>
             ))}
 
+            {covered.length > 0 && (
+              <section aria-labelledby="sec-covered" className="mt-2">
+                <h2 id="sec-covered" className="mb-0.5 px-2 text-xs font-bold text-sub-ink">
+                  在庫でまかなえるもの
+                </h2>
+                <p className="mb-1.5 px-2 text-[11px] text-ink-soft">
+                  うちの在庫で足りそうです。足りなければ買ってください
+                </p>
+                <ul className="flex flex-col gap-1.5">
+                  <AnimatePresence initial={false}>{covered.map(row)}</AnimatePresence>
+                </ul>
+              </section>
+            )}
+
             {done.length > 0 && (
               <section aria-labelledby="sec-done" className="mt-2">
-                <h2 id="sec-done" className="mb-1.5 px-2 text-xs font-bold text-ink-soft">
-                  かごに入れたもの
-                </h2>
+                <div className="mb-1.5 flex items-center gap-2 px-2">
+                  <h2 id="sec-done" className="flex-1 text-xs font-bold text-ink-soft">
+                    かごに入れたもの
+                  </h2>
+                  {unstocked.length > 0 && (
+                    <GlassButton
+                      size="sm"
+                      variant="primary"
+                      icon={<BoxIcon size={16} />}
+                      loading={pantry.fromShopping.isPending}
+                      onClick={() => pantry.fromShopping.mutate(weekStart)}
+                    >
+                      在庫に入れる（{unstocked.length}）
+                    </GlassButton>
+                  )}
+                </div>
                 <ul className="flex flex-col gap-1.5">
                   <AnimatePresence initial={false}>{done.map(row)}</AnimatePresence>
                 </ul>

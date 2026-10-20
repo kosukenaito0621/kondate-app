@@ -31,6 +31,8 @@ import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { deleteImage } from './images';
+import { loadStockIndex } from './pantry';
+import { addDays, toJstDate } from '../../shared/date';
 
 type RecipeRow = typeof recipes.$inferSelect;
 
@@ -133,7 +135,7 @@ const ownedBy = (groupId: string, id: string) =>
 export const recipeRoutes = new Hono<AppEnv>()
   .use(requireAuth, requireGroup)
   .get('/', zValidator('query', recipeQuerySchema), async (c) => {
-    const { q, category, genre, difficulty, mine, season } = c.req.valid('query');
+    const { q, category, genre, difficulty, mine, season, stock } = c.req.valid('query');
     const groupId = c.var.group.id;
     const conds: SQL[] = [
       mine ? eq(recipes.groupId, groupId) : visibleTo(groupId),
@@ -162,7 +164,25 @@ export const recipeRoutes = new Hono<AppEnv>()
         asc(recipes.name),
       )
       .limit(500);
-    return c.json(rows.map(toSummary));
+    if (!stock) return c.json(rows.map(toSummary));
+    // 在庫で探す：在庫の食材を使うものだけ。期限の近い食材を使うもの → 使う数の多いもの の順
+    const index = await loadStockIndex(c.var.db, groupId);
+    if (!index) return c.json([]);
+    const soonLimit = addDays(toJstDate(), 3);
+    const soonNames = new Set(
+      index.items.filter((i) => i.expiresOn && i.expiresOn <= soonLimit).map((i) => i.name),
+    );
+    const matched = rows
+      .map((r) => {
+        const have = [...new Set(index.ingredients[r.id] ?? [])];
+        return { ...toSummary(r), stock: { have, soon: have.some((n) => soonNames.has(n)) } };
+      })
+      .filter((r) => r.stock.have.length > 0);
+    matched.sort(
+      (a, b) =>
+        Number(b.stock.soon) - Number(a.stock.soon) || b.stock.have.length - a.stock.have.length,
+    );
+    return c.json(matched);
   })
   .get('/:id', async (c) => {
     const row = await findVisible(c.var.db, c.var.group.id, c.req.param('id'));

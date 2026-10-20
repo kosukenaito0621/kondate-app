@@ -18,6 +18,7 @@ import { Route as AppAboutRouteImport } from './routes/_app/about'
 import { Route as AppGroupRouteImport } from './routes/_app/group'
 import { Route as AppLogRouteImport } from './routes/_app/log'
 import { Route as AppNewsRouteImport } from './routes/_app/news'
+import { Route as AppPantryRouteImport } from './routes/_app/pantry'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShoppingRouteImport } from './routes/_app/shopping'
 import { Route as AppWeekRouteImport } from './routes/_app/week'
@@ -72,6 +73,11 @@ const AppLogRoute = AppLogRouteImport.update({
 const AppNewsRoute = AppNewsRouteImport.update({
   id: '/news',
   path: '/news',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPantryRoute = AppPantryRouteImport.update({
+  id: '/pantry',
+  path: '/pantry',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
   '/news': typeof AppNewsRoute
+  '/pantry': typeof AppPantryRoute
   '/settings': typeof AppSettingsRoute
   '/shopping': typeof AppShoppingRoute
   '/week': typeof AppWeekRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/group': typeof AppGroupRoute
   '/log': typeof AppLogRoute
   '/news': typeof AppNewsRoute
+  '/pantry': typeof AppPantryRoute
   '/settings': typeof AppSettingsRoute
   '/shopping': typeof AppShoppingRoute
   '/week': typeof AppWeekRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/_app/group': typeof AppGroupRoute
   '/_app/log': typeof AppLogRoute
   '/_app/news': typeof AppNewsRoute
+  '/_app/pantry': typeof AppPantryRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shopping': typeof AppShoppingRoute
   '/_app/week': typeof AppWeekRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/group'
     | '/log'
     | '/news'
+    | '/pantry'
     | '/settings'
     | '/shopping'
     | '/week'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/group'
     | '/log'
     | '/news'
+    | '/pantry'
     | '/settings'
     | '/shopping'
     | '/week'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_app/group'
     | '/_app/log'
     | '/_app/news'
+    | '/_app/pantry'
     | '/_app/settings'
     | '/_app/shopping'
     | '/_app/week'
@@ -336,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/pantry': {
+      id: '/_app/pantry'
+      path: '/pantry'
+      fullPath: '/pantry'
+      preLoaderRoute: typeof AppPantryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -421,6 +440,7 @@ interface AppRouteChildren {
   AppGroupRoute: typeof AppGroupRoute
   AppLogRoute: typeof AppLogRoute
   AppNewsRoute: typeof AppNewsRoute
+  AppPantryRoute: typeof AppPantryRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShoppingRoute: typeof AppShoppingRoute
   AppWeekRoute: typeof AppWeekRoute
@@ -438,6 +458,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGroupRoute: AppGroupRoute,
   AppLogRoute: AppLogRoute,
   AppNewsRoute: AppNewsRoute,
+  AppPantryRoute: AppPantryRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShoppingRoute: AppShoppingRoute,
   AppWeekRoute: AppWeekRoute,

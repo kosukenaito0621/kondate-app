@@ -3,6 +3,7 @@ import { toJstDate } from '../src/shared/date';
 import type { CreatedInvite } from '../src/shared/groups';
 import type { PantryItemView } from '../src/shared/pantry';
 import type { PlanView } from '../src/shared/plan';
+import type { RecipeSummary } from '../src/shared/recipe';
 import type { ShoppingListView } from '../src/shared/shopping';
 import { api, login, type TestUser } from './helpers';
 
@@ -200,5 +201,28 @@ describe('献立と在庫', () => {
       await api(u, `/api/plans/${WEEK}/generate`, { method: 'POST', json: {} }),
     );
     expect(v.days.every((d) => d.items.some((i) => i.slot === 'main'))).toBe(true);
+  });
+});
+
+describe('在庫で探す', () => {
+  it('在庫の食材を使うレシピだけを、期限の近い食材を使うもの・使う数の多いもの順に返す', async () => {
+    const u = await login('pantry-search');
+    const none = await json<RecipeSummary[]>(await api(u, '/api/recipes?stock=1'));
+    expect(none).toEqual([]);
+
+    await add(u, { name: '豚ロース肉', quantity: 250, unit: 'g', expiresOn: toJstDate() });
+    await add(u, { name: '玉ねぎ', quantity: 2, unit: '個' });
+    await add(u, { name: 'しょうゆ' }); // 調味料は数えない
+    const found = await json<RecipeSummary[]>(await api(u, '/api/recipes?stock=1'));
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.every((r) => r.stock && r.stock.have.length > 0)).toBe(true);
+    expect(found.some((r) => r.stock!.have.includes('しょうゆ'))).toBe(false);
+    // 期限の近い豚ロース肉を使う料理が先頭に来る
+    expect(found[0]!.stock).toMatchObject({ soon: true });
+    expect(found.find((r) => r.id === GINGER_PORK)!.stock!.have.sort()).toEqual(
+      ['玉ねぎ', '豚ロース肉'].sort(),
+    );
+    const firstNotSoon = found.findIndex((r) => !r.stock!.soon);
+    if (firstNotSoon > 0) expect(found.slice(firstNotSoon).every((r) => !r.stock!.soon)).toBe(true);
   });
 });

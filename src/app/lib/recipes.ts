@@ -12,6 +12,8 @@ export type RecipeFilters = {
   difficulty?: CookingLevel;
   mine?: '1';
   season?: Season;
+  /** 在庫で探す */
+  stock?: '1';
 };
 
 type JsonResponse = { ok: boolean; status: number; json(): Promise<unknown> };

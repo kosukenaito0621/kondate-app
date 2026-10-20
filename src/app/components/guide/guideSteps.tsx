@@ -159,6 +159,10 @@ export function buildGuideSteps({ joinedGroup }: { joinedGroup?: string | null }
         </>,
         '切らしている調味料は、リストの下の「家にある前提で除いたもの」をタップすると入ります（次の週からも入ります）。',
         '「牛乳 1本」のように入力すれば、献立にないものも追加できます。',
+        <>
+          <b>うちの在庫</b>
+          ：冷蔵庫にある食材を入れておくと、リストから差し引きます。買ったものは「在庫に入れる」でまとめて入れられ、「作った」を押すと使った分が減ります。
+        </>,
       ],
       where: '下のタブ「買い物」',
       art: <ArtShopping />,
@@ -167,7 +171,7 @@ export function buildGuideSteps({ joinedGroup }: { joinedGroup?: string | null }
       id: 'recipe',
       eyebrow: '5. レシピを増やす',
       title: '写真から AI が自動で作成',
-      lead: 'はじめから110品のレシピが入っています。家の定番や、気になるレシピも追加できます。',
+      lead: 'はじめから300品のレシピが入っています。家の定番や、気になるレシピも追加できます。',
       points: [
         <>
           <b>写真・URLから取り込む</b>：レシピ本の写真やレシピサイトの URL

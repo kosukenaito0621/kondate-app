@@ -4,7 +4,7 @@ import { CATEGORY_LABEL } from '../../shared/constants';
 import type { RecipeSummary } from '../../shared/recipe';
 import { riseItem, spring } from '../lib/motion';
 import { GenreBadge } from './GenreBadge';
-import { ClockIcon, YenIcon } from './icons';
+import { ClockIcon, YenIcon, BoxIcon } from './icons';
 import { SeasonBadge } from './SeasonBadge';
 import { LevelBadge } from './LevelBadge';
 
@@ -64,6 +64,17 @@ export function RecipeCard({
               </span>
               <LevelBadge level={recipe.difficulty} size="inline" />
             </div>
+            {recipe.stock && (
+              <p className="mt-1 flex items-center gap-1 truncate text-[11px] font-bold text-sub-ink">
+                <BoxIcon size={13} className="shrink-0" />
+                <span className="truncate">在庫：{recipe.stock.have.join('・')}</span>
+                {recipe.stock.soon && (
+                  <span className="shrink-0 rounded-full bg-memo px-1.5 text-[10px] text-memo-ink">
+                    期限近い
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </motion.div>
       </Link>

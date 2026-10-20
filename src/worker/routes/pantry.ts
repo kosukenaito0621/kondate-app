@@ -1,7 +1,9 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { Section } from '../../shared/constants';
+import type { PlannerStock } from '../../shared/planner';
+import { isHomeStock } from '../../shared/shopping';
 import { normalizeIngredientName, sectionOf } from '../../shared/ingredients';
 import {
   addQty,
@@ -11,7 +13,7 @@ import {
   type PantryItemView,
 } from '../../shared/pantry';
 import type { Db } from '../db/client';
-import { mealPlans, pantryItems, shoppingItems } from '../db/schema';
+import { mealPlans, pantryItems, recipeIngredients, recipes, shoppingItems } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
@@ -91,6 +93,40 @@ function addStatements(
       ),
     ...inserts.map((r) => db.insert(pantryItems).values(r)),
   ];
+}
+
+/**
+ * 在庫と、レシピごとに「在庫にある食材」の名前（調味料など家にある前提のものは除く）。
+ * 献立作成の重み付けと「在庫で探す」に使う。在庫が空なら読み込まない
+ */
+export async function loadStockIndex(db: Db, groupId: string): Promise<PlannerStock | undefined> {
+  const stock = await loadPantry(db, groupId);
+  if (!stock.length) return undefined;
+  const earliest = new Map<string, string | null>();
+  for (const s of stock) {
+    const prev = earliest.get(s.name);
+    if (prev === undefined || (s.expiresOn && (!prev || s.expiresOn < prev)))
+      earliest.set(s.name, s.expiresOn);
+  }
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      name: recipeIngredients.name,
+      section: recipeIngredients.section,
+    })
+    .from(recipeIngredients)
+    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
+    .where(or(isNull(recipes.groupId), eq(recipes.groupId, groupId)));
+  const ingredients: Record<string, string[]> = {};
+  for (const r of rows) {
+    const name = normalizeIngredientName(r.name);
+    if (isHomeStock(r.section, name) || !earliest.has(name)) continue;
+    (ingredients[r.recipeId] ??= []).push(name);
+  }
+  return {
+    items: [...earliest].map(([name, expiresOn]) => ({ name, expiresOn })),
+    ingredients,
+  };
 }
 
 export const pantryRoutes = new Hono<AppEnv>()

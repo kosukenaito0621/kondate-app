@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { CATEGORIES, CATEGORY_LABEL, GENRES, GENRE_LABEL } from '../../../../shared/constants';
 import { COOKING_LEVELS, LEVEL_META } from '../../../../shared/levels';
 import { FilterChips } from '../../../components/FilterChips';
-import { CameraIcon, LinkIcon, PlusIcon, SearchIcon } from '../../../components/icons';
+import { BoxIcon, CameraIcon, LinkIcon, PlusIcon, SearchIcon } from '../../../components/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
@@ -29,6 +29,8 @@ const validateSearch = (s: Record<string, unknown>) =>
     mine: optOneOf(s.mine, ['1'] as const),
     /** now は「今が旬」（開いた日の季節） */
     season: optOneOf(s.season, ['now', ...SEASONS] as const),
+    /** 在庫で探す（在庫の食材を使うレシピを、使う数の多い順に） */
+    stock: optOneOf(s.stock, ['1'] as const),
   });
 
 export const Route = createFileRoute('/_app/recipes/')({
@@ -101,6 +103,19 @@ function RecipeList() {
       />
 
       <div className="mb-4 flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={() => set('stock', filters.stock ? undefined : '1')}
+          aria-pressed={!!filters.stock}
+          className={cn(
+            'flex min-h-11 items-center gap-1.5 self-start rounded-full px-4 text-sm font-bold',
+            filters.stock ? 'bg-sub-soft text-sub-ink ring-2 ring-sub' : 'glass',
+          )}
+        >
+          <BoxIcon size={17} />
+          在庫で探す
+          {filters.stock && <span className="text-xs font-normal">（期限の近い順）</span>}
+        </button>
         <label className="glass flex min-h-12 items-center gap-2 rounded-full px-4">
           <SearchIcon size={18} className="text-ink-soft" />
           <span className="sr-only">料理名・材料で検索</span>
@@ -191,8 +206,19 @@ function RecipeList() {
         >
           <p className="mt-2 font-bold">見つかりませんでした</p>
           <p className="mt-1 text-sm text-ink-soft">
-            条件を変えるか、新しいレシピを追加してみましょう
+            {filters.stock
+              ? 'うちの在庫を使うレシピがありません。在庫を追加してみましょう'
+              : '条件を変えるか、新しいレシピを追加してみましょう'}
           </p>
+          {filters.stock && (
+            <Link
+              to="/pantry"
+              className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-accent-strong"
+            >
+              <BoxIcon size={16} />
+              うちの在庫へ
+            </Link>
+          )}
         </motion.div>
       ) : (
         <>

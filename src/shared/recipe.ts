@@ -138,6 +138,8 @@ export const recipeQuerySchema = z.object({
   mine: z.enum(['1']).optional(),
   /** その季節が旬・季節限定のレシピだけ */
   season: z.enum(SEASONS).optional(),
+  /** 在庫にある食材を使うレシピだけ（使う数の多い順） */
+  stock: z.enum(['1']).optional(),
 });
 
 // ===== APIの返却型 =====
@@ -158,6 +160,8 @@ export type RecipeSummary = {
   isSystem: boolean;
   seasons: Season[];
   seasonOnly: boolean;
+  /** 「在庫で探す」のとき：使う在庫の食材と、期限が近い（3日以内）ものを使うか */
+  stock?: { have: string[]; soon: boolean };
 };
 
 export type RecipeDetail = RecipeSummary & {

@@ -111,8 +111,12 @@ export function ShoppingRow({
               {lineAmount(item)}
             </span>
           </div>
+          {item.stock && <StockNote stock={item.stock} />}
           {item.sources.length > 0 && (
             <p className="truncate text-[11px] text-ink-soft">{item.sources.join('・')}</p>
+          )}
+          {item.stocked && (
+            <p className="text-[11px] font-bold text-success-ink">在庫に入れました</p>
           )}
           {item.isManual && <p className="text-[11px] text-ink-soft">手で追加</p>}
         </div>
@@ -133,5 +137,20 @@ export function ShoppingRow({
         )}
       </motion.div>
     </motion.li>
+  );
+}
+
+/** 在庫とくらべた結果（例：あと200g（在庫100g）） */
+function StockNote({ stock }: { stock: NonNullable<ShoppingItemView['stock']> }) {
+  return (
+    <p className="truncate text-[11px] font-bold text-sub-ink">
+      {stock.status === 'covered'
+        ? stock.have === 'あり'
+          ? '在庫にあります'
+          : `在庫 ${stock.have} でまかなえます`
+        : stock.status === 'partial'
+          ? `あと${stock.remaining}（在庫 ${stock.have}）`
+          : `在庫：${stock.have}`}
+    </p>
   );
 }

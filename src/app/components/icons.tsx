@@ -104,6 +104,14 @@ export const PlusIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** 箱（うちの在庫） */
+export const BoxIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5z" />
+    <path d="m4 8.5 8 4.5 8-4.5M12 13v7" />
+  </Icon>
+);
+
 /** 付箋（日ごとメモ） */
 export const MemoIcon = (p: IconProps) => (
   <Icon {...p}>

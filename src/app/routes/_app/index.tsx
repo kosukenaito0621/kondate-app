@@ -13,6 +13,7 @@ import { GlassCard } from '../../components/glass/GlassCard';
 import { GroupSwitcher } from '../../components/GroupSwitcher';
 import {
   BookIcon,
+  BoxIcon,
   CalendarIcon,
   CartIcon,
   ClockIcon,
@@ -136,7 +137,7 @@ function Home() {
             <MealHero key={item.slot} item={item} />
           ))}
           {memo}
-          <motion.div variants={riseItem} className="mt-2 grid grid-cols-3 gap-3">
+          <motion.div variants={riseItem} className="mt-2 grid grid-cols-2 gap-3">
             <QuickLink
               to="/week"
               label="今週の献立"
@@ -150,6 +151,12 @@ function Home() {
               icon={<CartIcon size={22} />}
             />
             <QuickLink to="/log" label="自炊記録" sub="作った料理" icon={<BookIcon size={22} />} />
+            <QuickLink
+              to="/pantry"
+              label="うちの在庫"
+              sub="使い切り"
+              icon={<BoxIcon size={22} />}
+            />
           </motion.div>
         </motion.div>
       )}
@@ -212,7 +219,7 @@ function QuickLink({
   sub,
   icon,
 }: {
-  to: '/week' | '/shopping' | '/log';
+  to: '/week' | '/shopping' | '/log' | '/pantry';
   label: string;
   sub: string;
   icon: React.ReactNode;

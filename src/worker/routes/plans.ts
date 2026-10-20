@@ -5,8 +5,6 @@ import { Hono, type Context } from 'hono';
 import { CATEGORY_LABEL } from '../../shared/constants';
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../shared/memo';
 
-import { normalizeIngredientName } from '../../shared/ingredients';
-import { isHomeStock } from '../../shared/shopping';
 import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
 import {
   DAY_MODE_LABEL,
@@ -28,25 +26,16 @@ import {
   type PlannerDay,
   type PlannerInput,
   type PlannerRecipe,
-  type PlannerStock,
   type Slot,
 } from '../../shared/planner';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
-import {
-  cookLogs,
-  hiddenRecipes,
-  mealPlanItems,
-  mealPlans,
-  recipeIngredients,
-  recipes,
-  users,
-} from '../db/schema';
+import { cookLogs, hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
-import { loadPantry } from './pantry';
+import { loadStockIndex } from './pantry';
 import { toSummary } from './recipes';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
@@ -92,37 +81,6 @@ async function recentHistory(db: Db, groupId: string, weekStart: string) {
   return history;
 }
 
-/** 在庫と、レシピごとの食材名（在庫が空なら読み込まない） */
-async function plannerStock(db: Db, groupId: string): Promise<PlannerStock | undefined> {
-  const stock = await loadPantry(db, groupId);
-  if (!stock.length) return undefined;
-  const earliest = new Map<string, string | null>();
-  for (const s of stock) {
-    const prev = earliest.get(s.name);
-    if (prev === undefined || (s.expiresOn && (!prev || s.expiresOn < prev)))
-      earliest.set(s.name, s.expiresOn);
-  }
-  const rows = await db
-    .select({
-      recipeId: recipeIngredients.recipeId,
-      name: recipeIngredients.name,
-      section: recipeIngredients.section,
-    })
-    .from(recipeIngredients)
-    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
-    .where(or(isNull(recipes.groupId), eq(recipes.groupId, groupId)));
-  const ingredients: Record<string, string[]> = {};
-  for (const r of rows) {
-    const name = normalizeIngredientName(r.name);
-    if (isHomeStock(r.section, name) || !earliest.has(name)) continue;
-    (ingredients[r.recipeId] ??= []).push(name);
-  }
-  return {
-    items: [...earliest].map(([name, expiresOn]) => ({ name, expiresOn })),
-    ingredients,
-  };
-}
-
 /** その週の予定の変更（日付 → 予定）。曜日の設定より優先 */
 type DayModes = Record<string, DayMode>;
 
@@ -136,7 +94,7 @@ async function plannerInput(
     loadSettings(db, groupId),
     plannerRecipes(db, groupId),
     recentHistory(db, groupId, weekStart),
-    plannerStock(db, groupId),
+    loadStockIndex(db, groupId),
   ]);
   const days: PlannerDay[] = weekDates(weekStart).map((date) => {
     const s = settings.days[weekdayIndex(date)]!;
