@@ -11,6 +11,7 @@ import {
   regenerate,
   reuseFactor,
   stockFactor,
+  weekLeftover,
   type PerishableUse,
   type PlannerDay,
   type PlannerInput,
@@ -449,5 +450,45 @@ describe('買った食材を使い切る', () => {
       return n;
     };
     expect(kinds(true)).toBeLessThan(kinds(false));
+  });
+});
+
+describe('使い切りの仕上げ', () => {
+  const perishables = (() => {
+    const out: Record<string, PerishableUse[]> = {};
+    for (const r of recipes) {
+      const uses = r.ingredients
+        .filter((i) => isPacked(i.name))
+        .map((i) => ({
+          name: i.name,
+          amount: toPackUnit(i.name, { ...i, amountText: i.amountText ?? null }),
+        }));
+      if (uses.length) out[r.id] = uses;
+    }
+    return out;
+  })();
+
+  it('あまりの合計が、使い切りを考えないときより大きく減る', () => {
+    let off = 0;
+    let on = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const a = generateWeek(input({ seed }));
+      const b = generateWeek(input({ seed, perishables }));
+      off += weekLeftover(input({ perishables }), a.items);
+      on += weekLeftover(input({ perishables }), b.items);
+    }
+    expect(on).toBeLessThan(off * 0.5);
+  });
+
+  it('差し替えても条件（主菜とのジャンル・重複なし）は守る', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const res = generateWeek(input({ seed, perishables }));
+      const ids = res.items.map((i) => i.recipeId);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const it of res.items.filter((i) => i.slot !== 'main')) {
+        const main = res.items.find((x) => x.date === it.date && x.slot === 'main')!;
+        expect(byId.get(it.recipeId)!.genre).toBe(byId.get(main.recipeId)!.genre);
+      }
+    }
   });
 });

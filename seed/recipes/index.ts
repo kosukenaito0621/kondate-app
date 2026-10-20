@@ -12,6 +12,7 @@ import batch05 from './more/batch05';
 import batch06 from './more/batch06';
 import batch07 from './more/batch07';
 import batch08 from './more/batch08';
+import batch09 from './more/batch09';
 
 const BASE_GROUPS: SeedGroup[] = [
   mainWa,
@@ -38,6 +39,7 @@ const EXTRAS: SeedExtra[] = [
   batch06,
   batch07,
   batch08,
+  batch09,
 ];
 
 export const SEED_GROUPS: SeedGroup[] = BASE_GROUPS.map((g) => ({

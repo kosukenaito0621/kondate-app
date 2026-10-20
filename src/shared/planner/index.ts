@@ -450,6 +450,108 @@ function fitBudget(input: PlannerInput, items: PlanItem[], ctx: PickContext) {
   return total;
 }
 
+/**
+ * 1週間のあまりの合計（食材ごとに「あまる量 / 買う量」を足したもの）。
+ * 量の分からない食材は数えない
+ */
+export function weekLeftover(input: PlannerInput, items: readonly PlanItem[]): number {
+  if (!input.perishables) return 0;
+  const byId = new Map(input.recipes.map((r) => [r.id, r]));
+  const need = new Map<string, number>();
+  for (const it of items) {
+    const r = byId.get(it.recipeId);
+    if (!r) continue;
+    const scale = input.servings / (r.servings || 2);
+    for (const u of input.perishables[it.recipeId] ?? []) {
+      if (u.amount !== null) need.set(u.name, (need.get(u.name) ?? 0) + u.amount * scale);
+    }
+  }
+  let total = 0;
+  for (const [name, n] of need) {
+    const p = purchaseFor(name, n);
+    if (p && p.buy > 0) total += p.leftover / p.buy;
+  }
+  return total;
+}
+
+/** これより減らないなら差し替えない（ほぼ同じなら元の献立のまま） */
+const CLEANUP_MIN_GAIN = 0.15;
+
+/**
+ * 使い切りの仕上げ。1週間を作ったあと、副菜・汁物を、あまった食材を使う料理に差し替えて
+ * あまりが減るなら差し替える（その日の条件・主菜とのジャンル・料理レベルは守る）。
+ * 日ごとに順番に選ぶため、月曜の副菜は木曜の主菜のあまりを知らない、という穴を埋める。
+ * 差し替えで変わる食材だけを計算し直す（Workers の CPU 時間を抑えるため）
+ */
+function cleanupLeftovers(input: PlannerInput, items: PlanItem[], ctx: PickContext) {
+  const perishables = input.perishables;
+  if (!perishables) return;
+  const byId = new Map(input.recipes.map((r) => [r.id, r]));
+  const dayOf = new Map(input.days.map((d) => [d.date, d]));
+  const usesOf = (id: string) => {
+    const r = byId.get(id);
+    const scale = r ? input.servings / (r.servings || 2) : 1;
+    return (perishables[id] ?? [])
+      .filter((u) => u.amount !== null)
+      .map((u) => ({ name: u.name, amount: u.amount! * scale }));
+  };
+  const need = new Map<string, number>();
+  for (const it of items)
+    for (const u of usesOf(it.recipeId)) need.set(u.name, (need.get(u.name) ?? 0) + u.amount);
+  const ratio = (name: string, n: number) => {
+    if (n <= 1e-9) return 0;
+    const p = purchaseFor(name, n);
+    return p && p.buy > 0 ? p.leftover / p.buy : 0;
+  };
+  // 差し替えたときに、あまりがどれだけ減るか
+  const gainOf = (fromId: string, toId: string) => {
+    const delta = new Map<string, number>();
+    for (const u of usesOf(fromId)) delta.set(u.name, (delta.get(u.name) ?? 0) - u.amount);
+    for (const u of usesOf(toId)) delta.set(u.name, (delta.get(u.name) ?? 0) + u.amount);
+    let gain = 0;
+    for (const [name, d] of delta) {
+      const n = need.get(name) ?? 0;
+      gain += ratio(name, n) - ratio(name, n + d);
+    }
+    return gain;
+  };
+  const candidates = input.recipes.filter(
+    (r) => r.category !== 'main' && perishables[r.id]?.length,
+  );
+
+  for (let guard = 0; guard < 6; guard++) {
+    let best: { item: PlanItem; next: PlannerRecipe; gain: number } | null = null;
+    for (const item of items) {
+      if (item.slot === 'main') continue;
+      const day = dayOf.get(item.date)!;
+      const main = items.find((x) => x.date === item.date && x.slot === 'main');
+      const genre = byId.get(main?.recipeId ?? item.recipeId)?.genre;
+      for (const r of candidates) {
+        if (
+          r.category !== item.slot ||
+          ctx.used.has(r.id) ||
+          (ctx.history[r.id] ?? 9) <= 1 ||
+          r.genre !== genre ||
+          isOutOfSeasonOnly(r, seasonOf(day.date)) ||
+          (day.level !== 'minori' && r.difficulty !== 'futaba') ||
+          !timeLevelFits(day.timeLevel, r.timeMinutes) ||
+          !budgetFits(day.budgetLevel, r.costLevel)
+        )
+          continue;
+        const gain = gainOf(item.recipeId, r.id);
+        if (gain > (best?.gain ?? CLEANUP_MIN_GAIN)) best = { item, next: r, gain };
+      }
+    }
+    if (!best) return;
+    for (const u of usesOf(best.item.recipeId))
+      need.set(u.name, (need.get(u.name) ?? 0) - u.amount);
+    for (const u of usesOf(best.next.id)) need.set(u.name, (need.get(u.name) ?? 0) + u.amount);
+    ctx.used.delete(best.item.recipeId);
+    ctx.used.add(best.next.id);
+    best.item.recipeId = best.next.id;
+  }
+}
+
 /** 1週間分の献立を生成する */
 export function generateWeek(input: PlannerInput): PlanResult {
   const rng = createRng(input.seed);
@@ -482,6 +584,7 @@ export function generateWeek(input: PlannerInput): PlanResult {
     prevMain = mainItem ? byId.get(mainItem.recipeId) : undefined;
   });
 
+  cleanupLeftovers(input, items, ctx);
   const estimatedCost = fitBudget(input, items, ctx);
   return { items, estimatedCost, overBudget: estimatedCost > input.weeklyBudget, warnings };
 }

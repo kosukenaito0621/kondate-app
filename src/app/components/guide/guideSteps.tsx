@@ -171,7 +171,7 @@ export function buildGuideSteps({ joinedGroup }: { joinedGroup?: string | null }
       id: 'recipe',
       eyebrow: '5. レシピを増やす',
       title: '写真から AI が自動で作成',
-      lead: 'はじめから300品のレシピが入っています。家の定番や、気になるレシピも追加できます。',
+      lead: 'はじめから326品のレシピが入っています。家の定番や、気になるレシピも追加できます。',
       points: [
         <>
           <b>写真・URLから取り込む</b>：レシピ本の写真やレシピサイトの URL
