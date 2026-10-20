@@ -116,9 +116,7 @@ function TryButton({ auto }: { auto: boolean }) {
       >
         {busy ? 'おためしの食卓を用意しています…' : 'ログインせずに試す'}
       </button>
-      <p className="text-[11px] text-ink-soft">
-        24時間だけ使えます。AI取り込み・写真・招待はお休み
-      </p>
+      <p className="text-[11px] text-ink-soft">24時間だけ使えます。写真・招待はお休み</p>
       {error && (
         <p role="alert" className="text-xs text-danger">
           {error}

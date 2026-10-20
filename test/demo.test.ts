@@ -71,8 +71,8 @@ describe('お試しモード', () => {
     }
   });
 
-  it('同じ接続元からは1時間に3回まで', async () => {
-    for (let i = 0; i < 3; i++) expect((await start('10.0.0.3')).status).toBe(201);
+  it('同じ接続元からは1時間に10回まで', async () => {
+    for (let i = 0; i < 10; i++) expect((await start('10.0.0.3')).status).toBe(201);
     expect((await start('10.0.0.3')).status).toBe(429);
   });
 

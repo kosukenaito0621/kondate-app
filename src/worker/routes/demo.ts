@@ -20,7 +20,8 @@ import type { AppEnv } from '../types';
  * - 「家族役を呼ぶ」で、架空の家族「はなこ」さんがメモ・献立・買い物リストを変え、リアルタイム共有を体験できる
  */
 export const GUEST_TTL_MS = 24 * 60 * 60 * 1000;
-const GUEST_PER_IP_PER_HOUR = 3;
+// 携帯回線は1つの IP アドレスを大勢で使うことがあるので、少し多めにしておく（全体の上限は別にある）
+const GUEST_PER_IP_PER_HOUR = 10;
 const GUEST_PER_DAY = 100;
 const FAMILY_NAME = 'はなこ';
 
@@ -131,7 +132,11 @@ export const demoRoutes = new Hono<AppEnv>()
       (await hitRateLimit(db, 'guest-all', GUEST_PER_DAY, 86_400_000))
     ) {
       return c.json(
-        { error: 'rate_limited', message: 'いまはお試しを作れません。時間をおいてお試しください' },
+        {
+          error: 'rate_limited',
+          message:
+            'お試しを作れる回数の上限に達しました。1時間ほどおいてから、もう一度お試しください',
+        },
         429,
       );
     }
