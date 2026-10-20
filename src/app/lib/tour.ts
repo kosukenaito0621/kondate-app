@@ -18,6 +18,8 @@ export type Mission = {
   spot: string;
   /** 光らせた場所に添える一言 */
   hint: string;
+  /** 光らせた場所に触れたあと、続けて光らせる場所（次の画面のボタンなど） */
+  then?: { spot: string; hint: string };
 };
 
 export const MISSIONS: readonly Mission[] = [
@@ -76,6 +78,7 @@ export const MISSIONS: readonly Mission[] = [
     to: '/recipes',
     spot: 'recipe-import',
     hint: '見本の写真で、取り込みを試せます',
+    then: { spot: 'import-sample', hint: '「この写真で試す」を押してみましょう' },
   },
   {
     id: 'family',

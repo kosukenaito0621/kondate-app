@@ -17,7 +17,7 @@ import { AiProgressSkeleton } from '../../../components/skeleton/Skeletons';
 import { resizeImage } from '../../../lib/images';
 import { LevelIcon } from '../../../components/LevelIcon';
 import { DEMO_DRAFT, DEMO_IMAGE } from '../../../lib/demoRecipe';
-import { markMission, showSpot, useTour } from '../../../lib/tour';
+import { markMission } from '../../../lib/tour';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 
 export const Route = createFileRoute('/_app/recipes/import')({
@@ -96,13 +96,6 @@ function ImportForm({ demo }: { demo: boolean }) {
       markMission('import');
     },
   });
-
-  // 「やってみよう」から来たら、見本の写真のボタンを光らせる
-  const { spot } = useTour();
-  useEffect(() => {
-    if (!demo || spot?.id !== 'import' || spot.spot === 'import-sample') return;
-    showSpot({ ...spot, spot: 'import-sample', hint: '「この写真で試す」を押してみましょう' });
-  }, [demo, spot]);
 
   useEffect(() => {
     if (!importing.isPending) return;

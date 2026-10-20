@@ -9,8 +9,9 @@ const PAD = 6;
 const FIND_TIMEOUT = 4000;
 
 /**
- * ミッションの「押す場所」を光らせる。まわりを少し暗くし、吹き出しで一言添える。
- * 光らせた場所はそのまま押せる（重ねた層は押せないようにしてある）
+ * ミッションの「押す場所」を光る枠で囲み、吹き出しで一言添える。
+ * まわりは暗くせず、重ねた層は押せないようにしてあるので、画面はふだんどおり使える。
+ * 光らせた場所に触れると消える
  */
 export function Spotlight() {
   const { spot } = useTour();
@@ -56,7 +57,16 @@ export function Spotlight() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    // 光らせた場所に触れたら、案内は役目を終えたので消す（ドラッグなどの邪魔をしない）
+    const onDown = (e: PointerEvent) => {
+      if (!el || !(e.target instanceof Node) || !el.contains(e.target)) return;
+      showSpot(spot.then ? { ...spot, ...spot.then, then: undefined } : null);
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener('pointerdown', onDown, true);
+    };
   }, [spot]);
 
   const below = rect ? rect.top + rect.height / 2 < window.innerHeight / 2 : true;
@@ -71,7 +81,7 @@ export function Spotlight() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* 穴のあいた暗幕（大きな影で、まわりだけを暗くする） */}
+          {/* 押す場所を囲む光る枠 */}
           <div
             className="spot-hole absolute rounded-2xl"
             style={{
