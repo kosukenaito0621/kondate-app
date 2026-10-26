@@ -34,6 +34,6 @@
   "vars": {
     "AI_DAILY_LIMIT": "20",
     // 本番の URL（Google のリダイレクト先に使う）。ローカルでは .dev.vars の値で上書きされる
-    "APP_URL": "https://kondate-app.naikou7110.workers.dev",
+    "APP_URL": "https://kondate-app.sukeo-appslab.workers.dev",
   },
 }

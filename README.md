@@ -6,6 +6,9 @@
 - ホーム画面に追加して、アプリのように使えます（PWA）。電波の弱い売り場でも、前に開いた買い物リストを表示できます。
 - 料理に慣れていない人向けの「🌱 わかば」と、慣れた人向けの「🌾 みのり」の2段階で、レシピの難しさとコツの量を変えられます。
 
+**本番**：https://kondate-app.sukeo-appslab.workers.dev
+（ログインせずに試す：https://kondate-app.sukeo-appslab.workers.dev/login?try=1 ）
+
 ## できること
 
 | 機能                   | 内容                                                                                                                                                                                                                                |
@@ -72,11 +75,11 @@
 npm install
 cp .dev.vars.example .dev.vars   # Google の Client ID / Secret を入れる
 npm run db:migrate:local         # ローカルの D1 にテーブルを作る
-npm run db:seed:local            # 初期レシピ110品を入れる
+npm run db:seed:local            # 初期レシピ326品を入れる
 npm run dev                      # http://localhost:5173
 ```
 
-- Google Cloud Console の OAuth クライアントに、リダイレクト URI `http://localhost:5173/api/auth/google/callback` を登録してください。
+- Google Cloud Console の OAuth クライアントに、リダイレクト URI `http://localhost:5173/api/auth/google/callback` を登録してください。本番は `https://kondate-app.sukeo-appslab.workers.dev/api/auth/google/callback` です（`wrangler.jsonc` の `APP_URL` と合わせる）。
 - Workers AI はローカルからもリモートで実行します（`npx wrangler login` が必要）。ログインせずに動かすときは `LOCAL_ONLY=1 npm run dev`（AI 取り込み以外は動きます）。
 
 | コマンド                             | 内容                                                      |

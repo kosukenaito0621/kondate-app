@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: production
-      url: https://kondate-app.naikou7110.workers.dev
+      url: https://kondate-app.sukeo-appslab.workers.dev
     concurrency:
       group: deploy-production
       cancel-in-progress: false
