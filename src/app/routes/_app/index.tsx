@@ -121,11 +121,13 @@ function Home() {
         <>
           <OffToday weekStart={data.weekStart} date={data.day.date} mode={data.day.mode} />
           {memo}
+          <QuickLinks />
         </>
       ) : data.day.items.length === 0 ? (
         <>
           <EmptyToday weekStart={data.weekStart} />
           {memo}
+          <QuickLinks />
         </>
       ) : (
         <motion.div
@@ -138,27 +140,7 @@ function Home() {
             <MealHero key={item.slot} item={item} />
           ))}
           {memo}
-          <motion.div variants={riseItem} className="mt-2 grid grid-cols-2 gap-3">
-            <QuickLink
-              to="/week"
-              label="今週の献立"
-              sub="見る・変える"
-              icon={<CalendarIcon size={22} />}
-            />
-            <QuickLink
-              to="/shopping"
-              label="買い物リスト"
-              sub="今週の材料"
-              icon={<CartIcon size={22} />}
-            />
-            <QuickLink to="/log" label="自炊記録" sub="作った料理" icon={<BookIcon size={22} />} />
-            <QuickLink
-              to="/pantry"
-              label="うちの在庫"
-              sub="使い切り"
-              icon={<BoxIcon size={22} />}
-            />
-          </motion.div>
+          <QuickLinks />
         </motion.div>
       )}
     </>
@@ -210,6 +192,33 @@ function MealHero({ item }: { item: PlanItemView }) {
         </motion.div>
       </Link>
       <CookedButton recipeId={r.id} recipeName={r.name} />
+    </motion.div>
+  );
+}
+
+/** 今週の献立・買い物・自炊記録・在庫への入り口（今日の献立がない日も出す） */
+function QuickLinks() {
+  return (
+    <motion.div
+      variants={riseItem}
+      initial="initial"
+      animate="animate"
+      className="mt-2 grid grid-cols-2 gap-3"
+    >
+      <QuickLink
+        to="/week"
+        label="今週の献立"
+        sub="見る・変える"
+        icon={<CalendarIcon size={22} />}
+      />
+      <QuickLink
+        to="/shopping"
+        label="買い物リスト"
+        sub="今週の材料"
+        icon={<CartIcon size={22} />}
+      />
+      <QuickLink to="/log" label="自炊記録" sub="作った料理" icon={<BookIcon size={22} />} />
+      <QuickLink to="/pantry" label="うちの在庫" sub="使い切り" icon={<BoxIcon size={22} />} />
     </motion.div>
   );
 }
