@@ -515,3 +515,12 @@ describe('お気に入り', () => {
     expect(on).toBeLessThan(off * 2);
   });
 });
+
+describe('作り直さない日', () => {
+  it('lockedDates の日は、献立がなくても埋めない', () => {
+    const locked = [WEEK[0]!, WEEK[1]!];
+    const res = generateWeek(input({ lockedDates: locked }));
+    expect(res.items.some((i) => locked.includes(i.date))).toBe(false);
+    expect(res.items.some((i) => i.date === WEEK[2])).toBe(true);
+  });
+});

@@ -30,6 +30,8 @@ export default defineConfig(async () => {
                   GOOGLE_CLIENT_ID: 'test-client.apps.googleusercontent.com',
                   GOOGLE_CLIENT_SECRET: 'test-secret',
                   APP_URL: 'http://localhost:5173',
+                  // 献立のテストは 2026-10-19 の週で作るので、その週の月曜を「今日」にする
+                  PLAN_TODAY: '2026-10-19',
                 },
               },
             }),

@@ -6,7 +6,14 @@ import { CATEGORY_LABEL } from '../../shared/constants';
 import { isPacked, toPackUnit } from '../../shared/purchase';
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../shared/memo';
 
-import { addDays, WEEKDAY_LABELS, weekDates, weekdayIndex, weekStartOf } from '../../shared/date';
+import {
+  addDays,
+  toJstDate,
+  WEEKDAY_LABELS,
+  weekDates,
+  weekdayIndex,
+  weekStartOf,
+} from '../../shared/date';
 import {
   DAY_MODE_LABEL,
   dayModeSchema,
@@ -396,18 +403,25 @@ export const planRoutes = new Hono<AppEnv>()
     if (!plan) return stale(c);
     const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
     const before = await planItems(c.var.db, plan.id);
-    // 「作った」と記録した日は作り直さない（その日の献立をそのまま残す）
+    // すぎた日と「作った」と記録した日は作り直さない（その日の献立をそのまま残す。空の日も埋めない）
+    // テストでは「今日」を固定する（PLAN_TODAY はテスト用の設定にだけある）
+    const today = (c.env as { PLAN_TODAY?: string }).PLAN_TODAY ?? toJstDate();
     const cooked = await c.var.db
       .selectDistinct({ date: cookLogs.date })
       .from(cookLogs)
       .where(and(eq(cookLogs.groupId, c.var.group.id), inArray(cookLogs.date, weekDates(ws))));
-    const keepDates = new Set(cooked.map((r) => r.date));
+    const keepDates = new Set([
+      ...weekDates(ws).filter((d) => d < today),
+      ...cooked.map((r) => r.date),
+    ]);
     const fixed = before.filter((it) => keepDates.has(it.date));
-    const result = generateWeek({ ...input, fixed });
-    const kept = [...new Set(fixed.map((it) => it.date))].sort();
-    if (kept.length) {
+    const result = generateWeek({ ...input, fixed, lockedDates: [...keepDates] });
+    const kept = [...keepDates].sort();
+    if (kept.length === 7) {
+      result.warnings.unshift('すぎた日の献立は作り直さないので、この週は変わりません');
+    } else if (kept.length) {
       result.warnings.unshift(
-        `「作った」と記録した${kept.map(dayName).join('・')}の献立は、そのまま残しました`,
+        `${kept.map(dayName).join('・')}の献立は、そのまま残しました（すぎた日と「作った」と記録した日は作り直しません）`,
       );
     }
     // 作り直す前の献立を「元に戻す」用に残す（献立がなかった週は残さない）

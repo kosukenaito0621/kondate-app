@@ -92,3 +92,26 @@ describe('「作った」と記録した日は作り直さない', () => {
     for (const it of tue.items) expect(others).not.toContain(it.recipe.id);
   });
 });
+
+describe('すぎた日は作り直さない', () => {
+  it('すぎた週は、作り直しても献立が変わらない（空の日も埋めない）', async () => {
+    const u = await login('keep-past');
+    const PAST = '2026-10-12';
+    const empty = await json<PlanView>(await api(u, `/api/plans/${PAST}`));
+    const main = 'sys-main-wa-01';
+    const set = await json<PlanView>(
+      await api(u, `/api/plans/${PAST}/days/${PAST}/main`, {
+        method: 'PUT',
+        json: { version: empty.version, recipeId: main },
+      }),
+    );
+    const b = await json<PlanView>(
+      await api(u, `/api/plans/${PAST}/generate`, {
+        method: 'POST',
+        json: { version: set.version },
+      }),
+    );
+    expect(ids(b)).toEqual([`main:${main}`]);
+    expect(b.warnings.some((w) => w.includes('変わりません'))).toBe(true);
+  });
+});

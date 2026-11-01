@@ -66,6 +66,8 @@ export type PlannerInput = {
    * 使っているレシピはほかの日で重ならないようにする
    */
   fixed?: readonly PlanItem[];
+  /** 作り直さない日（すぎた日など）。献立がなくても埋めずに空のまま残す */
+  lockedDates?: readonly string[];
   /** うちの在庫（あれば、在庫を使う料理を出やすくする） */
   stock?: PlannerStock;
   /**
@@ -567,7 +569,7 @@ function cleanupLeftovers(input: PlannerInput, items: PlanItem[], ctx: PickConte
 export function generateWeek(input: PlannerInput): PlanResult {
   const rng = createRng(input.seed);
   const fixed = input.fixed ?? [];
-  const fixedDates = new Set(fixed.map((it) => it.date));
+  const fixedDates = new Set([...fixed.map((it) => it.date), ...(input.lockedDates ?? [])]);
   // ジャンルは料理する日（残す日を除く）にだけ割り当てる
   const cookDays = input.days.filter((d) => !d.off && !fixedDates.has(d.date));
   const cookGenres = allocateGenres(input.ratio, cookDays.length, rng);
@@ -607,7 +609,7 @@ export function generateWeek(input: PlannerInput): PlanResult {
     prevMain = mainItem ? byId.get(mainItem.recipeId) : undefined;
   });
 
-  // 残す日の料理は差し替えない（使い切りの仕上げ・予算合わせは作った日だけ）
+  // 残す日の料理は差し替えない（使い切りの仕上げ・予算合わせは今回選んだ料理だけ）
   cleanupLeftovers(input, items, ctx);
   const fixedCost = estimateCost(fixed, input.recipes, input.servings);
   fitBudget({ ...input, weeklyBudget: input.weeklyBudget - fixedCost }, items, ctx);
