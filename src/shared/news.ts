@@ -20,6 +20,15 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-01-undo-regenerate',
+    date: '2026-11-01',
+    kind: 'improve',
+    title: '「1週間まるごと作り直す」を元に戻せるようになりました',
+    body: [
+      '作り直す前に確認を出すようにしました。作り直したあとも、すぐ出る「元に戻す」か、週間献立のいちばん下の「作り直す前の献立に戻す」で、直前の献立に戻せます（作り直してから3日以内）。',
+    ],
+  },
+  {
     id: '2026-10-21-favorites',
     date: '2026-10-21',
     kind: 'feature',

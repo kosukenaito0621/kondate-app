@@ -12,7 +12,7 @@ import { pantryRoutes } from './routes/pantry';
 import { demoRoutes, purgeGuests, setSelfFetch } from './routes/demo';
 import { meRoutes } from './routes/me';
 import { memoRoutes, purgeOldMemos } from './routes/memos';
-import { planRoutes, todayItems } from './routes/plans';
+import { planRoutes, purgePlanUndo, todayItems } from './routes/plans';
 import { recipeShareRoutes } from './routes/recipe-shares';
 import { recipeRoutes } from './routes/recipes';
 import { settingsRoutes } from './routes/settings';
@@ -81,6 +81,7 @@ export default {
       Promise.all([
         purgeOldMemos(db).then((n) => console.log(`purged ${n} old memos`)),
         purgeGuests(db).then((n) => console.log(`purged ${n} guest users`)),
+        purgePlanUndo(db).then((n) => console.log(`purged ${n} plan undo snapshots`)),
       ]),
     );
   },

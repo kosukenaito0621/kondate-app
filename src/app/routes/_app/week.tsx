@@ -15,6 +15,7 @@ import {
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../../shared/memo';
 import type { PlanDayView } from '../../../shared/plan';
 import type { Slot } from '../../../shared/planner';
+import { ConfirmDialog } from '../../components/glass/ConfirmDialog';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { ChevronLeftIcon, ChevronRightIcon, CutleryIcon, GearIcon } from '../../components/icons';
@@ -45,6 +46,14 @@ const label = (ws: string) => {
   const f = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
   return `${f(ws)} 〜 ${f(end)}`;
 };
+/** 作り直した時刻の表示（今日なら時刻だけ、ほかの日は日付も） */
+function clock(at: number) {
+  const d = new Date(at + 9 * 3_600_000);
+  const hm = `${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  const day = `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+  return toJstDate(new Date(at)) === toJstDate() ? hm : `${day} ${hm}`;
+}
+
 const dayName = (date: string) => `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
 
 /** 一度だけ出す「長押しで変更できます」の案内（端末ごと） */
@@ -117,13 +126,39 @@ function WeekPage() {
   const go = (delta: number) =>
     navigate({ search: { w: addDays(weekStart, delta * 7) }, replace: true });
 
-  const generate = () =>
+  const hasItems = !!plan?.days.some((d) => d.items.length > 0);
+  const [confirmRegen, setConfirmRegen] = useState(false);
+
+  /** 献立を作る。作り直したときは「元に戻す」付きで知らせる */
+  const generate = () => {
+    const replacing = hasItems;
     mutation.mutate(
       { type: 'generate' },
       {
         onSuccess: () => {
           setShuffle((n) => n + 1);
           markMission('generate');
+          setConfirmRegen(false);
+          if (replacing) {
+            toast('1週間の献立を作り直しました', 'info', {
+              duration: 8000,
+              action: { label: '元に戻す', onClick: undoRegenerate },
+            });
+          }
+        },
+        onError: () => setConfirmRegen(false),
+      },
+    );
+  };
+
+  /** 「1週間まるごと作り直す」の直前に戻す */
+  const undoRegenerate = () =>
+    mutation.mutate(
+      { type: 'undo' },
+      {
+        onSuccess: () => {
+          setShuffle((n) => n + 1);
+          toast('作り直す前の献立に戻しました');
         },
       },
     );
@@ -310,10 +345,21 @@ function WeekPage() {
               icon={<CutleryIcon size={18} />}
               loading={mutation.isPending && mutation.variables?.type === 'generate'}
               data-tour="week-generate"
-              onClick={generate}
+              onClick={() => (hasItems ? setConfirmRegen(true) : generate())}
             >
               1週間まるごと作り直す
             </GlassButton>
+            {plan.undoAt && (
+              <GlassButton
+                block
+                variant="ghost"
+                className="mt-1"
+                loading={mutation.isPending && mutation.variables?.type === 'undo'}
+                onClick={undoRegenerate}
+              >
+                作り直す前の献立に戻す（{clock(plan.undoAt)}に作り直し）
+              </GlassButton>
+            )}
           </motion.div>
           {plan.updatedBy && (
             <p className="text-center text-xs text-ink-soft">
@@ -390,6 +436,15 @@ function WeekPage() {
         }}
       />
       {memoConfirm.element}
+      <ConfirmDialog
+        open={confirmRegen}
+        title="1週間まるごと作り直しますか？"
+        message="今の献立はすべて新しい献立に入れ替わります。間違えたときは「作り直す前の献立に戻す」で戻せます（3日以内）。"
+        confirmLabel="作り直す"
+        loading={mutation.isPending && mutation.variables?.type === 'generate'}
+        onConfirm={generate}
+        onCancel={() => setConfirmRegen(false)}
+      />
     </>
   );
 }

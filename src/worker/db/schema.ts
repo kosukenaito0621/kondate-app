@@ -457,3 +457,18 @@ export const recipeFavorites = sqliteTable(
     index('recipe_favorites_recipe_idx').on(t.recipeId),
   ],
 );
+
+/**
+ * 1週間まるごと作り直す直前の献立（「元に戻す」用。献立ごとに直前の1回分だけ持つ）。
+ * 古いものは毎日の定期処理で消す
+ */
+export const planUndo = sqliteTable('plan_undo', {
+  planId: text('plan_id')
+    .primaryKey()
+    .references(() => mealPlans.id, { onDelete: 'cascade' }),
+  items: text('items', { mode: 'json' })
+    .$type<{ date: string; slot: 'main' | 'soup' | 'side'; recipeId: string }[]>()
+    .notNull(),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at'),
+});

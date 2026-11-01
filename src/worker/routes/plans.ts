@@ -32,7 +32,15 @@ import {
 } from '../../shared/planner';
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
-import { cookLogs, hiddenRecipes, mealPlanItems, mealPlans, recipes, users } from '../db/schema';
+import {
+  cookLogs,
+  hiddenRecipes,
+  mealPlanItems,
+  mealPlans,
+  planUndo,
+  recipes,
+  users,
+} from '../db/schema';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
 import { notifyGroup } from '../realtime/notify';
@@ -44,6 +52,18 @@ import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
 type Ctx = Context<AppEnv>;
+
+/** 「元に戻す」ができる期間（作り直してから3日） */
+export const UNDO_TTL_MS = 3 * 86_400_000;
+
+/** 期限の過ぎた「元に戻す」用の献立を消す（Cron から呼ぶ） */
+export async function purgePlanUndo(db: Db, now = Date.now()) {
+  const res = await db
+    .delete(planUndo)
+    .where(lt(planUndo.createdAt, now - UNDO_TTL_MS))
+    .returning({ id: planUndo.planId });
+  return res.length;
+}
 
 const dayName = (date: string) => `${WEEKDAY_LABELS[weekdayIndex(date)]}曜`;
 
@@ -189,6 +209,13 @@ export async function buildPlanView(
   const cooked = new Map(logs.map((l) => [`${l.date}|${l.recipeId}`, l.id]));
   const memos = await loadMemos(db, groupId, dates);
   const favorites = await groupFavoriteIds(db, groupId);
+  const undo = plan
+    ? await db
+        .select({ at: planUndo.createdAt })
+        .from(planUndo)
+        .where(eq(planUndo.planId, plan.id))
+        .get()
+    : null;
   const slotOrder = { main: 0, soup: 1, side: 2 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
@@ -207,6 +234,7 @@ export async function buildPlanView(
     updatedBy: updater ?? null,
     updatedAt: plan?.updatedAt ?? 0,
     warnings,
+    undoAt: undo && Date.now() - undo.at <= UNDO_TTL_MS ? undo.at : null,
     days: weekDates(weekStart).map((date) => {
       const s = settings.days[weekdayIndex(date)]!;
       return {
@@ -368,7 +396,25 @@ export const planRoutes = new Hono<AppEnv>()
     if (!plan) return stale(c);
     const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
     const result = generateWeek(input);
-    await replaceItems(c, plan.id, result.items, {});
+    // 作り直す前の献立を「元に戻す」用に残す（献立がなかった週は残さない）
+    const before = await planItems(c.var.db, plan.id);
+    const snapshot = before.length
+      ? [
+          c.var.db
+            .insert(planUndo)
+            .values({
+              planId: plan.id,
+              items: before,
+              createdBy: c.var.user.id,
+              createdAt: Date.now(),
+            })
+            .onConflictDoUpdate({
+              target: planUndo.planId,
+              set: { items: before, createdBy: c.var.user.id, createdAt: Date.now() },
+            }),
+        ]
+      : [];
+    await replaceItems(c, plan.id, result.items, {}, snapshot);
     await saveCost(c.var.db, c.var.group.id, plan.id, ws);
     notifyGroup(c, {
       type: 'plan.updated',
@@ -377,6 +423,51 @@ export const planRoutes = new Hono<AppEnv>()
       summary: '1週間の献立を作り直しました',
     });
     return c.json(await buildPlanView(c.var.db, c.var.group.id, ws, result.warnings));
+  })
+  /** 「1週間まるごと作り直す」の直前の献立に戻す（直前の1回分だけ） */
+  .post('/:weekStart/undo', zValidator('json', versionSchema), async (c) => {
+    const ws = validWeekStart(c);
+    if (!ws) return c.json({ error: 'invalid_week' }, 400);
+    const db = c.var.db;
+    const current = await findPlan(db, c.var.group.id, ws);
+    const saved = current
+      ? await db.select().from(planUndo).where(eq(planUndo.planId, current.id)).get()
+      : null;
+    if (!current || !saved || Date.now() - saved.createdAt > UNDO_TTL_MS) {
+      return c.json({ error: 'nothing_to_undo', message: '元に戻せる献立がありません' }, 404);
+    }
+    const plan = await bumpVersion(c, ws, c.req.valid('json').version);
+    if (!plan) return stale(c);
+    // そのあと消えたレシピ（自分のレシピを削除した など）は戻さない
+    const ids = [...new Set(saved.items.map((i) => i.recipeId))];
+    const alive = new Set(
+      (
+        await db
+          .select({ id: recipes.id })
+          .from(recipes)
+          .where(
+            and(
+              inArray(recipes.id, ids),
+              or(isNull(recipes.groupId), eq(recipes.groupId, c.var.group.id)),
+            ),
+          )
+      ).map((r) => r.id),
+    );
+    await replaceItems(
+      c,
+      plan.id,
+      saved.items.filter((i) => alive.has(i.recipeId)),
+      {},
+      [db.delete(planUndo).where(eq(planUndo.planId, plan.id))],
+    );
+    await saveCost(db, c.var.group.id, plan.id, ws);
+    notifyGroup(c, {
+      type: 'plan.updated',
+      weekStart: ws,
+      dates: weekDates(ws),
+      summary: '1週間の献立を作り直す前に戻しました',
+    });
+    return c.json(await buildPlanView(db, c.var.group.id, ws));
   })
   /** 1日分（slot 指定なら1品）だけ作り直す */
   .post('/:weekStart/days/:date/regenerate', zValidator('json', regenerateSchema), async (c) => {

@@ -127,4 +127,6 @@ export type PlanView = {
   updatedAt: number;
   days: PlanDayView[];
   warnings: string[];
+  /** 「1週間まるごと作り直す」の直前に戻せるか（戻せるなら作り直した時刻） */
+  undoAt: number | null;
 };

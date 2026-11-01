@@ -148,6 +148,13 @@
       "when": 1792502872728,
       "tag": "0020_recipe_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1793504361641,
+      "tag": "0021_plan_undo",
+      "breakpoints": true
     }
   ]
 }

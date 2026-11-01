@@ -26,7 +26,8 @@ export type PlanAction =
   | { type: 'regenerate'; date: string; slot?: Slot; memo?: EditMemoChoice }
   | { type: 'set'; date: string; slot: Slot; recipeId: string | null; memo?: EditMemoChoice }
   | { type: 'swap'; from: string; to: string; memo?: SwapMemoChoice }
-  | { type: 'mode'; date: string; mode: DayMode };
+  | { type: 'mode'; date: string; mode: DayMode }
+  | { type: 'undo' };
 
 /**
  * 献立の変更。版番号を付けて送り、古ければ（409）最新を読み直して知らせる。
@@ -42,25 +43,27 @@ export function usePlanMutation(weekStart: string) {
       const res =
         action.type === 'generate'
           ? await api.plans[':weekStart'].generate.$post({ param, json: { version } })
-          : action.type === 'regenerate'
-            ? await api.plans[':weekStart'].days[':date'].regenerate.$post({
-                param: { ...param, date: action.date },
-                json: { version, slot: action.slot, memo: action.memo },
-              })
-            : action.type === 'set'
-              ? await api.plans[':weekStart'].days[':date'][':slot'].$put({
-                  param: { ...param, date: action.date, slot: action.slot },
-                  json: { version, recipeId: action.recipeId, memo: action.memo },
+          : action.type === 'undo'
+            ? await api.plans[':weekStart'].undo.$post({ param, json: { version } })
+            : action.type === 'regenerate'
+              ? await api.plans[':weekStart'].days[':date'].regenerate.$post({
+                  param: { ...param, date: action.date },
+                  json: { version, slot: action.slot, memo: action.memo },
                 })
-              : action.type === 'mode'
-                ? await api.plans[':weekStart'].days[':date'].mode.$put({
-                    param: { ...param, date: action.date },
-                    json: { version, mode: action.mode },
+              : action.type === 'set'
+                ? await api.plans[':weekStart'].days[':date'][':slot'].$put({
+                    param: { ...param, date: action.date, slot: action.slot },
+                    json: { version, recipeId: action.recipeId, memo: action.memo },
                   })
-                : await api.plans[':weekStart'].swap.$post({
-                    param,
-                    json: { version, from: action.from, to: action.to, memo: action.memo },
-                  });
+                : action.type === 'mode'
+                  ? await api.plans[':weekStart'].days[':date'].mode.$put({
+                      param: { ...param, date: action.date },
+                      json: { version, mode: action.mode },
+                    })
+                  : await api.plans[':weekStart'].swap.$post({
+                      param,
+                      json: { version, from: action.from, to: action.to, memo: action.memo },
+                    });
       if (res.status === 409) throw new StaleError();
       return ok<PlanView>(res);
     },
