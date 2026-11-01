@@ -61,6 +61,11 @@ export type PlannerInput = {
   history: Readonly<Record<string, number>>;
   /** 食卓のだれかのお気に入り（少し出やすくする） */
   favorites?: ReadonlySet<string>;
+  /**
+   * 作り直さずに残す献立（「作った」と記録した日など）。その日は選び直さず、
+   * 使っているレシピはほかの日で重ならないようにする
+   */
+  fixed?: readonly PlanItem[];
   /** うちの在庫（あれば、在庫を使う料理を出やすくする） */
   stock?: PlannerStock;
   /**
@@ -561,8 +566,10 @@ function cleanupLeftovers(input: PlannerInput, items: PlanItem[], ctx: PickConte
 /** 1週間分の献立を生成する */
 export function generateWeek(input: PlannerInput): PlanResult {
   const rng = createRng(input.seed);
-  // ジャンルは料理する日にだけ割り当てる
-  const cookDays = input.days.filter((d) => !d.off);
+  const fixed = input.fixed ?? [];
+  const fixedDates = new Set(fixed.map((it) => it.date));
+  // ジャンルは料理する日（残す日を除く）にだけ割り当てる
+  const cookDays = input.days.filter((d) => !d.off && !fixedDates.has(d.date));
   const cookGenres = allocateGenres(input.ratio, cookDays.length, rng);
   const genres = input.days.map((d) => (d.off ? undefined : cookGenres[cookDays.indexOf(d)]));
   const ctx: PickContext = {
@@ -578,11 +585,20 @@ export function generateWeek(input: PlannerInput): PlanResult {
     servings: input.servings,
   };
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
+  for (const it of fixed) {
+    const r = byId.get(it.recipeId);
+    if (r) markUsed(ctx, r);
+  }
 
   const items: PlanItem[] = [];
   const warnings: string[] = [];
   let prevMain: PlannerRecipe | undefined;
   input.days.forEach((day, i) => {
+    if (fixedDates.has(day.date)) {
+      const main = fixed.find((it) => it.date === day.date && it.slot === 'main');
+      prevMain = main ? byId.get(main.recipeId) : undefined;
+      return;
+    }
     if (day.off) return;
     const res = planDay(ctx, day, genres[i], [prevMain], SLOTS);
     items.push(...res.items);
@@ -591,9 +607,18 @@ export function generateWeek(input: PlannerInput): PlanResult {
     prevMain = mainItem ? byId.get(mainItem.recipeId) : undefined;
   });
 
+  // 残す日の料理は差し替えない（使い切りの仕上げ・予算合わせは作った日だけ）
   cleanupLeftovers(input, items, ctx);
-  const estimatedCost = fitBudget(input, items, ctx);
-  return { items, estimatedCost, overBudget: estimatedCost > input.weeklyBudget, warnings };
+  const fixedCost = estimateCost(fixed, input.recipes, input.servings);
+  fitBudget({ ...input, weeklyBudget: input.weeklyBudget - fixedCost }, items, ctx);
+  const all = [...fixed, ...items];
+  const estimatedCost = estimateCost(all, input.recipes, input.servings);
+  return {
+    items: all,
+    estimatedCost,
+    overBudget: estimatedCost > input.weeklyBudget,
+    warnings,
+  };
 }
 
 /**

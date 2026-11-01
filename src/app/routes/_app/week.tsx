@@ -439,7 +439,7 @@ function WeekPage() {
       <ConfirmDialog
         open={confirmRegen}
         title="1週間まるごと作り直しますか？"
-        message="今の献立はすべて新しい献立に入れ替わります。間違えたときは「作り直す前の献立に戻す」で戻せます（3日以内）。"
+        message="「作った」と記録した日はそのまま残し、ほかの日を新しい献立に入れ替えます。間違えたときは「作り直す前の献立に戻す」で戻せます（3日以内）。"
         confirmLabel="作り直す"
         loading={mutation.isPending && mutation.variables?.type === 'generate'}
         onConfirm={generate}

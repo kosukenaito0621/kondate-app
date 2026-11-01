@@ -395,9 +395,22 @@ export const planRoutes = new Hono<AppEnv>()
     const plan = await bumpVersion(c, ws, c.req.valid('json').version);
     if (!plan) return stale(c);
     const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
-    const result = generateWeek(input);
-    // 作り直す前の献立を「元に戻す」用に残す（献立がなかった週は残さない）
     const before = await planItems(c.var.db, plan.id);
+    // 「作った」と記録した日は作り直さない（その日の献立をそのまま残す）
+    const cooked = await c.var.db
+      .selectDistinct({ date: cookLogs.date })
+      .from(cookLogs)
+      .where(and(eq(cookLogs.groupId, c.var.group.id), inArray(cookLogs.date, weekDates(ws))));
+    const keepDates = new Set(cooked.map((r) => r.date));
+    const fixed = before.filter((it) => keepDates.has(it.date));
+    const result = generateWeek({ ...input, fixed });
+    const kept = [...new Set(fixed.map((it) => it.date))].sort();
+    if (kept.length) {
+      result.warnings.unshift(
+        `「作った」と記録した${kept.map(dayName).join('・')}の献立は、そのまま残しました`,
+      );
+    }
+    // 作り直す前の献立を「元に戻す」用に残す（献立がなかった週は残さない）
     const snapshot = before.length
       ? [
           c.var.db

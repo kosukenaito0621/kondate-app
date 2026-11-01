@@ -70,3 +70,25 @@ describe('1週間まるごと作り直す → 元に戻す', () => {
     expect(await purgePlanUndo(db())).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('「作った」と記録した日は作り直さない', () => {
+  it('1週間まるごと作り直しても、作った日の献立はそのまま', async () => {
+    const u = await login('keep-cooked');
+    const a = await generate(u);
+    const tue = a.days[1]!;
+    await api(u, '/api/logs', {
+      method: 'POST',
+      json: { recipeId: tue.items[0]!.recipe.id, date: tue.date },
+    });
+    const b = await generate(u, a.version);
+    const day = (v: PlanView, date: string) =>
+      v.days.find((d) => d.date === date)!.items.map((i) => `${i.slot}:${i.recipe.id}`);
+    expect(day(b, tue.date)).toEqual(day(a, tue.date));
+    expect(b.warnings.some((w) => w.includes('火曜') && w.includes('そのまま'))).toBe(true);
+    // 残した日の料理は、ほかの日で重ならない
+    const others = b.days
+      .filter((d) => d.date !== tue.date)
+      .flatMap((d) => d.items.map((i) => i.recipe.id));
+    for (const it of tue.items) expect(others).not.toContain(it.recipe.id);
+  });
+});
