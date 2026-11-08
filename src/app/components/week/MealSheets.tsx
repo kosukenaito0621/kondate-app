@@ -3,7 +3,9 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { SLOT_LABEL, slotCategory, type Category, type Slot } from '../../../shared/constants';
 import { WEEKDAY_LABELS } from '../../../shared/date';
+import { isDinnerHosted, MEALS } from '../../../shared/hosting';
 import type { PlanDayView, PlanItemView } from '../../../shared/plan';
+import type { RecipeSummary } from '../../../shared/recipe';
 import { cn } from '../../lib/cn';
 import { recipesQuery } from '../../lib/recipes';
 import { GenreBadge } from '../GenreBadge';
@@ -105,7 +107,8 @@ function MealSheetBody({
   );
 }
 
-function RecipePicker({
+export function RecipePicker({
+  hosting,
   category,
   level,
   currentId,
@@ -113,6 +116,8 @@ function RecipePicker({
   onPick,
   onAuto,
 }: {
+  /** もてなしの候補（「おもてなし」の印、お気に入りの順に上へ） */
+  hosting?: boolean;
   category: Category;
   level: 'futaba' | 'minori';
   currentId?: string;
@@ -134,7 +139,9 @@ function RecipePicker({
     }),
   );
 
-  const list = data?.filter((r) => !excludeIds?.includes(r.id));
+  const rank = (r: RecipeSummary) => (r.tags.includes('おもてなし') ? 2 : 0) + (r.favorite ? 1 : 0);
+  const visible = data?.filter((r) => !excludeIds?.includes(r.id));
+  const list = hosting ? visible && [...visible].sort((a, b) => rank(b) - rank(a)) : visible;
 
   return (
     <div className="flex flex-col gap-3">
@@ -202,6 +209,7 @@ export function DaySheet({
   onAddSide,
   onSwap,
   onMode,
+  onAddHosting,
 }: {
   day: PlanDayView | null;
   days: PlanDayView[];
@@ -211,7 +219,10 @@ export function DaySheet({
   onAddSide: () => void;
   onSwap: (to: string) => void;
   onMode: (mode: DayMode) => void;
+  /** お試し版では渡さない（もてなしの入口を出さない） */
+  onAddHosting?: () => void;
 }) {
+  const dinner = day ? isDinnerHosted(day) : false;
   return (
     <Sheet
       open={day !== null}
@@ -220,33 +231,43 @@ export function DaySheet({
     >
       {day && (
         <div className="flex flex-col gap-3">
-          <div>
-            <p className="mb-2 text-xs font-bold text-ink-soft">この日の予定</p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {DAY_MODES.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  disabled={busy || day.mode === m}
-                  aria-pressed={day.mode === m}
-                  onClick={() => onMode(m)}
-                  className={cn(
-                    'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold',
-                    day.mode === m ? 'bg-accent text-accent-ink' : 'groove',
-                  )}
-                >
-                  <DayModeIcon mode={m} size={18} />
-                  {DAY_MODE_LABEL[m]}
-                </button>
-              ))}
+          {onAddHosting && day.hostings.length < MEALS.length && (
+            <GlassButton onClick={onAddHosting}>もてなしを追加</GlassButton>
+          )}
+          {dinner && (
+            <p className="text-xs text-ink-soft">
+              夜のもてなしがあるので、この日のふだんの献立はお休みです。
+            </p>
+          )}
+          {!dinner && (
+            <div>
+              <p className="mb-2 text-xs font-bold text-ink-soft">この日の予定</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {DAY_MODES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    disabled={busy || day.mode === m}
+                    aria-pressed={day.mode === m}
+                    onClick={() => onMode(m)}
+                    className={cn(
+                      'flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold',
+                      day.mode === m ? 'bg-accent text-accent-ink' : 'groove',
+                    )}
+                  >
+                    <DayModeIcon mode={m} size={18} />
+                    {DAY_MODE_LABEL[m]}
+                  </button>
+                ))}
+              </div>
+              {day.mode !== day.modeSetting && (
+                <p className="mt-1.5 text-[11px] text-ink-soft">
+                  いつもは「{DAY_MODE_LABEL[day.modeSetting]}」の曜日です（今週だけ変更中）
+                </p>
+              )}
             </div>
-            {day.mode !== day.modeSetting && (
-              <p className="mt-1.5 text-[11px] text-ink-soft">
-                いつもは「{DAY_MODE_LABEL[day.modeSetting]}」の曜日です（今週だけ変更中）
-              </p>
-            )}
-          </div>
-          {!isOffDay(day.mode) && (
+          )}
+          {!dinner && !isOffDay(day.mode) && (
             <>
               <GlassButton variant="primary" loading={busy} onClick={onRegenerateDay}>
                 この日の献立を作り直す
@@ -256,25 +277,27 @@ export function DaySheet({
               )}
             </>
           )}
-          <div>
-            <p className="mb-2 text-xs font-bold text-ink-soft">ほかの曜日と入れ替える</p>
-            <div className="grid grid-cols-6 gap-1.5">
-              {days
-                .filter((d) => d.date !== day.date)
-                .map((d) => (
-                  <button
-                    key={d.date}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onSwap(d.date)}
-                    className="groove min-h-11 rounded-2xl text-sm font-bold"
-                    aria-label={`${WEEKDAY_LABELS[d.weekday]}曜日と入れ替える`}
-                  >
-                    {WEEKDAY_LABELS[d.weekday]}
-                  </button>
-                ))}
+          {!dinner && (
+            <div>
+              <p className="mb-2 text-xs font-bold text-ink-soft">ほかの曜日と入れ替える</p>
+              <div className="grid grid-cols-6 gap-1.5">
+                {days
+                  .filter((d) => d.date !== day.date && !isDinnerHosted(d))
+                  .map((d) => (
+                    <button
+                      key={d.date}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onSwap(d.date)}
+                      className="groove min-h-11 rounded-2xl text-sm font-bold"
+                      aria-label={`${WEEKDAY_LABELS[d.weekday]}曜日と入れ替える`}
+                    >
+                      {WEEKDAY_LABELS[d.weekday]}
+                    </button>
+                  ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </Sheet>
@@ -282,14 +305,16 @@ export function DaySheet({
 }
 
 /** その日に「作った」を記録・取り消す（未来の日は出さない） */
-function CookOnDateButton({
+export function CookOnDateButton({
   recipeId,
   date,
   logId,
+  hostingCourseId,
 }: {
   recipeId: string;
   date: string;
   logId: string | null;
+  hostingCourseId?: string;
 }) {
   const cook = useCookOnDate();
   // 押した直後の表示（読み直しが届くまでのあいだ）
@@ -302,7 +327,7 @@ function CookOnDateButton({
       loading={cook.isPending}
       onClick={() =>
         cook.mutate(
-          { recipeId, date, logId: done ? logId : null },
+          { recipeId, date, logId: done ? logId : null, hostingCourseId },
           { onSuccess: () => setDone((d) => !d) },
         )
       }

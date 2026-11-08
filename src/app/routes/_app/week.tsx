@@ -24,6 +24,7 @@ import { WeekSkeleton } from '../../components/skeleton/Skeletons';
 import { useToast } from '../../components/toast/Toaster';
 import { BudgetBar } from '../../components/week/BudgetBar';
 import { DayCard } from '../../components/week/DayCard';
+import { HostingCreateSheet, HostingSheet } from '../../components/week/HostingSheets';
 import { DaySheet, MealSheet, type MealTarget } from '../../components/week/MealSheets';
 import { useMemoConfirm } from '../../components/week/MemoConfirm';
 import { useIsGuest } from '../../lib/auth';
@@ -93,6 +94,8 @@ function WeekPage() {
   const [shuffle, setShuffle] = useState(0);
   const [meal, setMeal] = useState<MealTarget | null>(null);
   const [daySheet, setDaySheet] = useState<PlanDayView | null>(null);
+  const [hostingDay, setHostingDay] = useState<string | null>(null);
+  const [hostingId, setHostingId] = useState<string | null>(null);
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null);
   const [flashes, setFlashes] = useState<Record<string, number>>({});
 
@@ -102,7 +105,7 @@ function WeekPage() {
     return pendingSwap && plan?.version === pendingSwap.version ? applySwap(ds, pendingSwap) : ds;
   }, [plan, pendingSwap]);
   const editableMemo = weekStart >= weekStartOf(today);
-  const isEmpty = plan && plan.days.every((d) => d.items.length === 0);
+  const isEmpty = plan && plan.days.every((d) => d.items.length === 0 && !d.hostings.length);
 
   const guest = useIsGuest();
   useEffect(() => {
@@ -307,6 +310,24 @@ function WeekPage() {
           >
             1週間の献立をつくる
           </GlassButton>
+          {!guest && (
+            <div className="w-full">
+              <p className="mb-2 text-xs font-bold text-ink-soft">もてなしだけ先に入れる</p>
+              <div className="grid grid-cols-7 gap-1">
+                {plan.days.map((d) => (
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => setHostingDay(d.date)}
+                    className="groove min-h-11 rounded-xl text-sm font-bold"
+                    aria-label={`${WEEKDAY_LABELS[d.weekday]}曜日にもてなしを追加`}
+                  >
+                    {WEEKDAY_LABELS[d.weekday]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </GlassCard>
       ) : (
         <div className="flex flex-col gap-3">
@@ -333,6 +354,7 @@ function WeekPage() {
                   onItem={(item) => setMeal({ day, slot: item.slot, item })}
                   onAddSlot={(slot) => setMeal({ day, slot })}
                   onMenu={() => setDaySheet(day)}
+                  onHosting={(h) => setHostingId(h.id)}
                 />
               </li>
             ))}
@@ -406,6 +428,14 @@ function WeekPage() {
         days={days}
         busy={mutation.isPending}
         onClose={() => setDaySheet(null)}
+        onAddHosting={
+          guest
+            ? undefined
+            : () => {
+                setHostingDay(daySheet?.date ?? null);
+                setDaySheet(null);
+              }
+        }
         onMode={(mode) =>
           daySheet &&
           mutation.mutate(
@@ -433,6 +463,16 @@ function WeekPage() {
           setDaySheet(null);
           void swapDays(daySheet.date, to, false);
         }}
+      />
+      <HostingCreateSheet
+        day={days.find((d) => d.date === hostingDay) ?? null}
+        weekStart={weekStart}
+        onClose={() => setHostingDay(null)}
+      />
+      <HostingSheet
+        hosting={days.flatMap((d) => d.hostings).find((h) => h.id === hostingId) ?? null}
+        weekStart={weekStart}
+        onClose={() => setHostingId(null)}
       />
       {memoConfirm.element}
       <ConfirmDialog

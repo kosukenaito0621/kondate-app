@@ -18,10 +18,12 @@ import {
 import { cn } from '../../lib/cn';
 import { spring } from '../../lib/motion';
 import { LONG_PRESS_MS, useLongPress } from '../../lib/useLongPress';
+import { isDinnerHosted, type HostingView } from '../../../shared/hosting';
 import { GenreBadge } from '../GenreBadge';
 import { CheckDraw, ClockIcon, GripIcon, HeartIcon, MemoIcon } from '../icons';
 import { LevelBadge } from '../LevelBadge';
 import { DayModeIcon } from './DayModeIcon';
+import { HostingCard } from './HostingCard';
 import { MemoField } from './MemoField';
 
 const md = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
@@ -108,6 +110,7 @@ export function DayCard({
   onItem,
   onAddSlot,
   onMenu,
+  onHosting,
 }: {
   day: PlanDayView;
   isToday: boolean;
@@ -122,16 +125,22 @@ export function DayCard({
   onItem: (item: PlanItemView) => void;
   onAddSlot: (slot: Slot) => void;
   onMenu: () => void;
+  onHosting: (hosting: HostingView) => void;
 }) {
   // 土曜は水色、日曜と祝日は赤（カレンダーと同じ）
   const holiday = holidayName(day.date);
   const tone = day.weekday === 6 || holiday ? 'sun' : day.weekday === 5 ? 'sat' : null;
   const off = isOffDay(day.mode);
+  // 夜のもてなしがある日は、ふだんの献立をお休みにする
+  const dinner = isDinnerHosted(day);
   const missing = off
     ? []
     : (['main', 'soup'] as const).filter((s) => !day.items.some((i) => i.slot === s));
   const canAddSide =
-    !off && day.items.some((i) => i.slot === 'side') && !day.items.some((i) => i.slot === 'side2');
+    !off &&
+    !dinner &&
+    day.items.some((i) => i.slot === 'side') &&
+    !day.items.some((i) => i.slot === 'side2');
   // 生成のたびに、カードがシャッフルされて並ぶ演出（角度は日ごとに少しずつ変える）
   const tilt = ((index * 37) % 11) - 5;
   const weekday = WEEKDAY_LABELS[day.weekday];
@@ -203,7 +212,7 @@ export function DayCard({
             <MemoIcon size={15} aria-label="メモあり" />
           </span>
         )}
-        {off ? (
+        {off || dinner ? (
           <span className="ml-auto" />
         ) : (
           <span className="ml-auto flex items-center gap-1.5 text-[10px] text-ink-soft">
@@ -221,62 +230,81 @@ export function DayCard({
         </button>
       </header>
 
+      {day.hostings.length > 0 && (
+        <div className="mb-1 flex flex-col gap-1.5">
+          {day.hostings.map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              onClick={() => onHosting(h)}
+              className="block w-full rounded-2xl text-left"
+            >
+              <HostingCard hosting={h} />
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 献立の部分。持ち上げているあいだは、元の場所に受け皿が見える */}
-      <div className="slide-slot rounded-2xl">
-        <div ref={bodyRef} className="slide-body flex gap-1 rounded-2xl">
-          <button
-            type="button"
-            onPointerDown={onGrip}
-            className="grid w-7 shrink-0 cursor-grab touch-none place-items-center rounded-xl text-ink-faint active:cursor-grabbing"
-            data-tour="day-grip"
-            aria-label={`${weekday}曜の献立をほかの曜日へ移す`}
-          >
-            <GripIcon size={18} />
-          </button>
-          {off ? (
+      {!dinner && (
+        <div className="slide-slot rounded-2xl">
+          <div ref={bodyRef} className="slide-body flex gap-1 rounded-2xl">
             <button
               type="button"
-              onClick={onMenu}
-              className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-sub-soft px-3 text-left text-sub-ink"
+              onPointerDown={onGrip}
+              className="grid w-7 shrink-0 cursor-grab touch-none place-items-center rounded-xl text-ink-faint active:cursor-grabbing"
+              data-tour="day-grip"
+              aria-label={`${weekday}曜の献立をほかの曜日へ移す`}
             >
-              <DayModeIcon mode={day.mode} size={22} />
-              <span className="flex-1">
-                <span className="block font-bold">{DAY_MODE_LABEL[day.mode]}の日</span>
-                <span className="block text-[11px]">料理はお休み。タップで予定を変えられます</span>
-              </span>
+              <GripIcon size={18} />
             </button>
-          ) : (
-            <div className="flex min-w-0 flex-1 flex-col">
-              {day.items.map((item) => (
-                <MealRow
-                  key={`${item.slot}-${item.recipe.id}`}
-                  item={item}
-                  onLongPress={() => onItem(item)}
-                />
-              ))}
-              {missing.map((slot) => (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => onAddSlot(slot)}
-                  className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
-                >
-                  <span className="w-8 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
-                </button>
-              ))}
-              {canAddSide && (
-                <button
-                  type="button"
-                  onClick={() => onAddSlot('side2')}
-                  className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
-                >
-                  <span className="w-8 shrink-0" aria-hidden />＋ 副菜をもう1品
-                </button>
-              )}
-            </div>
-          )}
+            {off ? (
+              <button
+                type="button"
+                onClick={onMenu}
+                className="flex min-h-14 flex-1 items-center gap-3 rounded-2xl bg-sub-soft px-3 text-left text-sub-ink"
+              >
+                <DayModeIcon mode={day.mode} size={22} />
+                <span className="flex-1">
+                  <span className="block font-bold">{DAY_MODE_LABEL[day.mode]}の日</span>
+                  <span className="block text-[11px]">
+                    料理はお休み。タップで予定を変えられます
+                  </span>
+                </span>
+              </button>
+            ) : (
+              <div className="flex min-w-0 flex-1 flex-col">
+                {day.items.map((item) => (
+                  <MealRow
+                    key={`${item.slot}-${item.recipe.id}`}
+                    item={item}
+                    onLongPress={() => onItem(item)}
+                  />
+                ))}
+                {missing.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => onAddSlot(slot)}
+                    className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
+                  >
+                    <span className="w-8 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
+                  </button>
+                ))}
+                {canAddSide && (
+                  <button
+                    type="button"
+                    onClick={() => onAddSlot('side2')}
+                    className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
+                  >
+                    <span className="w-8 shrink-0" aria-hidden />＋ 副菜をもう1品
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {editableMemo ? (
         <div className="pl-8">

@@ -81,13 +81,20 @@ export function useCookOnDate() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (v: { recipeId: string; date: string; logId: string | null }) => {
+    mutationFn: async (v: {
+      recipeId: string;
+      date: string;
+      logId: string | null;
+      hostingCourseId?: string;
+    }) => {
       if (v.logId) {
         const res = await api.logs[':id'].$delete({ param: { id: v.logId } });
         if (!res.ok) throw new Error('取り消せませんでした');
         return null;
       }
-      const res = await api.logs.$post({ json: { recipeId: v.recipeId, date: v.date } });
+      const res = await api.logs.$post({
+        json: { recipeId: v.recipeId, date: v.date, hostingCourseId: v.hostingCourseId },
+      });
       if (!res.ok) throw new Error('記録できませんでした');
       return (await res.json()) as LogCreated;
     },
