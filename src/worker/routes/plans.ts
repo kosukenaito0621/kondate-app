@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { and, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { Hono, type Context } from 'hono';
-import { CATEGORY_LABEL } from '../../shared/constants';
+import { CATEGORY_LABEL, SLOT_LABEL, SLOTS, slotCategory } from '../../shared/constants';
 import { isPacked, toPackUnit } from '../../shared/purchase';
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../shared/memo';
 
@@ -223,7 +223,7 @@ export async function buildPlanView(
         .where(eq(planUndo.planId, plan.id))
         .get()
     : null;
-  const slotOrder = { main: 0, soup: 1, side: 2 } as const;
+  const slotOrder = { main: 0, soup: 1, side: 2, side2: 3 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
     rows.map((r) => ({ date: r.item.date, slot: r.item.slot, recipeId: r.item.recipeId })),
@@ -557,7 +557,7 @@ export const planRoutes = new Hono<AppEnv>()
     const ws = validWeekStart(c);
     const date = c.req.param('date');
     const slot = c.req.param('slot') as Slot;
-    if (!ws || !inWeek(ws, date) || !['main', 'soup', 'side'].includes(slot)) {
+    if (!ws || !inWeek(ws, date) || !SLOTS.includes(slot)) {
       return c.json({ error: 'invalid_date' }, 400);
     }
     const { version, recipeId, memo } = c.req.valid('json');
@@ -566,23 +566,44 @@ export const planRoutes = new Hono<AppEnv>()
       const usable = await plannerRecipes(db, c.var.group.id);
       const r = usable.find((x) => x.id === recipeId);
       if (!r) return c.json({ error: 'recipe_not_found' }, 404);
-      if (r.category !== slot) return c.json({ error: 'category_mismatch' }, 400);
+      if (r.category !== slotCategory(slot)) return c.json({ error: 'category_mismatch' }, 400);
+      // 副菜の1品目と2品目は同じレシピにしない
+      if (slot === 'side' || slot === 'side2') {
+        const plan = await findPlan(db, c.var.group.id, ws);
+        const other = plan
+          ? (await planItems(db, plan.id)).find(
+              (it) => it.date === date && it.slot === (slot === 'side' ? 'side2' : 'side'),
+            )
+          : undefined;
+        if (other?.recipeId === recipeId) return c.json({ error: 'duplicate_side' }, 400);
+      }
     }
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
-    await replaceItems(
-      c,
-      plan.id,
-      recipeId ? [{ date, slot, recipeId }] : [],
-      { date, slot },
-      clearMemo(c, date, memo),
-    );
+    await replaceItems(c, plan.id, recipeId ? [{ date, slot, recipeId }] : [], { date, slot }, [
+      ...clearMemo(c, date, memo),
+      // 1品目を外したら、2品目を1品目に繰り上げる（行の削除のあとに実行される）
+      ...(slot === 'side' && !recipeId
+        ? [
+            db
+              .update(mealPlanItems)
+              .set({ slot: 'side' })
+              .where(
+                and(
+                  eq(mealPlanItems.planId, plan.id),
+                  eq(mealPlanItems.date, date),
+                  eq(mealPlanItems.slot, 'side2'),
+                ),
+              ),
+          ]
+        : []),
+    ]);
     await saveCost(db, c.var.group.id, plan.id, ws);
     notifyGroup(c, {
       type: 'plan.updated',
       weekStart: ws,
       dates: [date],
-      summary: `${dayName(date)}の${CATEGORY_LABEL[slot]}を${recipeId ? '変更' : '外'}しました`,
+      summary: `${dayName(date)}の${SLOT_LABEL[slot]}を${recipeId ? '変更' : '外'}しました`,
     });
     return c.json(await buildPlanView(db, c.var.group.id, ws));
   })

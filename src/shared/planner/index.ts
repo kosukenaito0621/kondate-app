@@ -2,11 +2,14 @@ import {
   CATEGORY_LABEL,
   GENRES,
   LEVELS,
+  AUTO_SLOTS,
   timeLevelFits,
+  type AutoSlot,
   type Category,
   type CostLevel,
   type Genre,
   type MainIngredient,
+  type Slot,
   type TimeLevel,
 } from '../constants';
 import { WEEKDAY_LABELS, weekdayIndex } from '../date';
@@ -15,8 +18,7 @@ import { purchaseFor } from '../purchase';
 import { isInSeason, isOutOfSeasonOnly, seasonOf, type Season } from '../season';
 import { createRng, shuffle, weightedPick } from './random';
 
-export type Slot = Category;
-export const SLOTS: readonly Slot[] = ['main', 'soup', 'side'];
+export type { Slot };
 
 export type PlannerRecipe = {
   id: string;
@@ -322,7 +324,7 @@ function dayLabel(date: string) {
 function pick(
   ctx: PickContext,
   day: PlannerDay,
-  slot: Slot,
+  slot: AutoSlot,
   opts: { genre?: Genre; mainGenre?: Genre; neighborIngredients: MainIngredient[] },
 ): { recipe: PlannerRecipe | undefined; warning: string | null } {
   const season = seasonOf(day.date);
@@ -378,7 +380,7 @@ function planDay(
   day: PlannerDay,
   genre: Genre | undefined,
   neighbors: (PlannerRecipe | undefined)[],
-  slots: readonly Slot[],
+  slots: readonly AutoSlot[],
   keepMain?: PlannerRecipe,
 ) {
   const items: PlanItem[] = [];
@@ -602,7 +604,7 @@ export function generateWeek(input: PlannerInput): PlanResult {
       return;
     }
     if (day.off) return;
-    const res = planDay(ctx, day, genres[i], [prevMain], SLOTS);
+    const res = planDay(ctx, day, genres[i], [prevMain], AUTO_SLOTS);
     items.push(...res.items);
     warnings.push(...res.warnings);
     const mainItem = res.items.find((it) => it.slot === 'main');
@@ -631,7 +633,7 @@ export function regenerate(
   input: PlannerInput,
   current: readonly PlanItem[],
   date: string,
-  slot?: Slot,
+  slot?: AutoSlot,
 ): PlanResult {
   const rng = createRng(input.seed);
   const byId = new Map(input.recipes.map((r) => [r.id, r]));
@@ -678,7 +680,7 @@ export function regenerate(
     day,
     genre,
     [mainOf(input.days[idx - 1]), mainOf(input.days[idx + 1])],
-    slot ? [slot] : SLOTS,
+    slot ? [slot] : AUTO_SLOTS,
     keepMain,
   );
   const items = [...kept, ...res.items];

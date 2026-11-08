@@ -1,5 +1,5 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Slot } from '../../shared/planner';
+import type { AutoSlot, Slot } from '../../shared/constants';
 import type { DayMode, PlanSettings, PlanView } from '../../shared/plan';
 import type { EditMemoChoice, SwapMemoChoice } from '../../shared/memo';
 import { api } from '../api';
@@ -23,7 +23,7 @@ export class StaleError extends Error {}
 
 export type PlanAction =
   | { type: 'generate' }
-  | { type: 'regenerate'; date: string; slot?: Slot; memo?: EditMemoChoice }
+  | { type: 'regenerate'; date: string; slot?: AutoSlot; memo?: EditMemoChoice }
   | { type: 'set'; date: string; slot: Slot; recipeId: string | null; memo?: EditMemoChoice }
   | { type: 'swap'; from: string; to: string; memo?: SwapMemoChoice }
   | { type: 'mode'; date: string; mode: DayMode }

@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { EDIT_MEMO_CHOICES, SWAP_MEMO_CHOICES, type DayMemo } from './memo';
-import { CATEGORIES, LEVELS, TIME_LEVELS, type CostLevel, type TimeLevel } from './constants';
+import {
+  AUTO_SLOTS,
+  LEVELS,
+  TIME_LEVELS,
+  type CostLevel,
+  type Slot,
+  type TimeLevel,
+} from './constants';
 import { isIsoDate } from './date';
 import { DAY_LEVELS, type CookingLevel, type DayLevel } from './levels';
 import type { RecipeSummary } from './recipe';
@@ -70,7 +77,7 @@ export const weekStartParam = z.string().refine(isIsoDate, '日付の形式が�
 export const versionSchema = z.object({ version: z.number().int().min(0).optional() });
 /** memo：その日のメモをどうするか（省略時は残す） */
 export const regenerateSchema = versionSchema.extend({
-  slot: z.enum(CATEGORIES).optional(),
+  slot: z.enum(AUTO_SLOTS).optional(),
   memo: z.enum(EDIT_MEMO_CHOICES).optional(),
 });
 export const setSlotSchema = versionSchema.extend({
@@ -86,7 +93,7 @@ export const swapSchema = versionSchema.extend({
 });
 
 export type PlanItemView = {
-  slot: (typeof CATEGORIES)[number];
+  slot: Slot;
   recipe: RecipeSummary;
   updatedBy: string | null;
   updatedAt: number;

@@ -260,7 +260,7 @@ export const mealPlanItems = sqliteTable(
       .notNull()
       .references(() => mealPlans.id, { onDelete: 'cascade' }),
     date: text('date').notNull(),
-    slot: text('slot', { enum: ['main', 'soup', 'side'] }).notNull(),
+    slot: text('slot', { enum: ['main', 'soup', 'side', 'side2'] }).notNull(),
     recipeId: text('recipe_id')
       .notNull()
       .references(() => recipes.id, { onDelete: 'cascade' }),
@@ -467,7 +467,7 @@ export const planUndo = sqliteTable('plan_undo', {
     .primaryKey()
     .references(() => mealPlans.id, { onDelete: 'cascade' }),
   items: text('items', { mode: 'json' })
-    .$type<{ date: string; slot: 'main' | 'soup' | 'side'; recipeId: string }[]>()
+    .$type<{ date: string; slot: 'main' | 'soup' | 'side' | 'side2'; recipeId: string }[]>()
     .notNull(),
   createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at'),

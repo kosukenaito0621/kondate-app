@@ -8,6 +8,21 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   side: '副菜',
 };
 
+/** 献立の枠（1日に各1品）。side2 は自分で足すときだけ使う */
+export const SLOTS = ['main', 'soup', 'side', 'side2'] as const;
+export type Slot = (typeof SLOTS)[number];
+/** おまかせで選ぶ枠 */
+export const AUTO_SLOTS = ['main', 'soup', 'side'] as const;
+export type AutoSlot = (typeof AUTO_SLOTS)[number];
+export const SLOT_LABEL: Record<Slot, string> = {
+  main: '主菜',
+  soup: '汁物',
+  side: '副菜',
+  side2: '副菜2',
+};
+/** その枠に入れられるレシピの分類 */
+export const slotCategory = (slot: Slot): AutoSlot => (slot === 'side2' ? 'side' : slot);
+
 export const GENRES = ['wa', 'yo', 'chu'] as const;
 export type Genre = (typeof GENRES)[number];
 export const GENRE_LABEL: Record<Genre, string> = { wa: '和食', yo: '洋食', chu: '中華' };
