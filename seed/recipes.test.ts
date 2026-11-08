@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AUTO_SLOTS,
   CATEGORIES,
   GENRES,
   LEVELS,
@@ -17,6 +18,7 @@ const EXPECTED: Record<Category, Record<Genre, number>> = {
   main: { wa: 50, yo: 50, chu: 50 },
   soup: { wa: 23, yo: 25, chu: 25 },
   side: { wa: 37, yo: 34, chu: 32 },
+  dessert: { wa: 0, yo: 0, chu: 0 },
 };
 
 const of = (category: Category, genre?: Genre) =>
@@ -75,7 +77,8 @@ describe('初期レシピ', () => {
   });
 
   describe('料理レベル', () => {
-    it.each(CATEGORIES.flatMap((c) => GENRES.map((g) => [c, g] as const)))(
+    // デザートは初期レシピがないので対象外
+    it.each(AUTO_SLOTS.flatMap((c) => GENRES.map((g) => [c, g] as const)))(
       '%s × %s でわかばが4割以上',
       (category, genre) => {
         const list = of(category, genre);

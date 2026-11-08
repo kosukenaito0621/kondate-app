@@ -52,7 +52,7 @@ export const AI_RECIPE_JSON_SCHEMA = {
     category: {
       type: 'string',
       enum: [...CATEGORIES],
-      description: 'main=主菜, soup=汁物, side=副菜',
+      description: 'main=主菜, soup=汁物, side=副菜, dessert=デザート',
     },
     genre: { type: 'string', enum: [...GENRES], description: 'wa=和食, yo=洋食, chu=中華' },
     servings: { type: 'integer', description: '何人分か' },

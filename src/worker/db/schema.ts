@@ -163,7 +163,7 @@ export const recipes = sqliteTable(
     groupId: text('group_id').references(() => groups.id, { onDelete: 'cascade' }), // NULL=システム共通
     createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
-    category: text('category', { enum: ['main', 'soup', 'side'] }).notNull(),
+    category: text('category', { enum: ['main', 'soup', 'side', 'dessert'] }).notNull(),
     genre: text('genre', { enum: ['wa', 'yo', 'chu'] }).notNull(),
     servings: integer('servings').notNull().default(2),
     timeMinutes: integer('time_minutes').notNull(),

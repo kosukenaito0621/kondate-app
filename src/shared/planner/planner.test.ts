@@ -524,3 +524,25 @@ describe('作り直さない日', () => {
     expect(res.items.some((i) => i.date === WEEK[2])).toBe(true);
   });
 });
+
+describe('デザート', () => {
+  const desserts = recipes
+    .slice(0, 30)
+    .map((r) => ({ ...r, id: `dessert-${r.id}`, category: 'dessert' as const }));
+  const mixed = [...recipes, ...desserts];
+  const isDessert = (i: { recipeId: string }) => i.recipeId.startsWith('dessert-');
+
+  it('おまかせ作成に出ない', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      expect(generateWeek(input({ recipes: mixed, seed })).items.some(isDessert)).toBe(false);
+    }
+  });
+
+  it('1日の作り直しに出ない', () => {
+    const base = generateWeek(input({ recipes: mixed }));
+    for (let seed = 1; seed <= 50; seed++) {
+      const res = regenerate(input({ recipes: mixed, seed }), base.items, WEEK[2]!);
+      expect(res.items.some(isDessert)).toBe(false);
+    }
+  });
+});

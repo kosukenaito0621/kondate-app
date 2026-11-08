@@ -13,7 +13,7 @@ const SYSTEM_PROMPT = `あなたは料理本の写真やレシピサイトから
 
 - 書かれている内容を正確に写す。材料名・分量は書かれたとおり。書かれていない材料を足さない。
 - name: 料理名。
-- category: main=主菜（肉・魚・卵・豆腐などが主役のおかず、丼・麺・パスタ・カレーも含む）/ soup=汁物 / side=副菜。
+- category: main=主菜（肉・魚・卵・豆腐などが主役のおかず、丼・麺・パスタ・カレーも含む）/ soup=汁物 / side=副菜 / dessert=デザート（お菓子・甘味）。
 - genre: wa=和食 / yo=洋食 / chu=中華（韓国料理やエスニックは近いほう）。
 - mainIngredient: chicken / pork / beef / fish（魚介全般）/ egg / tofu（豆腐・大豆製品）/ veg / other。
 - difficulty（料理レベル）:

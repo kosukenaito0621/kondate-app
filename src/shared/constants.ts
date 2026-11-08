@@ -1,11 +1,12 @@
 // レシピ・献立で使う区分の定義（フロント・バック・シード共通）
 
-export const CATEGORIES = ['main', 'soup', 'side'] as const;
+export const CATEGORIES = ['main', 'soup', 'side', 'dessert'] as const;
 export type Category = (typeof CATEGORIES)[number];
 export const CATEGORY_LABEL: Record<Category, string> = {
   main: '主菜',
   soup: '汁物',
   side: '副菜',
+  dessert: 'デザート',
 };
 
 /** 献立の枠（1日に各1品）。side2 は自分で足すときだけ使う */
@@ -124,6 +125,7 @@ export const COST_THRESHOLDS: Record<Category, [number, number]> = {
   main: [350, 700],
   soup: [120, 250],
   side: [130, 260],
+  dessert: [150, 350],
 };
 
 export function costLevelFor(category: Category, costYen: number): CostLevel {

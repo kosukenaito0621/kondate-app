@@ -181,6 +181,17 @@ describe('レシピAPI', () => {
     expect(bad.status).toBe(400);
   });
 
+  it('デザートを登録でき、category=dessert で絞り込める', async () => {
+    const u = await login('recipe-dessert');
+    const res = await api(u, '/api/recipes', {
+      method: 'POST',
+      json: { ...sample, name: 'プリン', category: 'dessert', mainIngredient: 'other' },
+    });
+    expect(res.status).toBe(201);
+    const list = (await (await api(u, '/api/recipes?category=dessert')).json()) as RecipeSummary[];
+    expect(list.map((r) => r.name)).toEqual(['プリン']);
+  });
+
   describe('グループ間のデータ遮断', () => {
     it('他のグループのレシピは見えず、編集・削除・複製もできない', async () => {
       const alice = await login('alice-r');

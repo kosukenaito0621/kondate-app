@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-08-dessert',
+    date: '2026-11-08',
+    kind: 'improve',
+    title: 'レシピの分類に「デザート」が増えました',
+    body: [
+      'レシピの登録や取り込みで「デザート」を選べます。レシピ一覧でも絞り込めます。',
+      'デザートは、おまかせで作る週間献立には出ません。',
+    ],
+  },
+  {
     id: '2026-11-08-second-side',
     date: '2026-11-08',
     kind: 'feature',
