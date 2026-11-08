@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AutoSlot, Slot } from '../../shared/constants';
+import { withHostings } from '../../shared/hosting';
 import type { DayMode, PlanSettings, PlanView } from '../../shared/plan';
 import type { EditMemoChoice, SwapMemoChoice } from '../../shared/memo';
 import { api } from '../api';
@@ -9,7 +10,10 @@ import { ok } from './recipes';
 export const planQuery = (weekStart: string) =>
   queryOptions({
     queryKey: ['plan', weekStart],
-    queryFn: async () => ok<PlanView>(await api.plans[':weekStart'].$get({ param: { weekStart } })),
+    queryFn: async () => {
+      const view = await ok<PlanView>(await api.plans[':weekStart'].$get({ param: { weekStart } }));
+      return { ...view, days: view.days.map(withHostings) };
+    },
     staleTime: 15_000,
   });
 

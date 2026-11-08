@@ -189,10 +189,11 @@ function HostingBody({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const busy = mutation.isPending;
   const courses = hosting.courses.map(toInput);
-  const save = (next: CourseInput[], then: View = { kind: 'list' }) =>
+  // then を渡さなければ、保存しても画面は切り替えない
+  const save = (next: CourseInput[], then?: View) =>
     mutation.mutate(
       { type: 'courses', id: hosting.id, courses: next },
-      { onSuccess: () => setView(then) },
+      { onSuccess: () => then && setView(then) },
     );
   const replace = (index: number, patch: Partial<CourseInput>, then?: View) =>
     save(
@@ -219,7 +220,7 @@ function HostingBody({
           category={course.category}
           level="minori"
           currentId={course.recipe?.id}
-          onPick={(recipeId) => replace(view.index, { recipeId })}
+          onPick={(recipeId) => replace(view.index, { recipeId }, { kind: 'list' })}
         />
       </div>
     );
@@ -230,7 +231,9 @@ function HostingBody({
       <AddCourse
         busy={busy}
         onBack={() => setView({ kind: 'list' })}
-        onAdd={(label, category) => save([...courses, { label, category, recipeId: null }])}
+        onAdd={(label, category) =>
+          save([...courses, { label, category, recipeId: null }], { kind: 'list' })
+        }
       />
     );
   }
@@ -247,9 +250,23 @@ function HostingBody({
         canRemove={courses.length > 1}
         onBack={() => setView({ kind: 'list' })}
         onPick={() => setView({ kind: 'pick', index: view.index })}
-        onRename={(label) => replace(view.index, { label }, view)}
-        onClear={() => replace(view.index, { recipeId: null }, view)}
-        onRemove={() => save(courses.filter((_, i) => i !== view.index))}
+        onSave={(patch, next) =>
+          replace(
+            view.index,
+            patch,
+            next === 'pick'
+              ? { kind: 'pick', index: view.index }
+              : next === 'list'
+                ? { kind: 'list' }
+                : undefined,
+          )
+        }
+        onRemove={() =>
+          save(
+            courses.filter((_, i) => i !== view.index),
+            { kind: 'list' },
+          )
+        }
       />
     );
   }
@@ -331,8 +348,7 @@ function CourseDetail({
   canRemove,
   onBack,
   onPick,
-  onRename,
-  onClear,
+  onSave,
   onRemove,
 }: {
   course: HostingCourseView;
@@ -341,14 +357,20 @@ function CourseDetail({
   canRemove: boolean;
   onBack: () => void;
   onPick: () => void;
-  onRename: (label: string) => void;
-  onClear: () => void;
+  onSave: (patch: Partial<CourseInput>, next?: 'list' | 'pick') => void;
   onRemove: () => void;
 }) {
   const [label, setLabel] = useState(course.label);
+  // 書きかけの名前は、次の操作と一緒に1回で保存する（別々に送ると行き違うため）
+  const next = label.trim();
+  const dirty = next && next !== course.label ? { label: next } : null;
   return (
     <div className="flex flex-col gap-2.5">
-      <GlassButton variant="ghost" onClick={onBack}>
+      <GlassButton
+        variant="ghost"
+        disabled={busy}
+        onClick={() => (dirty ? onSave(dirty, 'list') : onBack())}
+      >
         もどる
       </GlassButton>
       <label className="groove flex min-h-11 items-center gap-2 rounded-full px-4">
@@ -357,13 +379,21 @@ function CourseDetail({
           value={label}
           maxLength={20}
           onChange={(e) => setLabel(e.target.value)}
-          onBlur={() => {
-            const next = label.trim();
-            if (next && next !== course.label) onRename(next);
-            else setLabel(course.label);
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && dirty && !busy) onSave(dirty);
           }}
           className="min-w-0 flex-1 bg-transparent py-2 outline-none"
         />
+        {dirty && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onSave(dirty)}
+            className="shrink-0 text-sm font-bold text-accent-strong"
+          >
+            変更
+          </button>
+        )}
       </label>
       {course.recipe && (
         <>
@@ -383,11 +413,19 @@ function CourseDetail({
           />
         </>
       )}
-      <GlassButton variant="primary" onClick={onPick}>
+      <GlassButton
+        variant="primary"
+        disabled={busy}
+        onClick={() => (dirty ? onSave(dirty, 'pick') : onPick())}
+      >
         {course.recipe ? '別のレシピを選ぶ' : 'レシピを選ぶ'}
       </GlassButton>
       {course.recipe && (
-        <GlassButton variant="ghost" loading={busy} onClick={onClear}>
+        <GlassButton
+          variant="ghost"
+          loading={busy}
+          onClick={() => onSave({ ...dirty, recipeId: null })}
+        >
           未定に戻す
         </GlassButton>
       )}

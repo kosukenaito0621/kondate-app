@@ -56,6 +56,12 @@ export type HostingView = {
   courses: HostingCourseView[];
 };
 
+/** 公開前の応答（端末に残ったキャッシュ）には hostings がないので、空として扱う */
+export const withHostings = <T extends Pick<PlanDayView, 'hostings'>>(day: T): T => ({
+  ...day,
+  hostings: day.hostings ?? [],
+});
+
 /** 夜のもてなしがある日は、ふだんの献立をお休みにする */
 export const isDinnerHosted = (day: Pick<PlanDayView, 'hostings'>) =>
   day.hostings.some((h) => h.meal === 'dinner');

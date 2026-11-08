@@ -20,7 +20,7 @@ import {
   CutleryIcon,
   YenIcon,
 } from '../../components/icons';
-import { isDinnerHosted } from '../../../shared/hosting';
+import { isDinnerHosted, withHostings } from '../../../shared/hosting';
 import { HostingCard } from '../../components/week/HostingCard';
 import { LevelBadge } from '../../components/LevelBadge';
 import { MemoField } from '../../components/week/MemoField';
@@ -43,7 +43,10 @@ type Today = {
 
 export const todayQuery = queryOptions({
   queryKey: ['today'],
-  queryFn: async () => ok<Today>(await api.today.$get()),
+  queryFn: async () => {
+    const today = await ok<Today>(await api.today.$get());
+    return { ...today, day: withHostings(today.day) };
+  },
   staleTime: 30_000,
 });
 

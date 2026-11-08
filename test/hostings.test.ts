@@ -183,6 +183,26 @@ describe('もてなしのAPI', () => {
     expect(await json<{ error: string }>(res)).toMatchObject({ error: 'category_mismatch' });
   });
 
+  it('レシピの分類があとから変わっても、そのコースの並べ替えや保存はできる', async () => {
+    const u = await login('host-recat');
+    const recipe = await json<RecipeDetail>(
+      await api(u, '/api/recipes', { method: 'POST', json: dessert }),
+    );
+    const { view, hosting } = await created(u);
+    const first = [course('デザート', 'dessert', recipe.id), course('汁物', 'soup')];
+    const saved = await json<PlanView>(await save(u, hosting.id, first, view.version));
+    const edited = await api(u, `/api/recipes/${recipe.id}`, {
+      method: 'PUT',
+      json: { ...dessert, category: 'side' },
+    });
+    expect(edited.status).toBe(200);
+    const res = await save(u, hosting.id, [...first].reverse(), saved.version);
+    expect(res.status).toBe(200);
+    expect((await json<PlanView>(res)).days[0]!.hostings[0]!.courses[1]!.recipe?.id).toBe(
+      recipe.id,
+    );
+  });
+
   it('ほかの食卓のもてなしは 404', async () => {
     const owner = await login('host-owner');
     const other = await login('host-other');

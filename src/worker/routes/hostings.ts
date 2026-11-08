@@ -160,7 +160,17 @@ export const hostingRoutes = new Hono<AppEnv>()
       if (ids.some((id) => !categoryOf.has(id))) {
         return c.json({ error: 'recipe_not_found' }, 404);
       }
-      if (courses.some((x) => x.recipeId && categoryOf.get(x.recipeId) !== x.category)) {
+      // すでに入っている枠はそのまま通す（あとからレシピの分類が変わっても、ほかの枠を保存できるように）
+      const saved = await db
+        .select({ recipeId: hostingCourses.recipeId, category: hostingCourses.category })
+        .from(hostingCourses)
+        .where(eq(hostingCourses.hostingId, hosting.id));
+      const kept = new Set(saved.map((x) => `${x.category}|${x.recipeId}`));
+      const mismatch = (x: (typeof courses)[number]) =>
+        x.recipeId &&
+        categoryOf.get(x.recipeId) !== x.category &&
+        !kept.has(`${x.category}|${x.recipeId}`);
+      if (courses.some(mismatch)) {
         return c.json({ error: 'category_mismatch' }, 400);
       }
     }
