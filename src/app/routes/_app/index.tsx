@@ -20,6 +20,8 @@ import {
   CutleryIcon,
   YenIcon,
 } from '../../components/icons';
+import { isDinnerHosted } from '../../../shared/hosting';
+import { HostingCard } from '../../components/week/HostingCard';
 import { LevelBadge } from '../../components/LevelBadge';
 import { MemoField } from '../../components/week/MemoField';
 import { markMission } from '../../lib/tour';
@@ -65,9 +67,11 @@ function Home() {
         name: me.displayName ?? '',
         hour,
         weekday,
-        hasPlan: !!data?.day.items.length,
+        hasPlan: !!data?.day.items.length || (!!data && isDinnerHosted(data.day)),
         offDay:
-          data && isOffDay(data.day.mode) ? (data.day.mode as 'eat_out' | 'takeout') : undefined,
+          data && isOffDay(data.day.mode) && !isDinnerHosted(data.day)
+            ? (data.day.mode as 'eat_out' | 'takeout')
+            : undefined,
         mainDish,
         timeLevel: data?.day.timeLevel,
         budgetLevel: data?.day.budgetLevel,
@@ -115,8 +119,23 @@ function Home() {
         )}
       </motion.header>
 
+      {data && data.day.hostings.length > 0 && (
+        <div className="mb-3 flex flex-col gap-2">
+          {data.day.hostings.map((h) => (
+            <Link key={h.id} to="/week" className="glass block rounded-[var(--radius-card)] p-2">
+              <HostingCard hosting={h} />
+            </Link>
+          ))}
+        </div>
+      )}
+
       {isPending || !data ? (
         <HomeSkeleton />
+      ) : isDinnerHosted(data.day) ? (
+        <>
+          {memo}
+          <QuickLinks />
+        </>
       ) : isOffDay(data.day.mode) ? (
         <>
           <OffToday weekStart={data.weekStart} date={data.day.date} mode={data.day.mode} />

@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-08-hosting',
+    date: '2026-11-08',
+    kind: 'feature',
+    title: 'もてなしの日を登録できるようになりました',
+    body: [
+      '週間献立の日のメニューから「もてなしを追加」で、昼か夜かと人数を選べます。前菜からデザートまで、出す順にコースを組めます。',
+      '買い物リストには、もてなしの人数分で入ります。夜のもてなしの日は、ふだんの献立がお休みになります。',
+    ],
+  },
+  {
     id: '2026-11-08-dessert',
     date: '2026-11-08',
     kind: 'improve',
