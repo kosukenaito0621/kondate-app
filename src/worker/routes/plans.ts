@@ -60,7 +60,7 @@ import { loadHostings } from '../lib/hostings';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
-type Ctx = Context<AppEnv>;
+export type Ctx = Context<AppEnv>;
 
 /** 「元に戻す」ができる期間（作り直してから3日） */
 export const UNDO_TTL_MS = 3 * 86_400_000;
@@ -281,7 +281,7 @@ export async function buildPlanView(
  * 版番号を確認して1つ進める。古い版からの保存なら null（呼び出し側で 409）。
  * 献立がなければ作る。
  */
-async function bumpVersion(c: Ctx, weekStart: string, expected: number | undefined) {
+export async function bumpVersion(c: Ctx, weekStart: string, expected: number | undefined) {
   const db = c.var.db;
   const groupId = c.var.group.id;
   const now = Date.now();
@@ -331,7 +331,7 @@ async function swapMemoStatements(c: Ctx, from: string, to: string, choice: Swap
     );
 }
 
-const stale = (c: Ctx) =>
+export const stale = (c: Ctx) =>
   c.json(
     {
       error: 'stale',
@@ -341,7 +341,7 @@ const stale = (c: Ctx) =>
   );
 
 /** 指定した日（と品目）の行を入れ替える */
-async function replaceItems(
+export async function replaceItems(
   c: Ctx,
   planId: string,
   next: PlanItem[],
@@ -376,7 +376,7 @@ async function replaceItems(
   ]);
 }
 
-async function saveCost(db: Db, groupId: string, planId: string, weekStart: string) {
+export async function saveCost(db: Db, groupId: string, planId: string, weekStart: string) {
   const view = await buildPlanView(db, groupId, weekStart);
   await db
     .update(mealPlans)
@@ -384,13 +384,13 @@ async function saveCost(db: Db, groupId: string, planId: string, weekStart: stri
     .where(eq(mealPlans.id, planId));
 }
 
-function validWeekStart(c: Ctx) {
+export function validWeekStart(c: Ctx) {
   const ws = c.req.param('weekStart')!;
   const ok = weekStartParam.safeParse(ws).success && weekStartOf(ws) === ws;
   return ok ? ws : null;
 }
 
-function inWeek(weekStart: string, date: string) {
+export function inWeek(weekStart: string, date: string) {
   return weekDates(weekStart).includes(date);
 }
 

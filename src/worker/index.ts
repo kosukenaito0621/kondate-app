@@ -12,6 +12,7 @@ import { pantryRoutes } from './routes/pantry';
 import { demoRoutes, purgeGuests, setSelfFetch } from './routes/demo';
 import { meRoutes } from './routes/me';
 import { memoRoutes, purgeOldMemos } from './routes/memos';
+import { hostingRoutes } from './routes/hostings';
 import { planRoutes, purgePlanUndo, todayItems } from './routes/plans';
 import { recipeShareRoutes } from './routes/recipe-shares';
 import { recipeRoutes } from './routes/recipes';
@@ -43,6 +44,7 @@ const api = new Hono<AppEnv>()
   .route('/invites', inviteRoutes)
   .route('/settings', settingsRoutes)
   .route('/plans', planRoutes)
+  .route('/hostings', hostingRoutes)
   .route('/shopping', shoppingRoutes)
   .route('/logs', logRoutes)
   .route('/memos', memoRoutes)
