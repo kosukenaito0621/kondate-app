@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { CATEGORY_LABEL, GENRE_LABEL } from '../../../../shared/constants';
 import { LEVEL_META } from '../../../../shared/levels';
+import { compact, optOneOf } from '../../../lib/search';
 import type { RecipeDetail, RecipeInput } from '../../../../shared/recipe';
 import { api } from '../../../api';
 import { GlassButton } from '../../../components/glass/GlassButton';
@@ -20,7 +21,10 @@ import { DEMO_DRAFT, DEMO_IMAGE } from '../../../lib/demoRecipe';
 import { markMission } from '../../../lib/tour';
 import { riseItem, spring, staggerContainer } from '../../../lib/motion';
 
+const IMPORT_MODES = ['photo', 'url'] as const;
+
 export const Route = createFileRoute('/_app/recipes/import')({
+  validateSearch: (s: Record<string, unknown>) => compact({ mode: optOneOf(s.mode, IMPORT_MODES) }),
   component: ImportPage,
 });
 
@@ -50,7 +54,8 @@ function ImportPage() {
 }
 
 function ImportForm({ demo }: { demo: boolean }) {
-  const [mode, setMode] = useState<'photo' | 'url'>('photo');
+  // 「追加」で選んだ取り込み方で開く
+  const [mode, setMode] = useState<'photo' | 'url'>(Route.useSearch().mode ?? 'photo');
   const [result, setResult] = useState<Draft | null>(null);
   const [stage, setStage] = useState(0);
   const [preview, setPreview] = useState<string | null>(null);

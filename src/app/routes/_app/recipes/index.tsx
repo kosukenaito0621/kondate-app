@@ -6,14 +6,7 @@ import { useEffect, useState } from 'react';
 import { CATEGORIES, CATEGORY_LABEL, GENRES, GENRE_LABEL } from '../../../../shared/constants';
 import { COOKING_LEVELS, LEVEL_META } from '../../../../shared/levels';
 import { FilterChips } from '../../../components/FilterChips';
-import {
-  BoxIcon,
-  CameraIcon,
-  HeartIcon,
-  LinkIcon,
-  PlusIcon,
-  SearchIcon,
-} from '../../../components/icons';
+import { BoxIcon, HeartIcon, LinkIcon, PlusIcon, SearchIcon } from '../../../components/icons';
 import { PageHeader } from '../../../components/PageHeader';
 import { RecipeCard } from '../../../components/RecipeCard';
 import { RecipeListSkeleton } from '../../../components/skeleton/Skeletons';
@@ -23,6 +16,7 @@ import { toJstDate } from '../../../../shared/date';
 import { SEASON_LABEL, SEASONS, seasonOf } from '../../../../shared/season';
 import { LevelIcon } from '../../../components/LevelIcon';
 import { MAX_SHARE_BUNDLE } from '../../../../shared/recipe';
+import { AddRecipeSheet } from '../../../components/recipe/AddRecipeSheet';
 import { BundleShareBar } from '../../../components/recipe/BundleShareBar';
 import { useToast } from '../../../components/toast/Toaster';
 import { cn } from '../../../lib/cn';
@@ -54,6 +48,7 @@ function RecipeList() {
   const [text, setText] = useState(filters.q ?? '');
   // 「選んで送る」：選んだレシピ（id → 料理名、選んだ順）
   const [selecting, setSelecting] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [picked, setPicked] = useState<Map<string, string>>(new Map());
   const { toast } = useToast();
   const guest = useIsGuest();
@@ -89,28 +84,20 @@ function RecipeList() {
 
   return (
     <>
+      <AddRecipeSheet open={adding} onClose={() => setAdding(false)} />
       <PageHeader
         title="レシピ"
         eyebrow={data ? `${data.length}品` : undefined}
         action={
-          <div className="flex gap-2">
-            <Link
-              to="/recipes/import"
-              data-tour="recipe-import"
-              className="glass sheen flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-sm font-bold"
-            >
-              <CameraIcon size={18} />
-              写真・URL
-            </Link>
-            <Link
-              to="/recipes/new"
-              className="btn-primary sheen flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-bold"
-              aria-label="手入力で追加"
-            >
-              <PlusIcon size={18} />
-              追加
-            </Link>
-          </div>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            data-tour="recipe-add"
+            className="btn-primary sheen flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-bold"
+          >
+            <PlusIcon size={18} />
+            追加
+          </button>
         }
       />
 

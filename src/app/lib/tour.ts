@@ -25,8 +25,10 @@ export type Mission = {
   /** 光らせた場所に添える一言 */
   hint: string;
   /** 光らせた場所に触れたあと、続けて光らせる場所（次の画面のボタンなど） */
-  then?: { spot: string; hint: string; gesture: Mission['gesture'] };
+  then?: MissionStep;
 };
+
+type MissionStep = Pick<Mission, 'spot' | 'hint' | 'gesture' | 'then'>;
 
 export const MISSIONS: readonly Mission[] = [
   {
@@ -100,13 +102,18 @@ export const MISSIONS: readonly Mission[] = [
     title: 'レシピを取り込んでみよう',
     desc: 'レシピ本の写真から、材料と手順を自動で読み取ります',
     to: '/recipes',
-    spot: 'recipe-import',
+    spot: 'recipe-add',
     gesture: 'タップ',
-    hint: '「写真・URL」から、見本の写真で取り込みを試せます',
+    hint: '「追加」から、見本の写真で取り込みを試せます',
     then: {
-      spot: 'import-sample',
+      spot: 'recipe-add-photo',
       gesture: 'タップ',
-      hint: '「この写真で試す」を押してみましょう',
+      hint: '「レシピ本の写真」を選びましょう',
+      then: {
+        spot: 'import-sample',
+        gesture: 'タップ',
+        hint: '「この写真で試す」を押してみましょう',
+      },
     },
   },
   {
@@ -181,6 +188,10 @@ export function markMission(id: MissionId) {
   state = { ...state, done, spot: state.spot?.id === id ? null : state.spot, cleared: id };
   emit();
 }
+
+/** 光らせた場所に触れたあとの案内（続きがなければ null） */
+export const nextSpot = (mission: Mission): Mission | null =>
+  mission.then ? { ...mission, ...mission.then, then: mission.then.then } : null;
 
 /** ミッションの場所を光らせる（画面の移動は呼び出し側で） */
 export function showSpot(mission: Mission | null) {

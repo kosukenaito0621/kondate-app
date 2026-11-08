@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { spring } from '../../lib/motion';
-import { showSpot, useTour } from '../../lib/tour';
+import { nextSpot, showSpot, useTour } from '../../lib/tour';
 
 type Rect = { top: number; left: number; width: number; height: number };
 const PAD = 6;
@@ -62,7 +62,7 @@ export function Spotlight() {
       if (!(e.target instanceof Element)) return;
       // 位置を測る前でも、光らせる場所そのものに触れたかで判断する
       if (!e.target.closest(`[data-tour="${spot.spot}"]`)) return;
-      showSpot(spot.then ? { ...spot, ...spot.then, then: undefined } : null);
+      showSpot(nextSpot(spot));
     };
     document.addEventListener('pointerdown', onDown, true);
     return () => {

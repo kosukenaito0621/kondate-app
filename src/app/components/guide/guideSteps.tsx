@@ -188,7 +188,7 @@ export function buildGuideSteps({ joinedGroup }: { joinedGroup?: string | null }
         </>,
         '作るときは「ゆっくりモード」で手順を1つずつ大きく表示。手順に時間があれば、タイマーも使えます。',
       ],
-      where: '下のタブ「レシピ」→ 右上の「写真・URL」または「追加」',
+      where: '下のタブ「レシピ」→ 右上の「追加」',
       art: <ArtRecipe />,
     },
     {
