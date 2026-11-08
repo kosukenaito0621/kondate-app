@@ -10,6 +10,7 @@ import {
 } from './constants';
 import { isIsoDate } from './date';
 import { DAY_LEVELS, type CookingLevel, type DayLevel } from './levels';
+import type { HostingView } from './hosting';
 import type { RecipeSummary } from './recipe';
 
 export const SIDE_MODES = ['auto', 'on', 'off'] as const;
@@ -118,6 +119,8 @@ export type PlanDayView = {
   /** 曜日の設定どおりの予定 */
   modeSetting: DayMode;
   items: PlanItemView[];
+  /** その日のもてなし（昼・夜の順） */
+  hostings: HostingView[];
   /** その日のメモ */
   memo: DayMemo | null;
 };

@@ -270,6 +270,39 @@ export const mealPlanItems = sqliteTable(
   (t) => [uniqueIndex('meal_plan_items_slot_uq').on(t.planId, t.date, t.slot)],
 );
 
+/** もてなし（昼・夜のコース）。週の献立にぶら下がり、版番号は献立と共通 */
+export const hostings = sqliteTable(
+  'hostings',
+  {
+    id: text('id').primaryKey(),
+    planId: text('plan_id')
+      .notNull()
+      .references(() => mealPlans.id, { onDelete: 'cascade' }),
+    date: text('date').notNull(),
+    meal: text('meal', { enum: ['lunch', 'dinner'] }).notNull(),
+    servings: integer('servings').notNull(),
+    updatedBy: text('updated_by').references(() => users.id, { onDelete: 'set null' }),
+    updatedAt: integer('updated_at', { mode: 'number' }).notNull().default(0),
+  },
+  (t) => [uniqueIndex('hostings_slot_uq').on(t.planId, t.date, t.meal)],
+);
+
+/** もてなしのコースの枠（出す順）。レシピが消えたら未定に戻す */
+export const hostingCourses = sqliteTable(
+  'hosting_courses',
+  {
+    id: text('id').primaryKey(),
+    hostingId: text('hosting_id')
+      .notNull()
+      .references(() => hostings.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    label: text('label').notNull(),
+    category: text('category', { enum: ['main', 'soup', 'side', 'dessert'] }).notNull(),
+    recipeId: text('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('hosting_courses_hosting_idx').on(t.hostingId)],
+);
+
 export const shoppingItems = sqliteTable(
   'shopping_items',
   {

@@ -54,7 +54,9 @@ import { notifyGroup } from '../realtime/notify';
 import type { AppEnv } from '../types';
 import { loadRecipeIngredientNames, loadStockIndex } from './pantry';
 import { toSummary } from './recipes';
+import type { HostingView } from '../../shared/hosting';
 import { groupFavoriteIds } from '../lib/favorites';
+import { loadHostings } from '../lib/hostings';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
@@ -223,6 +225,9 @@ export async function buildPlanView(
         .where(eq(planUndo.planId, plan.id))
         .get()
     : null;
+  const hostingsByDate = plan
+    ? await loadHostings(db, plan.id, cooked, favorites)
+    : new Map<string, HostingView[]>();
   const slotOrder = { main: 0, soup: 1, side: 2, side2: 3 } as const;
   const summaries = rows.map((r) => toSummary(r.recipe));
   const estimatedCost = estimateCost(
@@ -265,6 +270,7 @@ export async function buildPlanView(
             cookedLogId: cooked.get(`${date}|${r.item.recipeId}`) ?? null,
             favorite: favorites.has(r.item.recipeId),
           })),
+        hostings: hostingsByDate.get(date) ?? [],
         memo: memos.get(date) ?? null,
       };
     }),
