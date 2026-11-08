@@ -13,7 +13,16 @@ import { addDays, toJstDate } from '../../shared/date';
 import { sectionOf } from '../../shared/ingredients';
 import { addQty, consumeStock, qtyLabel, type StockUse } from '../../shared/pantry';
 import type { Db } from '../db/client';
-import { cookLogs, pantryItems, recipeIngredients, recipes, users } from '../db/schema';
+import {
+  cookLogs,
+  hostingCourses,
+  hostings,
+  mealPlans,
+  pantryItems,
+  recipeIngredients,
+  recipes,
+  users,
+} from '../db/schema';
 import { isGroupImageKey } from '../lib/images';
 import { requireAuth } from '../middleware/auth';
 import { requireGroup } from '../middleware/group';
@@ -105,7 +114,12 @@ export async function recipeCookStats(
 }
 
 /** 作った料理の材料（人数に合わせて換算）を在庫から差し引き、使った量を記録に残す */
-async function consumeForLog(c: Context<AppEnv>, logId: string, recipeId: string) {
+async function consumeForLog(
+  c: Context<AppEnv>,
+  logId: string,
+  recipeId: string,
+  servingsOverride?: number,
+) {
   const db = c.var.db;
   const groupId = c.var.group.id;
   const stock = await loadPantry(db, groupId);
@@ -119,7 +133,7 @@ async function consumeForLog(c: Context<AppEnv>, logId: string, recipeId: string
     .select()
     .from(recipeIngredients)
     .where(eq(recipeIngredients.recipeId, recipeId));
-  const { servings } = await loadSettings(db, groupId);
+  const servings = servingsOverride ?? (await loadSettings(db, groupId)).servings;
   const scale = servings / (recipe?.servings || 2);
   const { updates, used } = consumeStock(
     stock,
@@ -201,9 +215,28 @@ export const logRoutes = new Hono<AppEnv>()
     c.json(await recipeCookStats(c.var.db, c.var.group.id, c.req.param('recipeId'))),
   )
   .post('/', zValidator('json', createLogSchema), async (c) => {
-    const { recipeId, date } = c.req.valid('json');
+    const { recipeId, date, hostingCourseId } = c.req.valid('json');
     const db = c.var.db;
     const groupId = c.var.group.id;
+    // もてなしの料理なら、もてなしの人数（自分の食卓のものだけ）
+    let hostingServings: number | undefined;
+    if (hostingCourseId) {
+      const hosted = await db
+        .select({ servings: hostings.servings })
+        .from(hostingCourses)
+        .innerJoin(hostings, eq(hostings.id, hostingCourses.hostingId))
+        .innerJoin(mealPlans, eq(mealPlans.id, hostings.planId))
+        .where(
+          and(
+            eq(hostingCourses.id, hostingCourseId),
+            eq(hostingCourses.recipeId, recipeId),
+            eq(mealPlans.groupId, groupId),
+          ),
+        )
+        .get();
+      if (!hosted) return c.json({ error: 'hosting_not_found' }, 404);
+      hostingServings = hosted.servings;
+    }
     // 見えるレシピ（システム共通か自グループ）だけ記録できる
     const visible = await db
       .select({ id: recipes.id })
@@ -221,7 +254,9 @@ export const logRoutes = new Hono<AppEnv>()
       .onConflictDoNothing()
       .returning({ id: cookLogs.id });
     // はじめて記録したときだけ、使った材料を在庫から差し引く
-    const used = inserted[0] ? await consumeForLog(c, inserted[0].id, recipeId) : [];
+    const used = inserted[0]
+      ? await consumeForLog(c, inserted[0].id, recipeId, hostingServings)
+      : [];
     if (used.length) notifyGroup(c, { type: 'pantry.updated', summary: '在庫を使いました' });
     const row = await db
       .select({ id: cookLogs.id })

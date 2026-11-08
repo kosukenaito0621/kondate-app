@@ -56,7 +56,7 @@ import { loadRecipeIngredientNames, loadStockIndex } from './pantry';
 import { toSummary } from './recipes';
 import type { HostingView } from '../../shared/hosting';
 import { groupFavoriteIds } from '../lib/favorites';
-import { loadHostings } from '../lib/hostings';
+import { dinnerHostedDates, loadHostings } from '../lib/hostings';
 import { loadMemos, memoStatement } from './memos';
 import { loadSettings } from './settings';
 
@@ -121,6 +121,7 @@ async function plannerInput(
   groupId: string,
   weekStart: string,
   dayModes: DayModes = {},
+  dinnerHosted: ReadonlySet<string> = new Set(),
 ): Promise<PlannerInput> {
   const [settings, recipeList, history, names, favorites] = await Promise.all([
     loadSettings(db, groupId),
@@ -150,7 +151,7 @@ async function plannerInput(
       timeLevel: s.timeLevel,
       sideMode: s.sideMode,
       level: s.level === 'inherit' ? settings.defaultLevel : s.level,
-      off: isOffDay(dayModes[date] ?? s.mode),
+      off: isOffDay(dayModes[date] ?? s.mode) || dinnerHosted.has(date),
     };
   });
   return {
@@ -340,6 +341,15 @@ export const stale = (c: Ctx) =>
     409,
   );
 
+/** 夜のもてなしがある日か（版を進める前に確かめる） */
+async function isDinnerHostedDay(c: Ctx, weekStart: string, dates: string[]) {
+  const plan = await findPlan(c.var.db, c.var.group.id, weekStart);
+  return !!plan && (await dinnerHostedDates(c.var.db, plan.id, dates)).size > 0;
+}
+
+const hostingDay = (c: Ctx) =>
+  c.json({ error: 'hosting_day', message: '夜のもてなしがある日は変更できません' }, 400);
+
 /** 指定した日（と品目）の行を入れ替える */
 export async function replaceItems(
   c: Ctx,
@@ -407,7 +417,8 @@ export const planRoutes = new Hono<AppEnv>()
     if (!ws) return c.json({ error: 'invalid_week' }, 400);
     const plan = await bumpVersion(c, ws, c.req.valid('json').version);
     if (!plan) return stale(c);
-    const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
+    const dinnerHosted = await dinnerHostedDates(c.var.db, plan.id);
+    const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes, dinnerHosted);
     const before = await planItems(c.var.db, plan.id);
     // すぎた日と「作った」と記録した日は作り直さない（その日の献立をそのまま残す。空の日も埋めない）
     // テストでは「今日」を固定する（PLAN_TODAY はテスト用の設定にだけある）
@@ -486,10 +497,12 @@ export const planRoutes = new Hono<AppEnv>()
           )
       ).map((r) => r.id),
     );
+    // 夜のもてなしがある日は、ふだんの料理を戻さない
+    const dinnerHosted = await dinnerHostedDates(db, plan.id);
     await replaceItems(
       c,
       plan.id,
-      saved.items.filter((i) => alive.has(i.recipeId)),
+      saved.items.filter((i) => alive.has(i.recipeId) && !dinnerHosted.has(i.date)),
       {},
       [db.delete(planUndo).where(eq(planUndo.planId, plan.id))],
     );
@@ -508,6 +521,7 @@ export const planRoutes = new Hono<AppEnv>()
     const date = c.req.param('date');
     if (!ws || !inWeek(ws, date)) return c.json({ error: 'invalid_date' }, 400);
     const { version, slot, memo } = c.req.valid('json');
+    if (await isDinnerHostedDay(c, ws, [date])) return hostingDay(c);
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
     const input = await plannerInput(c.var.db, c.var.group.id, ws, plan.dayModes);
@@ -533,6 +547,7 @@ export const planRoutes = new Hono<AppEnv>()
     const date = c.req.param('date');
     if (!ws || !inWeek(ws, date)) return c.json({ error: 'invalid_date' }, 400);
     const { version, mode } = c.req.valid('json');
+    if (await isDinnerHostedDay(c, ws, [date])) return hostingDay(c);
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
     const db = c.var.db;
@@ -567,6 +582,7 @@ export const planRoutes = new Hono<AppEnv>()
       return c.json({ error: 'invalid_date' }, 400);
     }
     const { version, recipeId, memo } = c.req.valid('json');
+    if (await isDinnerHostedDay(c, ws, [date])) return hostingDay(c);
     const db = c.var.db;
     if (recipeId) {
       const usable = await plannerRecipes(db, c.var.group.id);
@@ -620,6 +636,7 @@ export const planRoutes = new Hono<AppEnv>()
     if (!ws || !inWeek(ws, from) || !inWeek(ws, to) || from === to) {
       return c.json({ error: 'invalid_date' }, 400);
     }
+    if (await isDinnerHostedDay(c, ws, [from, to])) return hostingDay(c);
     const plan = await bumpVersion(c, ws, version);
     if (!plan) return stale(c);
     const db = c.var.db;

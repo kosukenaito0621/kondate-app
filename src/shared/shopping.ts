@@ -8,6 +8,8 @@ export type ShoppingSource = {
   /** 献立の日付（使い切りの表示用） */
   date?: string;
   recipeServings: number;
+  /** この料理だけ人数が違うとき（もてなし） */
+  servings?: number;
   ingredients: {
     name: string;
     quantity: number | null;
@@ -98,7 +100,7 @@ export function buildShoppingList(
   const acc = new Map<string, Acc>();
 
   for (const src of sources) {
-    const scale = servings / (src.recipeServings || 2);
+    const scale = (src.servings ?? servings) / (src.recipeServings || 2);
     for (const ing of src.ingredients) {
       const name = normalizeIngredientName(ing.name);
       if (isHomeStock(ing.section, name) && !buy.has(name)) continue;

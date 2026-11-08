@@ -6,6 +6,8 @@ export const createLogSchema = z.object({
   recipeId: z.string().min(1),
   /** 省略時は今日（JST） */
   date: z.string().refine(isIsoDate).optional(),
+  /** もてなしの料理を記録するとき（在庫はもてなしの人数分を引く） */
+  hostingCourseId: z.string().min(1).optional(),
 });
 
 export const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);

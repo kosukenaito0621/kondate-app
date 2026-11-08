@@ -244,3 +244,184 @@ describe('もてなしのAPI', () => {
     expect(await json<{ error: string }>(res)).toMatchObject({ error: 'guest_forbidden' });
   });
 });
+
+// 豚の生姜焼き（2人分）：豚ロース肉 250g ほか
+const GINGER_PORK = 'sys-main-wa-02';
+const withMain = (u: TestUser, id: string, version: number) =>
+  save(u, id, [course('主菜', 'main', GINGER_PORK)], version);
+
+describe('ふだんの献立との関係', () => {
+  it('おまかせ作成は夜のもてなしの日を埋めず、昼のもてなしの日は埋める', async () => {
+    const u = await login('host-gen');
+    await created(u, MON, 'dinner', 4);
+    const { view } = await created(u, '2026-10-20', 'lunch', 4);
+    const after = await generate(u, view.version);
+    expect(after.days[0]!.items).toEqual([]);
+    expect(after.days[1]!.items.length).toBeGreaterThan(0);
+  });
+
+  it('作り直しても、もてなしは変わらない', async () => {
+    const u = await login('host-regen');
+    const a = await generate(u);
+    const { view, hosting } = await created(u, MON, 'lunch', 6, a.version);
+    const saved = await json<PlanView>(await withMain(u, hosting.id, view.version));
+    const after = await generate(u, saved.version);
+    expect(after.days[0]!.hostings[0]!.courses[0]!.recipe?.id).toBe(GINGER_PORK);
+  });
+
+  it('元に戻しても、もてなしは変わらず、夜のもてなしの日にふだんの料理は戻らない', async () => {
+    const u = await login('host-undo');
+    const a = await generate(u);
+    const b = await generate(u, a.version);
+    const { view } = await created(u, MON, 'dinner', 4, b.version);
+    const back = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/undo`, { method: 'POST', json: { version: view.version } }),
+    );
+    expect(back.days[0]!.hostings).toHaveLength(1);
+    expect(back.days[0]!.items).toEqual([]);
+    expect(back.days[1]!.items.length).toBeGreaterThan(0);
+  });
+
+  it('夜のもてなしの日のふだんの献立の操作は 400 hosting_day で、版が進まない', async () => {
+    const u = await login('host-guard');
+    const a = await generate(u);
+    const { view } = await created(u, MON, 'dinner', 4, a.version);
+    const tue = '2026-10-20';
+    const version = view.version;
+    const calls = [
+      api(u, `/api/plans/${WEEK}/days/${MON}/regenerate`, { method: 'POST', json: { version } }),
+      api(u, `/api/plans/${WEEK}/days/${MON}/mode`, {
+        method: 'PUT',
+        json: { version, mode: 'eat_out' },
+      }),
+      api(u, `/api/plans/${WEEK}/days/${MON}/main`, {
+        method: 'PUT',
+        json: { version, recipeId: GINGER_PORK },
+      }),
+      api(u, `/api/plans/${WEEK}/swap`, { method: 'POST', json: { version, from: MON, to: tue } }),
+      api(u, `/api/plans/${WEEK}/swap`, { method: 'POST', json: { version, from: tue, to: MON } }),
+    ];
+    for (const res of await Promise.all(calls)) {
+      expect(res.status).toBe(400);
+      expect(await json<{ error: string }>(res)).toMatchObject({ error: 'hosting_day' });
+    }
+    expect((await planOf(u)).version).toBe(version);
+  });
+
+  it('昼のもてなしの日は、日を入れ替えてももてなしは動かない', async () => {
+    const u = await login('host-swap');
+    const a = await generate(u);
+    const { view } = await created(u, MON, 'lunch', 4, a.version);
+    const after = await json<PlanView>(
+      await api(u, `/api/plans/${WEEK}/swap`, {
+        method: 'POST',
+        json: { version: view.version, from: MON, to: '2026-10-20' },
+      }),
+    );
+    expect(after.days[0]!.hostings).toHaveLength(1);
+    expect(after.days[1]!.hostings).toHaveLength(0);
+  });
+});
+
+describe('買い物リスト・費用・在庫', () => {
+  const pork = (l: ShoppingListView) => l.items.find((i) => i.name === '豚ロース肉');
+
+  it('買い物リストにもてなしの人数分で入る', async () => {
+    const u = await login('host-shop');
+    const { view, hosting } = await created(u, MON, 'lunch', 6);
+    await withMain(u, hosting.id, view.version);
+    const list = await json<ShoppingListView>(await api(u, `/api/shopping/${WEEK}`));
+    expect(pork(list)).toMatchObject({ quantity: 750, unit: 'g' });
+  });
+
+  it('未定の枠は買い物リストに影響しない', async () => {
+    const u = await login('host-shop-empty');
+    await created(u, MON, 'lunch', 6);
+    const res = await api(u, `/api/shopping/${WEEK}`);
+    expect(res.status).toBe(200);
+    expect((await json<ShoppingListView>(res)).items).toEqual([]);
+  });
+
+  it('もてなしを変えると買い物リストが古いと分かる', async () => {
+    const u = await login('host-shop-stale');
+    const { view, hosting } = await created(u, MON, 'lunch', 6);
+    const saved = await json<PlanView>(await withMain(u, hosting.id, view.version));
+    await api(u, `/api/shopping/${WEEK}`);
+    await api(u, `${base}/${hosting.id}`, {
+      method: 'PATCH',
+      json: { version: saved.version, servings: 8 },
+    });
+    expect((await json<ShoppingListView>(await api(u, `/api/shopping/${WEEK}`))).outdated).toBe(
+      true,
+    );
+  });
+
+  it('費用の目安にもてなしは含まれない', async () => {
+    const u = await login('host-cost');
+    const a = await generate(u);
+    const { view, hosting } = await created(u, '2026-10-20', 'lunch', 6, a.version);
+    const saved = await json<PlanView>(await withMain(u, hosting.id, view.version));
+    expect(saved.estimatedCost).toBe(a.estimatedCost);
+  });
+
+  const stockOfPork = async (u: TestUser) =>
+    (await json<{ name: string; quantity: number }[]>(await api(u, '/api/pantry'))).find(
+      (i) => i.name === '豚ロース肉',
+    )?.quantity;
+  const addPork = (u: TestUser) =>
+    api(u, '/api/pantry', {
+      method: 'POST',
+      json: { name: '豚ロース肉', quantity: 1000, unit: 'g', expiresOn: null },
+    });
+
+  it('「作った」でもてなしの人数分が在庫から引かれる', async () => {
+    const u = await login('host-cook');
+    await addPork(u);
+    const { view, hosting } = await created(u, MON, 'lunch', 6);
+    const saved = await json<PlanView>(await withMain(u, hosting.id, view.version));
+    const courseId = saved.days[0]!.hostings[0]!.courses[0]!.id;
+    const res = await api(u, '/api/logs', {
+      method: 'POST',
+      json: { recipeId: GINGER_PORK, date: MON, hostingCourseId: courseId },
+    });
+    expect(res.status).toBe(201);
+    expect(await stockOfPork(u)).toBe(250);
+  });
+
+  it('ほかの食卓の hostingCourseId は 404', async () => {
+    const owner = await login('host-cook-owner');
+    const other = await login('host-cook-other');
+    const { view, hosting } = await created(owner, MON, 'lunch', 6);
+    const saved = await json<PlanView>(await withMain(owner, hosting.id, view.version));
+    const res = await api(other, '/api/logs', {
+      method: 'POST',
+      json: {
+        recipeId: GINGER_PORK,
+        date: MON,
+        hostingCourseId: saved.days[0]!.hostings[0]!.courses[0]!.id,
+      },
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('もてなしとふだんの献立で同じレシピを同じ日に使うと、両方に印が付き、在庫は1回だけ引かれる', async () => {
+    const u = await login('host-cook-both');
+    await addPork(u);
+    const { view, hosting } = await created(u, MON, 'lunch', 6);
+    const saved = await json<PlanView>(await withMain(u, hosting.id, view.version));
+    await api(u, `/api/plans/${WEEK}/days/${MON}/main`, {
+      method: 'PUT',
+      json: { version: saved.version, recipeId: GINGER_PORK },
+    });
+    const courseId = saved.days[0]!.hostings[0]!.courses[0]!.id;
+    await api(u, '/api/logs', {
+      method: 'POST',
+      json: { recipeId: GINGER_PORK, date: MON, hostingCourseId: courseId },
+    });
+    await api(u, '/api/logs', { method: 'POST', json: { recipeId: GINGER_PORK, date: MON } });
+    const after = (await planOf(u)).days[0]!;
+    expect(after.items.find((i) => i.slot === 'main')!.cookedLogId).not.toBeNull();
+    expect(after.hostings[0]!.courses[0]!.cookedLogId).not.toBeNull();
+    expect(await stockOfPork(u)).toBe(250);
+  });
+});

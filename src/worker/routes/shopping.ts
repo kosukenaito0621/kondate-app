@@ -18,6 +18,8 @@ import {
 import { chunkRows } from '../db/chunk';
 import type { Db } from '../db/client';
 import {
+  hostingCourses,
+  hostings,
   mealPlanItems,
   mealPlans,
   recipeIngredients,
@@ -54,15 +56,40 @@ async function planSources(db: Db, planId: string): Promise<ShoppingSource[]> {
     .from(mealPlanItems)
     .innerJoin(recipes, eq(recipes.id, mealPlanItems.recipeId))
     .where(eq(mealPlanItems.planId, planId));
-  if (!items.length) return [];
+  // もてなしの料理は、もてなしの人数分
+  const hosted = await db
+    .select({
+      recipeId: recipes.id,
+      name: recipes.name,
+      servings: recipes.servings,
+      date: hostings.date,
+      hostingServings: hostings.servings,
+    })
+    .from(hostingCourses)
+    .innerJoin(hostings, eq(hostings.id, hostingCourses.hostingId))
+    .innerJoin(recipes, eq(recipes.id, hostingCourses.recipeId))
+    .where(eq(hostings.planId, planId));
+  if (!items.length && !hosted.length) return [];
   const ings = await db
     .select()
     .from(recipeIngredients)
-    .where(inArray(recipeIngredients.recipeId, [...new Set(items.map((i) => i.recipeId))]));
-  return items.map((it) => ({
+    .where(
+      inArray(recipeIngredients.recipeId, [
+        ...new Set([...items, ...hosted].map((i) => i.recipeId)),
+      ]),
+    );
+  const planned: {
+    recipeId: string;
+    name: string;
+    servings: number;
+    date: string;
+    hostingServings?: number;
+  }[] = [...items, ...hosted];
+  return planned.map((it) => ({
     recipeName: it.name,
     date: it.date,
     recipeServings: it.servings,
+    servings: it.hostingServings,
     ingredients: ings
       .filter((g) => g.recipeId === it.recipeId)
       .map((g) => ({
