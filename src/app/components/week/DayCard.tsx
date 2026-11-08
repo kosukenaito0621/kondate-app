@@ -1,6 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
-import { CATEGORY_LABEL, COST_LEVEL_LABEL, TIME_LEVEL_LABEL } from '../../../shared/constants';
+import {
+  CATEGORY_LABEL,
+  COST_LEVEL_LABEL,
+  SLOT_LABEL,
+  TIME_LEVEL_LABEL,
+  type Slot,
+} from '../../../shared/constants';
 import { WEEKDAY_LABELS } from '../../../shared/date';
 import { holidayName } from '../../../shared/holidays';
 import {
@@ -48,8 +54,8 @@ export function MealRow({ item, onLongPress }: { item: PlanItemView; onLongPress
               : 'transform 160ms ease-out, opacity 160ms',
           }}
         />
-        <span className="w-7 shrink-0 text-[11px] font-bold text-ink-soft">
-          {CATEGORY_LABEL[item.slot]}
+        <span className="w-8 shrink-0 text-[11px] font-bold text-ink-soft">
+          {SLOT_LABEL[item.slot]}
         </span>
         <GenreBadge genre={r.genre} className="size-5 text-[10px]" />
         <span
@@ -114,7 +120,7 @@ export function DayCard({
   bodyRef: (el: HTMLDivElement | null) => void;
   onGrip: (e: React.PointerEvent) => void;
   onItem: (item: PlanItemView) => void;
-  onAddSlot: (slot: 'main' | 'soup' | 'side') => void;
+  onAddSlot: (slot: Slot) => void;
   onMenu: () => void;
 }) {
   // 土曜は水色、日曜と祝日は赤（カレンダーと同じ）
@@ -124,6 +130,8 @@ export function DayCard({
   const missing = off
     ? []
     : (['main', 'soup'] as const).filter((s) => !day.items.some((i) => i.slot === s));
+  const canAddSide =
+    !off && day.items.some((i) => i.slot === 'side') && !day.items.some((i) => i.slot === 'side2');
   // 生成のたびに、カードがシャッフルされて並ぶ演出（角度は日ごとに少しずつ変える）
   const tilt = ((index * 37) % 11) - 5;
   const weekday = WEEKDAY_LABELS[day.weekday];
@@ -253,9 +261,18 @@ export function DayCard({
                   onClick={() => onAddSlot(slot)}
                   className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
                 >
-                  <span className="w-7 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
+                  <span className="w-8 text-[11px] font-bold">{CATEGORY_LABEL[slot]}</span>＋ 選ぶ
                 </button>
               ))}
+              {canAddSide && (
+                <button
+                  type="button"
+                  onClick={() => onAddSlot('side2')}
+                  className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 text-left text-sm text-ink-faint"
+                >
+                  <span className="w-8 shrink-0" aria-hidden />＋ 副菜をもう1品
+                </button>
+              )}
             </div>
           )}
         </div>

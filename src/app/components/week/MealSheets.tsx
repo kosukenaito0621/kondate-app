@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { CATEGORY_LABEL, type Category } from '../../../shared/constants';
+import { SLOT_LABEL, slotCategory, type Category, type Slot } from '../../../shared/constants';
 import { WEEKDAY_LABELS } from '../../../shared/date';
 import type { PlanDayView, PlanItemView } from '../../../shared/plan';
 import { cn } from '../../lib/cn';
@@ -17,7 +17,7 @@ import { useCookOnDate } from '../../lib/cooklog';
 import { CheckDraw } from '../icons';
 import { LevelBadge } from '../LevelBadge';
 
-export type MealTarget = { day: PlanDayView; slot: Category; item?: PlanItemView };
+export type MealTarget = { day: PlanDayView; slot: Slot; item?: PlanItemView };
 
 /** 品目の操作：レシピを見る／別のレシピに／一覧から選ぶ／外す */
 export function MealSheet(props: {
@@ -30,7 +30,7 @@ export function MealSheet(props: {
 }) {
   const { target, onClose } = props;
   const title = target
-    ? `${WEEKDAY_LABELS[target.day.weekday]}曜日の${CATEGORY_LABEL[target.slot]}`
+    ? `${WEEKDAY_LABELS[target.day.weekday]}曜日の${SLOT_LABEL[target.slot]}`
     : '';
   return (
     <Sheet open={target !== null} title={title} onClose={onClose}>
@@ -56,14 +56,20 @@ function MealSheetBody({
 }) {
   // 空の枠をタップしたときは、最初から一覧を出す
   const [picking, setPicking] = useState(!target.item);
+  // 2品目はおまかせで選ばない
+  const auto = target.slot !== 'side2';
+  // 副菜の1品目と2品目は同じレシピにしない
+  const pair = target.slot === 'side' ? 'side2' : target.slot === 'side2' ? 'side' : null;
+  const pairId = target.day.items.find((i) => i.slot === pair)?.recipe.id;
   if (picking || !target.item) {
     return (
       <RecipePicker
-        category={target.slot}
+        category={slotCategory(target.slot)}
         level={target.day.level}
         currentId={target.item?.recipe.id}
         onPick={onPick}
-        onAuto={target.item ? undefined : onRegenerate}
+        excludeIds={pairId ? [pairId] : undefined}
+        onAuto={target.item || !auto ? undefined : onRegenerate}
       />
     );
   }
@@ -86,12 +92,14 @@ function MealSheetBody({
         date={target.day.date}
         logId={target.item.cookedLogId}
       />
-      <GlassButton variant="primary" loading={busy} onClick={onRegenerate}>
-        別のレシピにする（おまかせ）
-      </GlassButton>
+      {auto && (
+        <GlassButton variant="primary" loading={busy} onClick={onRegenerate}>
+          別のレシピにする（おまかせ）
+        </GlassButton>
+      )}
       <GlassButton onClick={() => setPicking(true)}>レシピ一覧から選ぶ</GlassButton>
       <GlassButton variant="ghost" onClick={onRemove}>
-        この{CATEGORY_LABEL[target.slot]}を外す
+        この{SLOT_LABEL[target.slot]}を外す
       </GlassButton>
     </div>
   );
@@ -101,12 +109,14 @@ function RecipePicker({
   category,
   level,
   currentId,
+  excludeIds,
   onPick,
   onAuto,
 }: {
   category: Category;
   level: 'futaba' | 'minori';
   currentId?: string;
+  excludeIds?: string[];
   onPick: (id: string) => void;
   onAuto?: () => void;
 }) {
@@ -123,6 +133,8 @@ function RecipePicker({
       difficulty: level === 'futaba' ? 'futaba' : undefined,
     }),
   );
+
+  const list = data?.filter((r) => !excludeIds?.includes(r.id));
 
   return (
     <div className="flex flex-col gap-3">
@@ -148,7 +160,7 @@ function RecipePicker({
       )}
       <ul className="-mx-1 flex max-h-[45dvh] flex-col gap-1 overflow-y-auto px-1">
         {isPending && <li className="p-3 text-sm text-ink-soft">読み込み中…</li>}
-        {data?.map((r) => (
+        {list?.map((r) => (
           <li key={r.id}>
             <button
               type="button"
@@ -174,7 +186,7 @@ function RecipePicker({
             </button>
           </li>
         ))}
-        {data?.length === 0 && <li className="p-3 text-sm text-ink-soft">見つかりませんでした</li>}
+        {list?.length === 0 && <li className="p-3 text-sm text-ink-soft">見つかりませんでした</li>}
       </ul>
     </div>
   );

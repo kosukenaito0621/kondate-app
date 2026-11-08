@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-08-second-side',
+    date: '2026-11-08',
+    kind: 'feature',
+    title: '副菜をもう1品足せるようになりました',
+    body: [
+      '週間献立で、副菜が入っている日に「＋ 副菜をもう1品」が出ます。足したい日だけ、レシピを選んでください。',
+      '2品目も買い物リストに入ります。おまかせで作るときは、これまでどおり副菜は1品です。',
+    ],
+  },
+  {
     id: '2026-11-01-undo-regenerate',
     date: '2026-11-01',
     kind: 'improve',

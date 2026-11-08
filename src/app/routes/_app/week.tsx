@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { CATEGORY_LABEL } from '../../../shared/constants';
+import { SLOT_LABEL } from '../../../shared/constants';
 import {
   addDays,
   isIsoDate,
@@ -14,7 +14,6 @@ import {
 } from '../../../shared/date';
 import { swapMemos, type EditMemoChoice, type SwapMemoChoice } from '../../../shared/memo';
 import type { PlanDayView } from '../../../shared/plan';
-import type { Slot } from '../../../shared/planner';
 import { ConfirmDialog } from '../../components/glass/ConfirmDialog';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
@@ -374,12 +373,12 @@ function WeekPage() {
         busy={mutation.isPending}
         onClose={() => setMeal(null)}
         onRegenerate={() => {
-          if (!meal) return;
+          if (!meal || meal.slot === 'side2') return;
           setMeal(null);
           const action = { type: 'regenerate' as const, date: meal.day.date, slot: meal.slot };
           // 空の枠に「おまかせ」で入れるのは差し替えではないので、メモは聞かない
           if (!meal.item) return mutation.mutate(action);
-          void editDay(action, `${dayName(meal.day.date)}の${CATEGORY_LABEL[meal.slot]}を変えます`);
+          void editDay(action, `${dayName(meal.day.date)}の${SLOT_LABEL[meal.slot]}を変えます`);
         }}
         onPick={(recipeId) => {
           if (!meal) return;
@@ -387,18 +386,18 @@ function WeekPage() {
           const action = {
             type: 'set' as const,
             date: meal.day.date,
-            slot: meal.slot as Slot,
+            slot: meal.slot,
             recipeId,
           };
           if (!meal.item) return mutation.mutate(action);
-          void editDay(action, `${dayName(meal.day.date)}の${CATEGORY_LABEL[meal.slot]}を変えます`);
+          void editDay(action, `${dayName(meal.day.date)}の${SLOT_LABEL[meal.slot]}を変えます`);
         }}
         onRemove={() => {
           if (!meal) return;
           setMeal(null);
           void editDay(
             { type: 'set', date: meal.day.date, slot: meal.slot, recipeId: null },
-            `${dayName(meal.day.date)}の${CATEGORY_LABEL[meal.slot]}を外します`,
+            `${dayName(meal.day.date)}の${SLOT_LABEL[meal.slot]}を外します`,
           );
         }}
       />

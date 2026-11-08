@@ -2,7 +2,7 @@ import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import { useMemo } from 'react';
-import { CATEGORY_LABEL } from '../../../shared/constants';
+import { SLOT_LABEL } from '../../../shared/constants';
 import { jstHour, toJstDate, weekdayIndex, WEEKDAY_LABELS } from '../../../shared/date';
 import type { PlanDayView, PlanItemView } from '../../../shared/plan';
 import { api } from '../../api';
@@ -167,7 +167,7 @@ function MealHero({ item }: { item: PlanItemView }) {
           <span className={`w-1.5 shrink-0 rounded-full ${stripe[r.genre]}`} aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-xs text-ink-soft">
-              <span className="font-bold text-accent-strong">{CATEGORY_LABEL[item.slot]}</span>
+              <span className="font-bold text-accent-strong">{SLOT_LABEL[item.slot]}</span>
               <GenreBadge genre={r.genre} className="size-5 text-[10px]" />
             </div>
             <motion.p
