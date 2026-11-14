@@ -42,13 +42,22 @@ export function useCookToggle() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async ({ recipeId, logId }: { recipeId: string; logId?: string }) => {
+    mutationFn: async ({
+      recipeId,
+      logId,
+      hostingCourseId,
+    }: {
+      recipeId: string;
+      logId?: string;
+      /** もてなしの料理なら、在庫はもてなしの人数分を引く */
+      hostingCourseId?: string;
+    }) => {
       if (logId) {
         const res = await api.logs[':id'].$delete({ param: { id: logId } });
         if (!res.ok) throw new Error('取り消せませんでした');
         return null;
       }
-      return ok<LogCreated>(await api.logs.$post({ json: { recipeId } }));
+      return ok<LogCreated>(await api.logs.$post({ json: { recipeId, hostingCourseId } }));
     },
     onSuccess: (res) => toastPantryUsed(toast, res),
     onMutate: async ({ recipeId, logId }) => {

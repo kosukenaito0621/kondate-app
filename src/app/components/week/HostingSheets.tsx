@@ -18,7 +18,9 @@ import { ConfirmDialog } from '../glass/ConfirmDialog';
 import { GlassButton } from '../glass/GlassButton';
 import { Segmented } from '../glass/Segmented';
 import { Sheet } from '../glass/Sheet';
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from '../icons';
+import { CheckDraw, ChevronDownIcon, ChevronUpIcon, PlusIcon } from '../icons';
+import { toJstDate } from '../../../shared/date';
+import { useCookOnDate } from '../../lib/cooklog';
 import { CookOnDateButton, RecipePicker } from './MealSheets';
 
 const dayLabel = (date: string) => `${WEEKDAY_LABELS[weekdayIndex(date)]}曜日`;
@@ -293,6 +295,16 @@ function HostingBody({
                 {c.recipe?.name ?? '未定（タップして選ぶ）'}
               </span>
             </button>
+            {c.recipe && (
+              <CookCheck
+                key={`${c.id}-${c.cookedLogId}`}
+                recipeId={c.recipe.id}
+                recipeName={c.recipe.name}
+                date={hosting.date}
+                logId={c.cookedLogId}
+                hostingCourseId={c.id}
+              />
+            )}
             <button
               type="button"
               disabled={busy || i === 0}
@@ -338,6 +350,46 @@ function HostingBody({
         onCancel={() => setConfirmDelete(false)}
       />
     </div>
+  );
+}
+
+/** 一覧の行から「作った」を記録・取り消す（未来の日は出さない） */
+function CookCheck({
+  recipeId,
+  recipeName,
+  date,
+  logId,
+  hostingCourseId,
+}: {
+  recipeId: string;
+  recipeName: string;
+  date: string;
+  logId: string | null;
+  hostingCourseId: string;
+}) {
+  const cook = useCookOnDate();
+  // 押した直後の表示（読み直しが届くまでのあいだ）
+  const [done, setDone] = useState(!!logId);
+  if (date > toJstDate()) return null;
+  return (
+    <button
+      type="button"
+      disabled={cook.isPending}
+      aria-pressed={done}
+      aria-label={done ? `${recipeName}の「作った」を取り消す` : `${recipeName}を作ったと記録する`}
+      onClick={() =>
+        cook.mutate(
+          { recipeId, date, logId: done ? logId : null, hostingCourseId },
+          { onSuccess: () => setDone((d) => !d) },
+        )
+      }
+      className={cn(
+        'grid size-11 shrink-0 place-items-center rounded-full',
+        done ? 'btn-primary' : 'text-ink-soft',
+      )}
+    >
+      <CheckDraw checked={done} size={16} />
+    </button>
   );
 }
 

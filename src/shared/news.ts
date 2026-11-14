@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-14-hosting-cooked',
+    date: '2026-11-14',
+    kind: 'improve',
+    title: 'もてなしの料理も、すぐに「作った」と記録できるようになりました',
+    body: [
+      'ホームのもてなしのカードと、週間献立のもてなしの一覧に、料理ごとの「作った」ボタンが付きました。',
+      '記録すると自炊記録に入り、在庫からはもてなしの人数分を引きます。',
+    ],
+  },
+  {
     id: '2026-11-08-hosting',
     date: '2026-11-08',
     kind: 'feature',

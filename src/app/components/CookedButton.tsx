@@ -10,10 +10,13 @@ export function CookedButton({
   recipeId,
   recipeName,
   size = 'md',
+  hostingCourseId,
 }: {
   recipeId: string;
   recipeName: string;
-  size?: 'md' | 'lg';
+  /** sm は印だけ（もてなしの一覧など、行が多いところ） */
+  size?: 'sm' | 'md' | 'lg';
+  hostingCourseId?: string;
 }) {
   const { data: logs } = useQuery(todayLogsQuery);
   const toggle = useCookToggle();
@@ -26,7 +29,11 @@ export function CookedButton({
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggle.mutate({ recipeId, logId: log && !log.id.startsWith('tmp-') ? log.id : undefined });
+        toggle.mutate({
+          recipeId,
+          logId: log && !log.id.startsWith('tmp-') ? log.id : undefined,
+          hostingCourseId,
+        });
       }}
       disabled={toggle.isPending || (done && log.id.startsWith('tmp-'))}
       aria-pressed={done}
@@ -35,7 +42,11 @@ export function CookedButton({
       transition={spring.snappy}
       className={cn(
         'relative flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl font-bold transition-colors',
-        size === 'lg' ? 'min-h-14 min-w-28 px-4 text-sm' : 'size-14 text-[10px]',
+        size === 'lg'
+          ? 'min-h-14 min-w-28 px-4 text-sm'
+          : size === 'sm'
+            ? 'size-11'
+            : 'size-14 text-[10px]',
         done ? 'btn-primary' : 'groove text-ink-soft',
       )}
     >
@@ -48,7 +59,7 @@ export function CookedButton({
       >
         <CheckDraw checked={done} size={14} />
       </span>
-      {done ? '作った！' : '作った'}
+      {size !== 'sm' && (done ? '作った！' : '作った')}
       <AnimatePresence>
         {done && (
           <motion.span

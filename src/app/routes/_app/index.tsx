@@ -125,9 +125,27 @@ function Home() {
       {data && data.day.hostings.length > 0 && (
         <div className="mb-3 flex flex-col gap-2">
           {data.day.hostings.map((h) => (
-            <Link key={h.id} to="/week" className="glass block rounded-[var(--radius-card)] p-2">
-              <HostingCard hosting={h} />
-            </Link>
+            <div key={h.id} className="glass rounded-[var(--radius-card)] p-2">
+              <HostingCard
+                hosting={h}
+                action={(c) =>
+                  c.recipe && (
+                    <CookedButton
+                      size="sm"
+                      recipeId={c.recipe.id}
+                      recipeName={c.recipe.name}
+                      hostingCourseId={c.id}
+                    />
+                  )
+                }
+              />
+              <Link
+                to="/week"
+                className="mt-1 flex min-h-11 items-center justify-center text-sm font-bold text-accent-strong"
+              >
+                週間献立でコースを変える
+              </Link>
+            </div>
           ))}
         </div>
       )}
