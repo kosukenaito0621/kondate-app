@@ -1,0 +1,19 @@
+# ライブラリの更新と脆弱性を月1回チェックする（2026-11-17 セキュリティ点検で追加）
+# 大きな版上げ（major）は動かなくなりやすいので自動では出さない。小さな更新はまとめて1つの提案にする。
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
