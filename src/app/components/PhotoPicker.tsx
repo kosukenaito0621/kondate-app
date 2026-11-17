@@ -15,11 +15,14 @@ import { useToast } from './toast/Toaster';
  */
 export function PhotoPicker({
   label = '写真を追加',
+  ariaLabel,
   onUploaded,
   className,
   compact,
 }: {
   label?: string;
+  /** 読み上げ用の名前（同じボタンが並ぶとき、どれか分かるように） */
+  ariaLabel?: string;
   onUploaded: (key: string) => void | Promise<void>;
   className?: string;
   compact?: boolean;
@@ -76,7 +79,7 @@ export function PhotoPicker({
         onClick={() => inputRef.current?.click()}
         disabled={busy}
         aria-busy={busy || undefined}
-        aria-label={compact ? label : undefined}
+        aria-label={ariaLabel ?? (compact ? label : undefined)}
         whileTap={{ scale: 0.92 }}
         transition={spring.snappy}
         className={cn(

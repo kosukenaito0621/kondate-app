@@ -27,9 +27,14 @@ export function CropDialog({
 
   useEffect(() => {
     if (!file) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // 一番手前なので Esc はここで止める（後ろのシートまで閉じないように）
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopImmediatePropagation();
+      onCancel();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [file, onCancel]);
 
   return createPortal(

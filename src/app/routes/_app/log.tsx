@@ -149,13 +149,13 @@ function Stat({
   );
 }
 
-/** 自炊記録の写真を付け替える */
-function useLogPhoto(logId: string) {
+/** 自炊記録の写真を付け替える（どの記録かは呼ぶ時点で渡す。途中でシートを替えても取り違えない） */
+function useLogPhoto() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (imageKey: string | null) => {
-      const res = await api.logs[':id'].$patch({ param: { id: logId }, json: { imageKey } });
+    mutationFn: async ({ id, imageKey }: { id: string; imageKey: string | null }) => {
+      const res = await api.logs[':id'].$patch({ param: { id }, json: { imageKey } });
       if (!res.ok) throw new Error('写真を保存できませんでした');
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logs'] }),
@@ -165,7 +165,7 @@ function useLogPhoto(logId: string) {
 
 /** 自炊記録のタイル（写真を主役に、料理名は小さく） */
 function LogTile({ entry, onOpen }: { entry: CookLogEntry; onOpen: () => void }) {
-  const photo = useLogPhoto(entry.id);
+  const photo = useLogPhoto();
   const name = entry.recipe.name;
   return (
     <motion.li
@@ -189,8 +189,9 @@ function LogTile({ entry, onOpen }: { entry: CookLogEntry; onOpen: () => void })
         ) : (
           <PhotoPicker
             label="写真を追加"
+            ariaLabel={`${name}の写真を追加`}
             className="size-full! rounded-2xl! flex-col border-[1.5px] border-dashed border-ink-faint/40"
-            onUploaded={(key) => photo.mutateAsync(key)}
+            onUploaded={(key) => photo.mutateAsync({ id: entry.id, imageKey: key })}
           />
         )}
       </div>
@@ -209,7 +210,7 @@ function LogTile({ entry, onOpen }: { entry: CookLogEntry; onOpen: () => void })
 function LogSheet({ entry, onClose }: { entry: CookLogEntry | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const photo = useLogPhoto(entry?.id ?? '');
+  const photo = useLogPhoto();
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const res = await api.logs[':id'].$delete({ param: { id } });
@@ -234,11 +235,14 @@ function LogSheet({ entry, onClose }: { entry: CookLogEntry | null; onClose: () 
                 className="aspect-square w-full rounded-[var(--radius-card)]"
               />
               <div className="grid grid-cols-2 gap-2">
-                <PhotoPicker label="写真を変える" onUploaded={(key) => photo.mutateAsync(key)} />
+                <PhotoPicker
+                  label="写真を変える"
+                  onUploaded={(key) => photo.mutateAsync({ id: entry.id, imageKey: key })}
+                />
                 <GlassButton
                   variant="ghost"
                   loading={photo.isPending}
-                  onClick={() => photo.mutate(null)}
+                  onClick={() => photo.mutate({ id: entry.id, imageKey: null })}
                 >
                   写真を外す
                 </GlassButton>
@@ -248,7 +252,7 @@ function LogSheet({ entry, onClose }: { entry: CookLogEntry | null; onClose: () 
             <PhotoPicker
               label="写真を追加"
               className="w-full"
-              onUploaded={(key) => photo.mutateAsync(key)}
+              onUploaded={(key) => photo.mutateAsync({ id: entry.id, imageKey: key })}
             />
           )}
           <div className="grid grid-cols-2 gap-2">
