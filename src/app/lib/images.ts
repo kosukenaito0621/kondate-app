@@ -1,3 +1,5 @@
+import { cropRect, type CropArea } from './crop';
+
 /** 画像の表示用URL（API 経由。グループのメンバーだけが見られる） */
 export function imageUrl(key: string) {
   return `/api/images/${key}`;
@@ -7,17 +9,22 @@ const MAX_SIDE = 1600;
 
 /**
  * 送る前に端末側で縮小する（長辺1600px、WebP。未対応なら JPEG）。
- * 向き（EXIF）は createImageBitmap が反映する。
+ * 向き（EXIF）は createImageBitmap が反映する。area があればその範囲（正方形）だけ切り取る。
  */
-export async function resizeImage(file: File): Promise<Blob> {
+export async function resizeImage(file: File, area?: CropArea): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h);
+  if (area) {
+    const r = cropRect(area, bitmap.width, bitmap.height, MAX_SIDE);
+    canvas.width = r.w;
+    canvas.height = r.h;
+    canvas.getContext('2d')!.drawImage(bitmap, r.sx, r.sy, r.sw, r.sh, 0, 0, r.w, r.h);
+  } else {
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  }
   bitmap.close();
   const toBlob = (type: string) =>
     new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.82));
@@ -28,8 +35,8 @@ export async function resizeImage(file: File): Promise<Blob> {
   return jpeg;
 }
 
-export async function uploadImage(file: File): Promise<string> {
-  const blob = await resizeImage(file);
+export async function uploadImage(file: File, area?: CropArea): Promise<string> {
+  const blob = await resizeImage(file, area);
   const form = new FormData();
   form.append('file', blob, blob.type === 'image/webp' ? 'photo.webp' : 'photo.jpg');
   const res = await fetch('/api/images', {
