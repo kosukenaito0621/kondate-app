@@ -11,7 +11,7 @@ updates:
       minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      - dependency-name: "*"
+      - dependency-name: '*'
         update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
