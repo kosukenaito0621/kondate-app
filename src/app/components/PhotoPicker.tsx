@@ -1,14 +1,16 @@
 import { motion } from 'motion/react';
 import { useIsGuest } from '../lib/auth';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { cn } from '../lib/cn';
+import type { CropArea } from '../lib/crop';
 import { uploadImage } from '../lib/images';
 import { spring } from '../lib/motion';
+import { CropDialog } from './CropDialog';
 import { CameraIcon } from './icons';
 import { useToast } from './toast/Toaster';
 
 /**
- * 写真を選ぶ／撮るボタン。選ぶと縮小してアップロードし、キーを返す。
+ * 写真を選ぶ／撮るボタン。選ぶと正方形の位置合わせを出し、決定したら切り取り・縮小してアップロードし、キーを返す。
  * スマホではカメラか写真ライブラリかを選べる。
  */
 export function PhotoPicker({
@@ -25,15 +27,24 @@ export function PhotoPicker({
   const guest = useIsGuest();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<File | null>(null);
   const { toast } = useToast();
 
-  const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
+    if (file) setPending(file);
+  };
+
+  const cancel = useCallback(() => setPending(null), []);
+
+  const confirm = async (area: CropArea) => {
+    const file = pending;
+    setPending(null);
     if (!file) return;
     setBusy(true);
     try {
-      await onUploaded(await uploadImage(file));
+      await onUploaded(await uploadImage(file, area));
     } catch (err) {
       toast(err instanceof Error ? err.message : '写真を追加できませんでした', 'error');
     } finally {
@@ -53,6 +64,12 @@ export function PhotoPicker({
         tabIndex={-1}
         aria-hidden="true"
         onChange={onChange}
+      />
+      <CropDialog
+        file={pending}
+        onCancel={cancel}
+        onConfirm={confirm}
+        onReselect={() => inputRef.current?.click()}
       />
       <motion.button
         type="button"
