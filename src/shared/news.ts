@@ -20,6 +20,16 @@ export type NewsItem = {
 
 export const NEWS: readonly NewsItem[] = [
   {
+    id: '2026-11-17-photo-crop-log-grid',
+    date: '2026-11-17',
+    kind: 'improve',
+    title: '写真の位置を合わせられるようになり、自炊記録が写真中心の見た目になりました',
+    body: [
+      '写真を選ぶと、正方形の枠で位置を合わせる画面が出ます。指でずらしたり、2本指で拡大したりして、料理を真ん中に寄せてから保存できます。',
+      '自炊記録は、写真を大きく2列で並べる形になりました。写真を押すと、写真の変更や記録の取り消しができます。',
+    ],
+  },
+  {
     id: '2026-11-14-hosting-cooked',
     date: '2026-11-14',
     kind: 'improve',

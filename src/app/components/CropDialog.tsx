@@ -39,7 +39,7 @@ export function CropDialog({
           role="dialog"
           aria-modal="true"
           aria-label="写真の位置を合わせる"
-          className="fixed inset-0 z-[60] flex flex-col bg-black/90 text-white"
+          className="fixed inset-0 z-[60] flex flex-col bg-neutral-950 text-white"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

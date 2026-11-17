@@ -2,12 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
-import { CATEGORY_LABEL } from '../../../shared/constants';
 import type { CookLogEntry } from '../../../shared/cooklog';
 import { toJstDate, weekdayIndex, WEEKDAY_LABELS } from '../../../shared/date';
 import { api } from '../../api';
-import { Avatar } from '../../components/Avatar';
-import { GenreBadge } from '../../components/GenreBadge';
 import { GlassButton } from '../../components/glass/GlassButton';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { Sheet } from '../../components/glass/Sheet';
@@ -39,6 +36,10 @@ function LogPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { data, isPending } = useQuery(monthLogsQuery(month));
   const [y, mm] = month.split('-');
+
+  // 詳細シートはカードの外に1つだけ置く（ガラスのカードの中だと画面全体に出せないため）
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openEntry = data?.entries.find((e) => e.id === openId) ?? null;
 
   const byDate = new Map<string, CookLogEntry[]>();
   for (const e of data?.entries ?? []) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
@@ -107,10 +108,10 @@ function LogPage() {
                     （{WEEKDAY_LABELS[weekdayIndex(date)]}）
                   </span>
                 </h2>
-                <ul className="flex flex-col">
+                <ul className="grid grid-cols-2 gap-2.5">
                   <AnimatePresence initial={false}>
                     {entries.map((e) => (
-                      <LogRow key={e.id} entry={e} />
+                      <LogTile key={e.id} entry={e} onOpen={() => setOpenId(e.id)} />
                     ))}
                   </AnimatePresence>
                 </ul>
@@ -119,6 +120,7 @@ function LogPage() {
           )}
         </motion.div>
       )}
+      <LogSheet entry={openEntry} onClose={() => setOpenId(null)} />
     </>
   );
 }
@@ -161,103 +163,114 @@ function useLogPhoto(logId: string) {
   });
 }
 
-function LogRow({ entry }: { entry: CookLogEntry }) {
+/** 自炊記録のタイル（写真を主役に、料理名は小さく） */
+function LogTile({ entry, onOpen }: { entry: CookLogEntry; onOpen: () => void }) {
+  const photo = useLogPhoto(entry.id);
+  const name = entry.recipe.name;
+  return (
+    <motion.li
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={spring.soft}
+      className="min-w-0"
+    >
+      <div className="aspect-square">
+        {entry.imageKey ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            className="block size-full rounded-2xl"
+            aria-label={`${name}の写真を見る`}
+          >
+            <Photo src={imageUrl(entry.imageKey)} alt="" className="size-full rounded-2xl" />
+          </button>
+        ) : (
+          <PhotoPicker
+            label="写真を追加"
+            className="size-full! rounded-2xl! flex-col border-[1.5px] border-dashed border-ink-faint/40"
+            onUploaded={(key) => photo.mutateAsync(key)}
+          />
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-1 block min-h-8 w-full truncate px-1 text-left text-xs text-ink-soft"
+      >
+        {name}
+      </button>
+    </motion.li>
+  );
+}
+
+/** タイルを押したときの詳細（大きな写真・写真の変更・記録の取り消し） */
+function LogSheet({ entry, onClose }: { entry: CookLogEntry | null; onClose: () => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [viewing, setViewing] = useState(false);
-  const photo = useLogPhoto(entry.id);
+  const photo = useLogPhoto(entry?.id ?? '');
   const remove = useMutation({
-    mutationFn: async () => {
-      const res = await api.logs[':id'].$delete({ param: { id: entry.id } });
+    mutationFn: async (id: string) => {
+      const res = await api.logs[':id'].$delete({ param: { id } });
       if (!res.ok) throw new Error('取り消せませんでした');
     },
     onSuccess: () => {
+      onClose();
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       toast('記録を取り消しました');
     },
     onError: (e) => toast(e.message, 'error'),
   });
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={spring.soft}
-      className="flex items-center gap-2.5 py-1.5"
-    >
-      {entry.imageKey ? (
-        <button
-          type="button"
-          onClick={() => setViewing(true)}
-          className="shrink-0 rounded-2xl"
-          aria-label={`${entry.recipe.name}の写真を見る`}
-        >
-          <Photo src={imageUrl(entry.imageKey)} alt="" className="size-14 rounded-2xl" />
-        </button>
-      ) : (
-        <PhotoPicker
-          compact
-          label={`${entry.recipe.name}の写真を追加`}
-          className="size-14 rounded-2xl"
-          onUploaded={(key) => photo.mutateAsync(key)}
-        />
-      )}
-      <Link
-        to="/recipes/$id"
-        params={{ id: entry.recipe.id }}
-        className="flex min-h-12 min-w-0 flex-1 items-center gap-2.5 rounded-2xl px-1"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5 text-[11px] text-ink-soft">
-            <GenreBadge genre={entry.recipe.genre} className="size-5 text-[10px]" />
-            {CATEGORY_LABEL[entry.recipe.category]}
-          </span>
-          <span className="mt-0.5 block truncate font-bold">{entry.recipe.name}</span>
-        </span>
-      </Link>
-      {entry.cookedBy && (
-        <span title={`${entry.cookedBy.name ?? ''}さんが記録`}>
-          <Avatar name={entry.cookedBy.name} url={entry.cookedBy.avatarUrl} size={26} />
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={() => remove.mutate()}
-        disabled={remove.isPending}
-        className="grid size-11 place-items-center text-ink-faint"
-        aria-label={`${entry.recipe.name}の記録を取り消す`}
-      >
-        <TrashIcon size={16} />
-      </button>
-
-      <Sheet open={viewing} title={entry.recipe.name} onClose={() => setViewing(false)}>
-        {entry.imageKey && (
-          <div className="flex flex-col gap-3">
-            <Photo
-              src={imageUrl(entry.imageKey)}
-              alt={`${entry.recipe.name}の写真`}
-              className="aspect-square w-full rounded-[var(--radius-card)]"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <PhotoPicker
-                label="写真を変える"
-                onUploaded={async (key) => {
-                  await photo.mutateAsync(key);
-                  setViewing(false);
-                }}
+    <Sheet open={!!entry} title={entry?.recipe.name ?? ''} onClose={onClose}>
+      {entry && (
+        <div className="flex flex-col gap-3">
+          {entry.imageKey ? (
+            <>
+              <Photo
+                src={imageUrl(entry.imageKey)}
+                alt={`${entry.recipe.name}の写真`}
+                className="aspect-square w-full rounded-[var(--radius-card)]"
               />
-              <GlassButton
-                variant="ghost"
-                loading={photo.isPending}
-                onClick={() => photo.mutate(null, { onSuccess: () => setViewing(false) })}
-              >
-                写真を外す
-              </GlassButton>
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <PhotoPicker label="写真を変える" onUploaded={(key) => photo.mutateAsync(key)} />
+                <GlassButton
+                  variant="ghost"
+                  loading={photo.isPending}
+                  onClick={() => photo.mutate(null)}
+                >
+                  写真を外す
+                </GlassButton>
+              </div>
+            </>
+          ) : (
+            <PhotoPicker
+              label="写真を追加"
+              className="w-full"
+              onUploaded={(key) => photo.mutateAsync(key)}
+            />
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/recipes/$id"
+              params={{ id: entry.recipe.id }}
+              className="glass inline-flex min-h-12 items-center justify-center rounded-full text-[15px] font-bold"
+            >
+              レシピを見る
+            </Link>
+            <GlassButton
+              variant="danger"
+              icon={<TrashIcon size={16} />}
+              loading={remove.isPending}
+              onClick={() => remove.mutate(entry.id)}
+              aria-label={`${entry.recipe.name}の記録を取り消す`}
+            >
+              取り消す
+            </GlassButton>
           </div>
-        )}
-      </Sheet>
-    </motion.li>
+        </div>
+      )}
+    </Sheet>
   );
 }
